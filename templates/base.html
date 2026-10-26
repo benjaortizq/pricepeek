@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PricePeek{% endblock %}</title>
+</head>
+<body>
+  <nav>
+    <strong>PricePeek</strong>
+    {% if user.is_authenticated %}
+      {% if user.rol == "cliente" %}
+        <a href="{% url 'inicio_cliente' %}">Inicio</a>
+      {% elif user.rol == "empresa" %}
+        <a href="{% url 'inicio_empresa' %}">Panel de empresa</a>
+      {% elif user.rol == "administrador" %}
+        <a href="{% url 'inicio_administrador' %}">Administración</a>
+      {% endif %}
+      <span>{{ user.first_name|default:user.email }}</span>
+      <form method="post" action="{% url 'logout' %}" style="display: inline">
+        {% csrf_token %}
+        <button type="submit">Cerrar sesión</button>
+      </form>
+    {% else %}
+      <a href="{% url 'login' %}">Iniciar sesión</a>
+      <a href="{% url 'registro' %}">Crear cuenta</a>
+    {% endif %}
+  </nav>
+
+  {% for message in messages %}
+    <p>{{ message }}</p>
+  {% endfor %}
+
+  {% block content %}{% endblock %}
+</body>
+</html>

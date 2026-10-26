@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar sesión · PricePeek{% endblock %}
+
+{% block content %}
+<h1>Iniciar sesión</h1>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button type="submit">Iniciar sesión</button>
+</form>
+
+<p><a href="{% url 'password_reset' %}">¿Olvidó su contraseña?</a></p>
+<p>¿No tiene cuenta? <a href="{% url 'registro' %}">Regístrese</a></p>
+{% endblock %}

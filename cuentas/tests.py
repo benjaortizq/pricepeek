@@ -29,3 +29,51 @@ class RegistroClienteTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Ya existe una cuenta con este correo")
         self.assertEqual(Usuario.objects.filter(email__iexact="ana@correo.com").count(), 1)
+
+
+
+class InicioSesionTests(TestCase):
+    def setUp(self):
+        self.clave = "Clave2026segura"
+        self.cliente = Usuario.objects.create_user(
+            email="cliente@correo.com", password=self.clave, rol=Usuario.Rol.CLIENTE)
+        self.empresa = Usuario.objects.create_user(
+            email="empresa@correo.com", password=self.clave, rol=Usuario.Rol.EMPRESA)
+        self.admin = Usuario.objects.create_user(
+            email="admin@correo.com", password=self.clave, rol=Usuario.Rol.ADMINISTRADOR)
+
+    def iniciar(self, email, clave=None):
+        datos = {"username": email, "password": clave or self.clave}
+        return self.client.post(reverse("login"), datos, follow=True)
+
+    def test_cada_rol_inicia_sesion_con_correo_y_llega_a_su_pagina(self):
+        casos = [
+            (self.cliente, "inicio_cliente"),
+            (self.empresa, "inicio_empresa"),
+            (self.admin, "inicio_administrador"),
+        ]
+        for usuario, destino in casos:
+            with self.subTest(rol=usuario.rol):
+                respuesta = self.iniciar(usuario.email)
+                self.assertRedirects(respuesta, reverse(destino))
+                self.client.logout()
+
+    def test_contrasena_incorrecta_no_inicia_sesion(self):
+        respuesta = self.iniciar(self.cliente.email, "incorrecta")
+        self.assertFalse(respuesta.wsgi_request.user.is_authenticated)
+
+    def test_cliente_no_puede_entrar_al_panel_de_empresa(self):
+        self.client.force_login(self.cliente)
+        respuesta = self.client.get(reverse("inicio_empresa"))
+        self.assertEqual(respuesta.status_code, 403)
+
+    def test_menu_muestra_solo_lo_del_rol(self):
+        self.client.force_login(self.cliente)
+        respuesta = self.client.get(reverse("inicio_cliente"))
+        self.assertNotContains(respuesta, "Panel de empresa")
+        self.assertNotContains(respuesta, "Administración")
+
+    def test_sin_sesion_redirige_al_login(self):
+        respuesta = self.client.get(reverse("inicio_cliente"))
+        esperado = f"{reverse('login')}?next={reverse('inicio_cliente')}"
+        self.assertRedirects(respuesta, esperado)

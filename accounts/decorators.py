@@ -1,4 +1,4 @@
-from functools import wraps
+﻿from functools import wraps
 
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied

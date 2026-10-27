@@ -9,11 +9,11 @@
   <nav>
     <strong>PricePeek</strong>
     {% if user.is_authenticated %}
-      {% if user.rol == "cliente" %}
+      {% if user.role == "client" %}
         <a href="{% url 'inicio_cliente' %}">Inicio</a>
-      {% elif user.rol == "empresa" %}
+      {% elif user.role == "enterprise" %}
         <a href="{% url 'inicio_empresa' %}">Panel de empresa</a>
-      {% elif user.rol == "administrador" %}
+      {% elif user.role  == "admin" %}
         <a href="{% url 'inicio_administrador' %}">Administración</a>
       {% endif %}
       <span>{{ user.first_name|default:user.email }}</span>
@@ -23,7 +23,7 @@
       </form>
     {% else %}
       <a href="{% url 'login' %}">Iniciar sesión</a>
-      <a href="{% url 'registro' %}">Crear cuenta</a>
+      <a href="{% url 'register' %}">Crear cuenta</a>
     {% endif %}
   </nav>
 

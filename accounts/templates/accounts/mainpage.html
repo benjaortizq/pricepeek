@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ titulo }}</h1>
+<p>Bienvenido, {{ user.first_name|default:user.email }}.</p>
+{% endblock %}

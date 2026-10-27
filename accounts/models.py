@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -33,8 +34,8 @@ class User(AbstractUser):
     username = None
     email = models.EmailField("email address", unique=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CLIENT)
-    alertas_activas = models.BooleanField(default=True)  # RF-24
-
+    active_alerts = models.BooleanField(default=True)  # RF-24
+    last_password_change = models.DateTimeField("last password change", default=timezone.now)
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

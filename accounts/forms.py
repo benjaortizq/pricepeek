@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
-from .models import Usuario
+from .models import User
 
 
 class RegistroClienteForm(UserCreationForm):
@@ -9,18 +9,18 @@ class RegistroClienteForm(UserCreationForm):
     email = forms.EmailField(label="Correo electrónico")
 
     class Meta:
-        model = Usuario
+        model = User
         fields = ("first_name", "email")
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower()
-        if Usuario.objects.filter(email__iexact=email).exists():
+        if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Ya existe una cuenta con este correo electrónico.")
         return email
 
     def save(self, commit=True):
-        usuario = super().save(commit=False)
-        usuario.rol = Usuario.Rol.CLIENTE
+        user = super().save(commit=False)
+        user.role = User.Role.CLIENT
         if commit:
-            usuario.save()
-        return usuario
+            user.save()
+        return user

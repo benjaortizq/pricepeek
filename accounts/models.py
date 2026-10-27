@@ -1,8 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
-
-class UsuarioManager(BaseUserManager):
+class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def _create_user(self, email, password, **extra_fields):
@@ -21,22 +20,22 @@ class UsuarioManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("rol", Usuario.Rol.ADMINISTRADOR)
+        extra_fields.setdefault("role", User.Role.ADMIN)
         return self._create_user(email, password, **extra_fields)
 
 
-class Usuario(AbstractUser):
-    class Rol(models.TextChoices):
-        CLIENTE = "cliente", "Cliente"
-        EMPRESA = "empresa", "Empresa"
-        ADMINISTRADOR = "administrador", "Administrador"
+class User(AbstractUser):
+    class Role(models.TextChoices):
+        CLIENT = "client", "Client"
+        ENTERPRISE = "enterprise", "Enterprise"
+        ADMIN = "admin", "Admin"
 
     username = None
-    email = models.EmailField("correo electrónico", unique=True)
-    rol = models.CharField(max_length=20, choices=Rol.choices, default=Rol.CLIENTE)
+    email = models.EmailField("email address", unique=True)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.CLIENT)
     alertas_activas = models.BooleanField(default=True)  # RF-24
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    objects = UsuarioManager()
+    objects = UserManager()

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar cuenta · PricePeek{% endblock %}
+
+{% block content %}
+<h1>Eliminar cuenta</h1>
+<p><strong>Esta acción es permanente.</strong> Se eliminarán sus datos personales, su lista de deseos y sus reseñas. No se puede deshacer.</p>
+<p>Para confirmar, ingrese su contraseña actual.</p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Eliminar mi cuenta</button>
+</form>
+
+<p><a href="{% url 'inicio_cliente' %}">Cancelar</a></p>
+{% endblock %}

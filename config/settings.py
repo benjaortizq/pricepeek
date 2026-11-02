@@ -84,7 +84,7 @@ DATABASES = {
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
         "OPTIONS": {
-            "sslmode": "require",
+            "sslmode": os.environ.get("DB_SSLMODE", "require"),
         },
     }
 }
@@ -106,13 +106,16 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'accounts.validators.LetraYNumeroValidator',  # RNF-07
+    },
 ]
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'  # RNF-22 / RNF-23
 
 TIME_ZONE = 'UTC'
 
@@ -138,3 +141,6 @@ MAILERS = {
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panel"
 LOGOUT_REDIRECT_URL = "login"
+
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 24 horas
+DEFAULT_FROM_EMAIL = "PricePeek <no-reply@pricepeek.local>"

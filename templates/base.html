@@ -11,6 +11,7 @@
     {% if user.is_authenticated %}
       {% if user.role == "client" %}
         <a href="{% url 'inicio_cliente' %}">Inicio</a>
+        <a href="{% url 'eliminar_cuenta' %}">Eliminar cuenta</a>
       {% elif user.role == "enterprise" %}
         <a href="{% url 'inicio_empresa' %}">Panel de empresa</a>
       {% elif user.role  == "admin" %}

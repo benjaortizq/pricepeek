@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ producto.name }} | PricePeek{% endblock %}
+
+{% block content %}
+<h1>{{ producto.name }}</h1>
+
+{% if imagen %}
+  <img src="{{ imagen.image_url }}" alt="{{ producto.name }}" width="300">
+{% else %}
+  <p>Este producto no tiene imagen.</p>
+{% endif %}
+
+<dl>
+  <dt>Marca</dt>
+  <dd>{{ producto.brand.name }}</dd>
+
+  <dt>Categoría</dt>
+  <dd>{{ producto.category.name }}</dd>
+
+  <dt>Descripción</dt>
+  <dd>{{ producto.description|default:"Sin descripción." }}</dd>
+
+  <dt>Código de barras</dt>
+  <dd>
+    {% for variante in variantes %}
+      {{ variante.gtin }}{% if not forloop.last %}<br>{% endif %}
+    {% empty %}
+      Sin código de barras.
+    {% endfor %}
+  </dd>
+</dl>
+{% endblock %}

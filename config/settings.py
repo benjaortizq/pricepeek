@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "accounts",
+    "products",
 ]
 AUTH_USER_MODEL = "accounts.User"
 
@@ -144,3 +145,7 @@ LOGOUT_REDIRECT_URL = "login"
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 24 horas
 DEFAULT_FROM_EMAIL = "PricePeek <no-reply@pricepeek.local>"
+import sys
+ 
+if "test" in sys.argv:
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}

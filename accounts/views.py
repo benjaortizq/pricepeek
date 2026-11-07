@@ -1,12 +1,12 @@
 from django.contrib import messages
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
-from .forms import RegistroClienteForm
+from .decorators import role_required
+from .forms import EliminarCuentaForm, RegistroClienteForm
+from .models import User
 
-from django.contrib.auth.decorators import login_required
-
-from .decorators import rol_requerido
-from .models import Usuario
 
 def registro(request):
     if request.method == "POST":
@@ -17,28 +17,43 @@ def registro(request):
             return redirect("login")
     else:
         form = RegistroClienteForm()
-    return render(request, "cuentas/registro.html", {"form": form})
+    return render(request, "accounts/register.html", {"form": form})
 
 
 @login_required
 def panel(request):
-    if request.user.rol == Usuario.Rol.EMPRESA:
+    if request.user.role == User.Role.ENTERPRISE:
         return redirect("inicio_empresa")
-    if request.user.rol == Usuario.Rol.ADMINISTRADOR:
+    if request.user.role == User.Role.ADMIN:
         return redirect("inicio_administrador")
     return redirect("inicio_cliente")
 
 
-@rol_requerido(Usuario.Rol.CLIENTE)
+@role_required(User.Role.CLIENT)
 def inicio_cliente(request):
-    return render(request, "cuentas/inicio.html", {"titulo": "Inicio del cliente"})
+    return render(request, "accounts/mainpage.html", {"titulo": "Inicio del cliente"})
 
 
-@rol_requerido(Usuario.Rol.EMPRESA)
+@role_required(User.Role.ENTERPRISE)
 def inicio_empresa(request):
-    return render(request, "cuentas/inicio.html", {"titulo": "Panel de empresa"})
+    return render(request, "accounts/mainpage.html", {"titulo": "Panel de empresa"})
 
 
-@rol_requerido(Usuario.Rol.ADMINISTRADOR)
+@role_required(User.Role.ADMIN)
 def inicio_administrador(request):
-    return render(request, "cuentas/inicio.html", {"titulo": "Panel de administración"})
+    return render(request, "accounts/mainpage.html", {"titulo": "Panel de administración"})
+
+
+@role_required(User.Role.CLIENT)
+def eliminar_cuenta(request):
+    if request.method == "POST":
+        form = EliminarCuentaForm(request.user, request.POST)
+        if form.is_valid():
+            usuario = request.user
+            logout(request)
+            usuario.delete()
+            messages.success(request, "Su cuenta y sus datos fueron eliminados.")
+            return redirect("login")
+    else:
+        form = EliminarCuentaForm(request.user)
+    return render(request, "accounts/eliminar_cuenta.html", {"form": form})

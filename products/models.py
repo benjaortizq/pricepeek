@@ -1,85 +1,85 @@
+# This is an auto-generated Django model module.
 from django.db import models
 
-# Las tablas ya existen en Supabase, por eso los modelos son managed = False.
 
-
-class Brand(models.Model):
+class Brands(models.Model):
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
     website_url = models.TextField(blank=True, null=True)
-    slug = models.CharField(max_length=255, unique=True)
+    slug = models.CharField(unique=True, max_length=255)
     logo_url = models.TextField()
     brand_color = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = "brands"
-
-    def __str__(self):
-        return self.name
+        db_table = 'brands'
 
 
-class Category(models.Model):
+class Categories(models.Model):
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = "categories"
-
-    def __str__(self):
-        return self.name
+        db_table = 'categories'
 
 
-class Product(models.Model):
-    id = models.BigIntegerField(primary_key=True)
+class ProductImages(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    product = models.ForeignKey('Products', models.DO_NOTHING)
+    variant = models.ForeignKey('ProductVariants', models.DO_NOTHING)
+    image_url = models.TextField()
+    is_main = models.BooleanField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'product_images'
+
+
+class ProductVariants(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    product = models.ForeignKey('Products', models.DO_NOTHING)
+    gtin = models.CharField(unique=True, max_length=255)
+    attributes = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'product_variants'
+
+
+class Products(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    brand = models.ForeignKey(Brand, models.DO_NOTHING, db_column="brand", related_name="products")
-    category = models.ForeignKey(
-        Category, models.DO_NOTHING, db_column="category", related_name="products"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    id = models.BigIntegerField(primary_key=True)
+    brand = models.ForeignKey(Brands, models.DO_NOTHING, db_column='brand')
+    category = models.ForeignKey(Categories, models.DO_NOTHING, db_column='category')
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = "products"
-
-    def __str__(self):
-        return self.name
-
-    def main_image(self):
-        # La imagen marcada como principal; si no hay, la primera que exista.
-        return self.images.order_by("-is_main", "id").first()
+        db_table = 'products'
+        db_table_comment = 'Product'
 
 
-class ProductVariant(models.Model):
-    product = models.ForeignKey(Product, models.DO_NOTHING, related_name="variants")
-    gtin = models.CharField("código de barras", max_length=14, unique=True)
-    attributes = models.JSONField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+# =========== Tablas para los precios de las empresas ===========
+class PricesWalmart(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    gtin = models.OneToOneField('ProductVariants', models.DO_NOTHING, db_column='gtin')
+    price = models.SmallIntegerField()
+    is_available = models.BooleanField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = "product_variants"
-
-    def __str__(self):
-        return self.gtin
-
-
-class ProductImage(models.Model):
-    product = models.ForeignKey(Product, models.DO_NOTHING, related_name="images")
-    variant = models.ForeignKey(ProductVariant, models.DO_NOTHING, related_name="images")
-    image_url = models.TextField()
-    is_main = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        managed = False
-        db_table = "product_images"
+        db_table = 'prices_walmart'

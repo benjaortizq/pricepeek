@@ -1,10 +1,9 @@
 from django.shortcuts import get_object_or_404, render
-
-from .models import Product
+from .models import Products
 
 
 def detalle_producto(request, pk):
-    producto = get_object_or_404(Product.objects.select_related("brand", "category"), pk=pk)
+    producto = get_object_or_404(Products.objects.select_related("brand", "category"), pk=pk)
     return render(
         request,
         "products/detalle_producto.html",

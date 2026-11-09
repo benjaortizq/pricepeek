@@ -1,9 +1,4 @@
-"""Validación de códigos de barras UPC/EAN (RF-39, UC-12).
-
-Es lógica pura: no usa la base de datos ni los modelos, así que se puede llamar
-desde el registro manual (RF-30), la carga masiva (RF-33) y la obtención
-automática de datos (RF-36).
-"""
+"""Validación de códigos de barras UPC/EAN (RF-39, UC-12)."""
 
 from dataclasses import dataclass
 

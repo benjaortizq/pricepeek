@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import SetPasswordForm, UserCreationForm
+from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm, UserCreationForm
 from django.utils import timezone
 
 from .models import User
@@ -56,3 +56,15 @@ class EliminarCuentaForm(forms.Form):
         if not self.user.check_password(password):
             raise forms.ValidationError("La contraseña ingresada no es correcta.")
         return password
+
+
+class CambioContrasenaForm(PasswordChangeForm):
+    """Contraseña actual + nueva contraseña; el cambio se aplica al confirmar el código."""
+
+
+class CodigoCambioContrasenaForm(forms.Form):
+    codigo = forms.CharField(
+        label="Código de verificación",
+        max_length=6,
+        widget=forms.TextInput(attrs={"autocomplete": "one-time-code", "inputmode": "numeric"}),
+    )

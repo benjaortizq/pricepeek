@@ -14,6 +14,13 @@ urlpatterns = [
         ),
         name="password_reset_confirm",
     ),
+    # Reemplaza la vista de Django para exigir el código enviado por correo.
+    path("password_change/", views.cambiar_contrasena, name="password_change"),
+    path(
+        "password_change/confirmar/",
+        views.confirmar_cambio_contrasena,
+        name="password_change_confirm",
+    ),
     path("eliminar-cuenta/", views.eliminar_cuenta, name="eliminar_cuenta"),
     path("panel/", views.panel, name="panel"),
     path("cliente/", views.inicio_cliente, name="inicio_cliente"),

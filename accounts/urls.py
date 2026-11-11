@@ -21,6 +21,8 @@ urlpatterns = [
         views.confirmar_cambio_contrasena,
         name="password_change_confirm",
     ),
+    path("perfil/", views.editar_perfil, name="editar_perfil"),
+    path("perfil/verificar-correo/", views.verificar_correo, name="verificar_correo"),
     path("eliminar-cuenta/", views.eliminar_cuenta, name="eliminar_cuenta"),
     path("panel/", views.panel, name="panel"),
     path("cliente/", views.inicio_cliente, name="inicio_cliente"),

@@ -30,4 +30,23 @@
     {% endfor %}
   </dd>
 </dl>
+
+<section aria-labelledby="resenas-heading">
+  <h2 id="resenas-heading">Reseñas</h2>
+  {% for resena in resenas %}
+    <article>
+      <p>{{ resena.content }}</p>
+      <small>
+        {% if resena.user.first_name or resena.user.last_name %}
+          {{ resena.user.first_name }} {{ resena.user.last_name }}
+        {% else %}
+          {{ resena.user.email }}
+        {% endif %}
+        · {{ resena.created_at|date:"d/m/Y" }}
+      </small>
+    </article>
+  {% empty %}
+    <p>Este producto todavía no tiene reseñas.</p>
+  {% endfor %}
+</section>
 {% endblock %}

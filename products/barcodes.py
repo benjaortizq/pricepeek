@@ -2,15 +2,20 @@
 
 from dataclasses import dataclass
 
-# RF-39: un código válido tiene 8 (EAN-8), 12 (UPC-A) o 13 (EAN-13) dígitos.
-FORMATOS = {8: "EAN-8", 12: "UPC-A", 13: "EAN-13"}
+# Un código válido tiene 8 (EAN-8), 12 (UPC-A), 13 (EAN-13) o 14 (GTIN-14) dígitos.
+FORMATOS = {8: "EAN-8", 12: "UPC-A", 13: "EAN-13", 14: "GTIN-14"}
+
+# Todos los códigos se guardan con 14 dígitos (rellenando con ceros a la izquierda),
+# para que el mismo producto no quede registrado dos veces con distinto formato.
+LONGITUD_NORMALIZADA = 14
 
 
 @dataclass(frozen=True)
 class ResultadoCodigo:
     valido: bool
     codigo: str = ""  # el código sin espacios en los extremos
-    formato: str = ""  # "EAN-8", "UPC-A" o "EAN-13" (solo si es válido)
+    formato: str = ""  # "EAN-8", "UPC-A", "EAN-13" o "GTIN-14" (solo si es válido)
+    normalizado: str = ""  # el código con 14 dígitos: es el que hay que guardar y buscar
     motivo: str = ""  # por qué se rechazó (solo si es inválido)
 
     def __bool__(self):
@@ -35,7 +40,7 @@ def validar_codigo_barras(codigo):
         return ResultadoCodigo(
             False,
             codigo,
-            motivo="El código de barras está vacío. Ingrese un código UPC/EAN de 8, 12 o 13 dígitos.",
+            motivo="El código de barras está vacío. Ingrese un código UPC/EAN de 8, 12, 13 o 14 dígitos.",
         )
 
     # isascii evita que pasen dígitos de otros alfabetos (por ejemplo "١٢٣").
@@ -50,7 +55,7 @@ def validar_codigo_barras(codigo):
         return ResultadoCodigo(
             False,
             codigo,
-            motivo=f"El código de barras tiene {len(codigo)} dígitos; debe tener 8, 12 o 13.",
+            motivo=f"El código de barras tiene {len(codigo)} dígitos; debe tener 8, 12, 13 o 14.",
         )
 
     esperado = calcular_digito_verificador(codigo[:-1])
@@ -64,4 +69,9 @@ def validar_codigo_barras(codigo):
             ),
         )
 
-    return ResultadoCodigo(True, codigo, formato=FORMATOS[len(codigo)])
+    return ResultadoCodigo(
+        True,
+        codigo,
+        formato=FORMATOS[len(codigo)],
+        normalizado=codigo.zfill(LONGITUD_NORMALIZADA),
+    )

@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 from dotenv import load_dotenv
 
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env", override=True)  # el .env manda sobre variables viejas de la terminal
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -135,17 +135,34 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# Con EMAIL_HOST_USER en el .env se envían correos reales por SMTP; si no, se imprimen en consola.
+if os.environ.get("EMAIL_HOST_USER"):
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {
+                "host": os.environ.get("EMAIL_HOST", "smtp.gmail.com"),
+                "port": int(os.environ.get("EMAIL_PORT", "587")),
+                "username": os.environ["EMAIL_HOST_USER"],
+                "password": os.environ.get("EMAIL_HOST_PASSWORD", ""),
+                "use_tls": True,
+            },
+        },
+    }
+else:
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        },
+    }
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panel"
 LOGOUT_REDIRECT_URL = "login"
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 24 horas
-DEFAULT_FROM_EMAIL = "PricePeek <no-reply@pricepeek.local>"
+PASSWORD_CHANGE_CODE_TIMEOUT = 60 * 10  # el código para confirmar el cambio vale 10 minutos
+PASSWORD_CHANGE_CODE_MAX_ATTEMPTS = 5
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PricePeek <no-reply@pricepeek.local>")
 import sys
  
 if "test" in sys.argv:

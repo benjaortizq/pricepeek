@@ -1,14 +1,16 @@
+import re
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.core import mail
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import resolve, reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
+from . import views
 from .models import User
 
 
@@ -179,3 +181,285 @@ class EliminarCuentaTests(TestCase):
                 respuesta = self.client.post(self.url, {"password": "Clave2026segura"})
                 self.assertEqual(respuesta.status_code, 403)
                 self.assertTrue(User.objects.filter(pk=usuario.pk).exists())
+
+
+class CambioContrasenaTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="ana@correo.com", password="Vieja2026clave", first_name="Ana"
+        )
+        self.client.force_login(self.user)
+        self.url = reverse("password_change")
+        self.url_confirmar = reverse("password_change_confirm")
+
+    def solicitar(self, actual="Vieja2026clave", nueva="Nueva2026clave"):
+        return self.client.post(
+            self.url,
+            {"old_password": actual, "new_password1": nueva, "new_password2": nueva},
+        )
+
+    def codigo_enviado(self):
+        return re.search(r"\b\d{6}\b", mail.outbox[-1].body).group()
+
+    def confirmar(self, codigo):
+        return self.client.post(self.url_confirmar, {"codigo": codigo})
+
+    def test_reemplaza_la_vista_de_django_que_no_pide_codigo(self):
+        self.assertEqual(resolve("/accounts/password_change/").func, views.cambiar_contrasena)
+
+    def test_solicitud_envia_codigo_al_correo_sin_cambiar_aun_la_contrasena(self):
+        respuesta = self.solicitar()
+        self.assertRedirects(respuesta, self.url_confirmar)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["ana@correo.com"])
+        self.assertIn("10 minutos", mail.outbox[0].body)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Vieja2026clave"))
+
+    def test_codigo_correcto_cambia_la_contrasena_y_mantiene_la_sesion(self):
+        antes = timezone.now() - timedelta(days=30)
+        User.objects.filter(pk=self.user.pk).update(last_password_change=antes)
+        self.solicitar()
+        respuesta = self.confirmar(self.codigo_enviado())
+        self.assertRedirects(respuesta, reverse("panel"), fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Nueva2026clave"))
+        self.assertFalse(self.user.check_password("Vieja2026clave"))
+        self.assertGreater(self.user.last_password_change, antes)
+        self.assertEqual(self.client.session["_auth_user_id"], str(self.user.pk))
+        self.assertNotIn(views.CAMBIO_PENDIENTE, self.client.session)
+
+    def test_contrasena_actual_incorrecta_no_envia_codigo(self):
+        respuesta = self.solicitar(actual="Incorrecta2026")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_nueva_contrasena_sin_numero_no_envia_codigo(self):
+        respuesta = self.solicitar(nueva="SoloLetrasAqui")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "al menos un número")
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_nuevas_contrasenas_distintas_no_envian_codigo(self):
+        respuesta = self.client.post(
+            self.url,
+            {
+                "old_password": "Vieja2026clave",
+                "new_password1": "Nueva2026clave",
+                "new_password2": "Otra2026clave",
+            },
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_codigo_incorrecto_no_cambia_la_contrasena(self):
+        self.solicitar()
+        codigo = self.codigo_enviado()
+        incorrecto = "000000" if codigo != "000000" else "111111"
+        respuesta = self.confirmar(incorrecto)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "no es correcto")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Vieja2026clave"))
+
+    def test_demasiados_intentos_invalidan_el_codigo(self):
+        self.solicitar()
+        codigo = self.codigo_enviado()
+        incorrecto = "000000" if codigo != "000000" else "111111"
+        for _ in range(5):
+            respuesta = self.confirmar(incorrecto)
+        self.assertRedirects(respuesta, self.url)
+        respuesta = self.confirmar(codigo)
+        self.assertRedirects(respuesta, self.url)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Vieja2026clave"))
+
+    def test_codigo_vencido_no_cambia_la_contrasena(self):
+        self.solicitar()
+        codigo = self.codigo_enviado()
+        with patch("accounts.views.timezone.now", return_value=timezone.now() + timedelta(minutes=11)):
+            respuesta = self.confirmar(codigo)
+        self.assertRedirects(respuesta, self.url)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Vieja2026clave"))
+
+    def test_nuevo_codigo_reemplaza_al_anterior(self):
+        self.solicitar()
+        primero = self.codigo_enviado()
+        self.solicitar(nueva="Otra2026clave")
+        segundo = self.codigo_enviado()
+        if primero != segundo:
+            self.assertEqual(self.confirmar(primero).status_code, 200)
+        self.confirmar(segundo)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("Otra2026clave"))
+
+    def test_confirmar_sin_solicitud_previa_redirige_al_formulario(self):
+        respuesta = self.client.get(self.url_confirmar)
+        self.assertRedirects(respuesta, self.url)
+
+    def test_visitante_es_redirigido_al_login(self):
+        self.client.logout()
+        for url in (self.url, self.url_confirmar):
+            with self.subTest(url=url):
+                respuesta = self.client.get(url)
+                self.assertEqual(respuesta.status_code, 302)
+                self.assertIn(reverse("login"), respuesta.url)
+
+    def test_cualquier_rol_puede_cambiar_su_contrasena(self):
+        for rol in (User.Role.ENTERPRISE, User.Role.ADMIN):
+            with self.subTest(rol=rol):
+                usuario = User.objects.create_user(
+                    email=f"{rol}@correo.com", password="Vieja2026clave", role=rol
+                )
+                self.client.force_login(usuario)
+                self.solicitar()
+                self.confirmar(self.codigo_enviado())
+                usuario.refresh_from_db()
+                self.assertTrue(usuario.check_password("Nueva2026clave"))
+
+
+class EditarPerfilTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="ana@correo.com", password="Clave2026segura", first_name="Ana"
+        )
+        User.objects.create_user(email="luis@correo.com", password="Otra2026clave")
+        self.client.force_login(self.user)
+        self.url = reverse("editar_perfil")
+
+    def cambiar_nombre(self, nombre):
+        return self.client.post(self.url, {"accion": "nombre", "nombre-first_name": nombre})
+
+    def verificar_correo(self, email):
+        return self.client.post(reverse("verificar_correo"), {"correo-email": email})
+
+    def confirmar_correo(self, password="Clave2026segura"):
+        return self.client.post(
+            self.url, {"accion": "confirmar_correo", "confirmar-password": password}
+        )
+
+    def cambiar_correo(self, email, password="Clave2026segura"):
+        respuesta = self.verificar_correo(email)
+        if respuesta.status_code != 302:
+            return respuesta
+        return self.confirmar_correo(password)
+
+    def test_muestra_el_nombre_y_correo_actuales(self):
+        respuesta = self.client.get(self.url)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, 'value="Ana"')
+        self.assertContains(respuesta, "ana@correo.com")
+
+    def test_la_pagina_no_muestra_campo_de_contrasena_hasta_verificar_el_correo(self):
+        respuesta = self.client.get(self.url)
+        self.assertNotContains(respuesta, 'type="password"')
+        self.assertContains(respuesta, reverse("password_change"))
+
+    def test_correo_libre_pasa_a_pedir_la_contrasena_sin_cambiar_aun(self):
+        respuesta = self.verificar_correo("nueva@correo.com")
+        self.assertRedirects(respuesta, self.url, fetch_redirect_response=False)
+        pagina = self.client.get(self.url)
+        self.assertContains(pagina, "nueva@correo.com")
+        self.assertContains(pagina, 'type="password"')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+
+    def test_verificar_correo_solo_acepta_post(self):
+        self.assertEqual(self.client.get(reverse("verificar_correo")).status_code, 405)
+
+    def test_si_otra_cuenta_toma_el_correo_antes_de_confirmar_no_se_cambia(self):
+        self.verificar_correo("nueva@correo.com")
+        User.objects.create_user(email="nueva@correo.com", password="Otra2026clave")
+        respuesta = self.confirmar_correo()
+        self.assertRedirects(respuesta, self.url, fetch_redirect_response=False)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+
+    def test_cancelar_descarta_el_correo_pendiente(self):
+        self.verificar_correo("nueva@correo.com")
+        self.client.post(self.url, {"accion": "cancelar_correo"})
+        self.confirmar_correo()
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+        self.assertNotContains(self.client.get(self.url), 'type="password"')
+
+    def test_confirmar_sin_verificar_antes_no_hace_nada(self):
+        self.confirmar_correo()
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+
+    def test_cambia_el_nombre(self):
+        respuesta = self.cambiar_nombre("Ana María")
+        self.assertRedirects(respuesta, self.url)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Ana María")
+
+    def test_no_permite_nombre_vacio(self):
+        respuesta = self.cambiar_nombre("")
+        self.assertEqual(respuesta.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Ana")
+
+    def test_cambia_el_correo_con_la_contrasena_correcta(self):
+        respuesta = self.cambiar_correo("Ana.Nueva@Correo.com")
+        self.assertRedirects(respuesta, self.url)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana.nueva@correo.com")
+        self.assertEqual(self.client.session["_auth_user_id"], str(self.user.pk))
+
+    def test_puede_iniciar_sesion_con_el_correo_nuevo(self):
+        self.cambiar_correo("nueva@correo.com")
+        self.client.logout()
+        self.assertTrue(self.client.login(email="nueva@correo.com", password="Clave2026segura"))
+        self.assertFalse(self.client.login(email="ana@correo.com", password="Clave2026segura"))
+
+    def test_contrasena_incorrecta_no_cambia_el_correo(self):
+        respuesta = self.cambiar_correo("nueva@correo.com", password="Incorrecta2026")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "no es correcta")
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+
+    def test_no_permite_un_correo_de_otra_cuenta(self):
+        respuesta = self.cambiar_correo("LUIS@correo.com")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Ya existe una cuenta con este correo")
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+
+    def test_no_permite_el_mismo_correo_actual(self):
+        respuesta = self.cambiar_correo("ana@correo.com")
+        self.assertContains(respuesta, "Ese ya es el correo de su cuenta")
+
+    def test_no_permite_un_correo_mal_escrito(self):
+        respuesta = self.cambiar_correo("esto-no-es-un-correo")
+        self.assertEqual(respuesta.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "ana@correo.com")
+
+    def test_cambiar_el_nombre_no_toca_el_correo_ni_al_reves(self):
+        self.cambiar_nombre("Ana María")
+        self.cambiar_correo("nueva@correo.com")
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Ana María")
+        self.assertEqual(self.user.email, "nueva@correo.com")
+
+    def test_visitante_es_redirigido_al_login(self):
+        self.client.logout()
+        respuesta = self.client.get(self.url)
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertIn(reverse("login"), respuesta.url)
+
+    def test_cualquier_rol_puede_editar_su_perfil(self):
+        for rol in (User.Role.ENTERPRISE, User.Role.ADMIN):
+            with self.subTest(rol=rol):
+                usuario = User.objects.create_user(
+                    email=f"{rol}@correo.com", password="Clave2026segura", role=rol
+                )
+                self.client.force_login(usuario)
+                self.cambiar_nombre("Nuevo")
+                self.cambiar_correo(f"nuevo-{rol}@correo.com")
+                usuario.refresh_from_db()
+                self.assertEqual(usuario.first_name, "Nuevo")
+                self.assertEqual(usuario.email, f"nuevo-{rol}@correo.com")

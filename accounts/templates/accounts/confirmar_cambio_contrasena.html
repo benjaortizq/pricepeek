@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmar cambio de contraseña · PricePeek{% endblock %}
+
+{% block content %}
+<h1>Confirmar cambio de contraseña</h1>
+<p>Enviamos un código de 6 dígitos a {{ user.email }}. El código es válido por {{ minutos }} minutos.</p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Confirmar</button>
+</form>
+
+<p><a href="{% url 'password_change' %}">Solicitar un nuevo código</a></p>
+{% endblock %}

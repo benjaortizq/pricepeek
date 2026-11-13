@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Cambiar contraseña · PricePeek{% endblock %}
+
+{% block content %}
+<h1>Cambiar contraseña</h1>
+<p>Ingrese su contraseña actual y la nueva contraseña. Le enviaremos un código a su correo para confirmar el cambio.</p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Enviar código</button>
+</form>
+
+<p><a href="{% url 'panel' %}">Cancelar</a></p>
+{% endblock %}

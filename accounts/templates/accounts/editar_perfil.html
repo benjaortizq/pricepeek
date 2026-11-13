@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Mi perfil · PricePeek{% endblock %}
+
+{% block content %}
+<h1>Mi perfil</h1>
+
+<h2>Nombre</h2>
+<form method="post" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="accion" value="nombre">
+  {{ form_nombre.as_p }}
+  <button type="submit">Guardar nombre</button>
+</form>
+
+<h2>Correo electrónico</h2>
+<p>Correo actual: {{ user.email }}</p>
+{% if correo_pendiente %}
+  <p>El correo <strong>{{ correo_pendiente }}</strong> está disponible. Ingrese su contraseña actual para confirmar el cambio.</p>
+  <form method="post" action="{% url 'editar_perfil' %}" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="confirmar_correo">
+    {{ form_confirmar.as_p }}
+    <button type="submit">Confirmar cambio de correo</button>
+  </form>
+  <form method="post" action="{% url 'editar_perfil' %}">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="cancelar_correo">
+    <button type="submit">Cancelar</button>
+  </form>
+{% else %}
+  <form method="post" action="{% url 'verificar_correo' %}" novalidate>
+    {% csrf_token %}
+    {{ form_correo.as_p }}
+    <button type="submit">Verificar correo</button>
+  </form>
+{% endif %}
+
+<h2>Contraseña</h2>
+<p><a href="{% url 'password_change' %}">Cambiar contraseña</a></p>
+{% endblock %}

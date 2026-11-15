@@ -1,39 +1,62 @@
-<!DOCTYPE html>
-<html lang="es">
+{% load static %}<!DOCTYPE html>
+<html class="h-full" lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}PricePeek{% endblock %}</title>
+  <title>{% block title %}PricePeek{% endblock %} | PricePeek Costa Rica</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="{% static 'js/tailwind.config.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  {# Estilo de los campos que Django genera ({{ field }}), igual al de las pantallas de diseño. #}
+  <style type="text/tailwindcss">
+    .campo input {
+      @apply w-full pl-11 pr-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/50 text-body-md font-body-md text-on-surface placeholder:text-secondary focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 transition-colors;
+    }
+    .campo.sin-icono input { @apply pl-4; }
+    .campo input.con-ojo { @apply pr-11; }
+    .ayuda ul { @apply list-disc pl-4 space-y-0.5; }
+    .boton-primario {
+      @apply w-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold font-body-md py-3.5 px-6 rounded-xl transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.99];
+    }
+    .boton-secundario {
+      @apply px-5 py-2.5 rounded-full border border-outline-variant text-on-surface font-semibold text-body-md font-body-md hover:bg-surface-container-low transition-colors inline-flex items-center justify-center gap-2;
+    }
+    .tarjeta { @apply bg-surface-container-lowest border border-outline-variant/60 rounded-2xl; }
+  </style>
+  {% block head %}{% endblock %}
 </head>
-<body>
-  <nav>
-    <strong>PricePeek</strong>
-    {% if user.is_authenticated %}
-      {% if user.role == "client" %}
-        <a href="{% url 'inicio_cliente' %}">Inicio</a>
-        <a href="{% url 'eliminar_cuenta' %}">Eliminar cuenta</a>
-      {% elif user.role == "enterprise" %}
-        <a href="{% url 'inicio_empresa' %}">Panel de empresa</a>
-      {% elif user.role  == "admin" %}
-        <a href="{% url 'inicio_administrador' %}">Administración</a>
-      {% endif %}
-      <a href="{% url 'editar_perfil' %}">Mi perfil</a>
-      <a href="{% url 'password_change' %}">Cambiar contraseña</a>
-      <span>{{ user.first_name|default:user.email }}</span>
-      <form method="post" action="{% url 'logout' %}" style="display: inline">
-        {% csrf_token %}
-        <button type="submit">Cerrar sesión</button>
-      </form>
-    {% else %}
-      <a href="{% url 'login' %}">Iniciar sesión</a>
-      <a href="{% url 'register' %}">Crear cuenta</a>
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-full flex flex-col selection:bg-primary-container selection:text-on-surface">
+  {% include "componentes/encabezado.html" %}
+
+  <main class="flex-grow w-full">
+    {% if messages %}
+      <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop pt-space-lg space-y-2">
+        {% for message in messages %}
+          {% if message.tags == "error" %}
+            <div class="flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
+              <span class="material-symbols-outlined text-[20px] text-error">error</span>
+              <p>{{ message }}</p>
+            </div>
+          {% else %}
+            <div class="flex items-start gap-3 rounded-xl border border-tertiary/30 bg-tertiary/10 p-3.5 text-body-md text-on-surface">
+              <span class="material-symbols-outlined text-[20px] text-tertiary">check_circle</span>
+              <p>{{ message }}</p>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
     {% endif %}
-  </nav>
 
-  {% for message in messages %}
-    <p>{{ message }}</p>
-  {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
 
-  {% block content %}{% endblock %}
+  {% include "componentes/pie.html" %}
+
+  <script src="{% static 'js/main.js' %}"></script>
+  <script src="{% static 'js/formularios.js' %}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

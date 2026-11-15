@@ -1,0 +1,7 @@
+/* base.css centres the icon font inline-block; this screen kept the default inline flow, so it is restored here */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  line-height: normal;
+  display: inline;
+  vertical-align: baseline;
+}

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html class="h-full bg-background" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PricePeek Business - Gestión de Productos</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar Anchor Component -->
+<aside class="fixed top-0 left-0 h-screen w-64 flex flex-col justify-between bg-surface-container-lowest border-r border-outline-variant z-50 shrink-0">
+<div class="p-5 flex flex-col gap-6">
+<!-- Brand Logo / Header -->
+<div class="flex items-center gap-3 px-2">
+<div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-surface font-headline-md text-headline-md shadow-sm">
+<span class="material-symbols-outlined text-on-surface text-[22px]" style="font-variation-settings: 'FILL' 1;">insights</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md text-on-surface tracking-tight font-extrabold flex items-center gap-1">
+<span>PricePeek</span>
+<span class="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">Inteligencia de Precios CR</p>
+</div>
+</div>
+<!-- Quick Action CTA -->
+<button class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-body-md font-bold transition-all border border-outline-variant active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+<span>Escanear código</span>
+</button>
+<!-- Navigation Tabs -->
+<nav class="flex flex-col gap-1.5 pt-2">
+<!-- 1. Resumen -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-body-md font-medium">Resumen</span>
+</a>
+<!-- 2. Productos (ACTIVE: Exact match from JSON mapping) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full bg-primary-container text-on-primary-container font-headline-md text-body-md font-bold shadow-sm active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span>Productos</span>
+</a>
+<!-- 3. Ofertas y precios -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">local_offer</span>
+<span class="font-body-md font-medium">Ofertas y precios</span>
+</a>
+<!-- 4. Sucursales -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+<span class="font-body-md font-medium">Sucursales</span>
+</a>
+<!-- 5. Configuración -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-body-md font-medium">Configuración</span>
+</a>
+</nav>
+</div>
+<!-- SideNavBar Footer -->
+<div class="p-5 border-t border-outline-variant flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="font-body-md font-medium">Ayuda y soporte</span>
+</a>
+<!-- Region Badge -->
+<div class="px-4 py-2 rounded-xl bg-surface-container-low flex items-center justify-between mt-2">
+<div class="flex items-center gap-2">
+<span class="text-sm font-label-badge font-bold">🇨🇷 CR</span>
+<span class="text-body-sm font-body-sm text-secondary">Costa Rica</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+</div>
+</div>
+</aside>
+<!-- Main Content Container with Margin Offset for 64 (16rem) Sidebar -->
+<div class="flex-1 ml-64 flex flex-col min-w-0">
+<!-- TopNavBar Anchor Component -->
+<header class="h-16 px-8 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center sticky top-0 z-40">
+<!-- Search & Brand Breadcrumb context -->
+<div class="flex items-center gap-6 w-1/3">
+<div class="relative w-full max-w-sm">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-secondary">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-full pl-10 pr-4 py-1.5 text-body-sm font-body-sm placeholder:text-secondary focus:bg-surface-container-lowest focus:outline-none focus:border-on-surface transition-colors" placeholder="Buscar en PricePeek Business..." type="text">
+</div>
+</div>
+<!-- Navigation Links from JSON -->
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-6">
+<a class="text-on-surface-variant hover:text-on-surface font-body-md font-medium text-body-sm transition-colors" href="#">Ver alertas</a>
+<a class="text-on-surface-variant hover:text-on-surface font-body-md font-medium text-body-sm transition-colors" href="#">Auditoría</a>
+</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-3">
+<button class="px-3.5 py-1.5 rounded-full border border-outline-variant text-on-surface hover:bg-surface-container-low text-body-sm font-body-sm font-semibold transition-colors flex items-center gap-1.5 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]">filter_alt</span>
+<span>Filtro de tiendas</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant text-on-surface text-body-sm font-body-sm font-semibold transition-colors flex items-center gap-1.5 active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Descargar reporte</span>
+</button>
+<div class="flex items-center gap-1">
+<button class="p-2 text-secondary hover:text-on-surface hover:bg-surface-container-low rounded-full transition-colors relative" title="Notificaciones">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container"></span>
+</button>
+<button class="p-2 text-secondary hover:text-on-surface hover:bg-surface-container-low rounded-full transition-colors" title="Escanear">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+</button>
+</div>
+<!-- Merchant Profile -->
+<div class="flex items-center gap-2 pl-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center font-bold text-body-sm text-on-surface">
+              CR
+            </div>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Body Content -->
+<main class="p-8 space-y-6 max-w-7xl w-full mx-auto">
+<!-- Breadcrumbs & Header Section -->
+<div class="space-y-4">
+<!-- Breadcrumb -->
+<nav class="flex items-center gap-2 text-body-sm font-body-sm text-secondary">
+<span class="hover:text-on-surface cursor-pointer">PricePeek Business</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-on-surface cursor-pointer">Catálogo Comercial</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Gestión de Productos</span>
+</nav>
+<!-- Title, Subtitle & Action Row -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">Inventario y Catálogo de Productos</h1>
+<p class="font-body-md text-body-md text-secondary mt-1">Control de precios en colones (₡), códigos de barra y sincronización competitiva en sucursales de Costa Rica.</p>
+</div>
+<!-- Primary CTA Button -->
+<div class="flex items-center gap-3 shrink-0">
+<button class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary-container hover:bg-[#e0a41c] text-[#111111] font-body-md font-bold shadow-sm transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px] font-bold">add</span>
+<span>+ Agregar producto</span>
+</button>
+</div>
+</div>
+<!-- Filter Controls Row -->
+<div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+<div class="flex flex-wrap items-center gap-3 flex-1">
+<!-- Search Input -->
+<div class="relative min-w-[280px] max-w-md flex-1">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-secondary">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-full pl-10 pr-4 py-2 text-body-sm font-body-sm placeholder:text-secondary focus:bg-surface-container-lowest focus:outline-none focus:border-on-surface transition-colors shadow-sm" placeholder="Buscar por nombre, SKU, EAN-13..." type="text">
+</div>
+<!-- Category Dropdown Filter -->
+<div class="relative">
+<select class="appearance-none bg-surface-container-lowest border border-outline-variant rounded-full pl-4 pr-9 py-2 text-body-sm font-body-sm text-on-surface font-medium focus:outline-none focus:border-on-surface cursor-pointer shadow-sm">
+<option selected="">Todas las categorías</option>
+<option>Línea Blanca</option>
+<option>Smartphones &amp; TV</option>
+<option>Electrodomésticos</option>
+<option>Audio &amp; Video</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary pointer-events-none">expand_more</span>
+</div>
+<!-- Estado Dropdown Filter -->
+<div class="relative">
+<select class="appearance-none bg-surface-container-lowest border border-outline-variant rounded-full pl-4 pr-9 py-2 text-body-sm font-body-sm text-on-surface font-medium focus:outline-none focus:border-on-surface cursor-pointer shadow-sm">
+<option selected="">Todos los estados</option>
+<option>Activo</option>
+<option>Sin stock</option>
+<option>Alerta de precio</option>
+<option>Pausado</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-secondary pointer-events-none">expand_more</span>
+</div>
+<button class="px-3.5 py-2 rounded-full border border-outline-variant text-secondary hover:text-on-surface bg-surface-container-lowest hover:bg-surface-container-low text-body-sm font-medium transition-colors flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Más filtros</span>
+</button>
+</div>
+<div class="text-body-sm text-secondary font-medium">
+<span>Mostrando <strong class="text-on-surface">7</strong> de 142 SKUs</span>
+</div>
+</div>
+</div>
+<!-- Catalog Summary Stats (Bento Grid Mini Cards) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- 1. Total Productos -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-body-sm font-body-sm text-secondary font-medium">Total Productos</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[18px]">inventory_2</span>
+</div>
+</div>
+<div>
+<div class="text-headline-md font-headline-md font-bold text-on-surface">142 artículos</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-tertiary font-semibold mt-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>+8 este mes</span>
+</div>
+</div>
+</div>
+<!-- 2. Sincronizados en Góndola -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-body-sm font-body-sm text-secondary font-medium">Sincronizados en Góndola</span>
+<div class="w-8 h-8 rounded-full bg-[#dcfce7] flex items-center justify-center text-[#16a34a]">
+<span class="material-symbols-outlined text-[18px]">sync_saved_locally</span>
+</div>
+</div>
+<div>
+<div class="text-headline-md font-headline-md font-bold text-on-surface">138 activos</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-secondary font-medium mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+<span>97.2% cobertura comercial</span>
+</div>
+</div>
+</div>
+<!-- 3. Alertas de Competencia -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/10 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between mb-2">
+<span class="text-body-sm font-body-sm text-secondary font-medium">Alertas de Competencia</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-[#925f00]">
+<span class="material-symbols-outlined text-[18px]">notification_important</span>
+</div>
+</div>
+<div>
+<div class="text-headline-md font-headline-md font-bold text-on-surface">14 productos</div>
+<div class="flex items-center gap-1 text-body-sm font-body-sm text-[#925f00] font-semibold mt-1">
+<span class="material-symbols-outlined text-[16px]">priority_high</span>
+<span>Precios desalineados</span>
+</div>
+</div>
+</div>
+<!-- 4. Actualización Promedio -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-body-sm font-body-sm text-secondary font-medium">Actualización Promedio</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[18px]">update</span>
+</div>
+</div>
+<div>
+<div class="text-headline-md font-headline-md font-bold text-on-surface">Hace 12 min</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-secondary font-medium mt-1">
+<span class="material-symbols-outlined text-[16px]">autorenew</span>
+<span>Automática en sucursales</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Products Data Table Section -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
+<!-- Table Actions Toolbar -->
+<div class="p-4 border-b border-outline-variant flex items-center justify-between bg-surface-bright">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+<span class="text-body-sm font-body-sm font-medium text-secondary">Seleccionar todos (142)</span>
+</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<button class="text-body-sm font-body-sm text-secondary hover:text-on-surface flex items-center gap-1 disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+<span>Edición rápida</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 text-body-sm rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface border border-outline-variant font-medium flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">view_column</span>
+<span>Columnas</span>
+</button>
+<button class="px-3 py-1 text-body-sm rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface border border-outline-variant font-medium flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[16px]">sort</span>
+<span>Ordenar</span>
+</button>
+</div>
+</div>
+<!-- Table Responsive Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-low/40 text-secondary font-body-sm text-[12px] uppercase tracking-wider">
+<th class="py-3 px-4 w-10 text-center">
+<span class="sr-only">Selección</span>
+</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface">Imagen y Producto</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface">Código de Barras</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface">Categoría</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface">Precio Actual</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface">Estado</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface">Sucursales</th>
+<th class="py-3.5 px-4 font-semibold text-on-surface text-right pr-6">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant font-body-md text-body-md">
+<!-- Row 1: Refrigeradora Samsung (Required Image IMAGE_15) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img alt="Refrigeradora Samsung 300L No Frost" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Vr8Cj8pcqIcUjbT8mGADsTkoCSYOTuySFv6jLrr3ANu4nGpy5h_eAKJxJf0Mtrlkvku5GP3oVtyg3Mu4naMNnrFp9EPCOsYuPJ9i9wBb9mnIrU5RrklWTeMg5UhRs9fajW_QrnO6PBkKoXhPxXovExAVV5CVTVi2GhV5s5da_-v9R_ufBDRjMVk2yb9blnvjNfp_Awso0XZJjBtp5k4iKTeJA6nnTEWK5lZqljC00eoV89TEdObbGtPVE">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Refrigeradora Samsung 300L No Frost</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: SAM-RF300-NF</span>
+<span>•</span>
+<span class="font-medium text-on-surface">Samsung</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>7441029481023</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Línea Blanca</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-on-surface">₡349.900</div>
+<span class="text-body-sm text-secondary">Margen: 18.4%</span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-[#16a34a] bg-[#dcfce7] border border-[#bbf7d0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    Activo
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>4 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">SJ, Alaj, Escazú...</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Smart TV LG 55" -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img class="w-full h-full object-contain" data-alt="A modern slim black 55-inch LG Smart TV displaying high contrast minimal visuals, studio catalog product photography, soft white reflections on the clean glass surface, light-mode background with clean lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1lumvBls0TKUAjHfbSmMFjBfd0YP4UIDVl-ljRWCp_-CRApYF_PyZcwdVsxjvQ3CE5h2CC049SNGo9xJ1yeG30jxQ39E7WStYf6WYB3DkDXT0MzOOV4L1E5P5FZQrUxc9p1S_t0pWqb50YObmKpkbq3BM7pGICQHmEtEwbxUWCXKLBDNqpqagFT4OFHH21F93riMLrZ2kkGON6R7-EYoTutdFBuNK6koO4JCat3QdbSx4S4rDE46Z">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Smart TV LG 55" 4K UHD AI ThinQ</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: LG-55UQ8000</span>
+<span>•</span>
+<span class="font-medium text-on-surface">LG Electronics</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>7448839210491</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Smartphones &amp; TV</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-on-surface">₡289.000</div>
+<span class="text-body-sm text-secondary">Margen: 14.2%</span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-[#16a34a] bg-[#dcfce7] border border-[#bbf7d0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    Activo
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>6 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">Red Nacional</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Freidora de Aire Philips XL 6.2L (Alerta de Precio) -->
+<tr class="bg-primary-container/5 hover:bg-primary-container/10 transition-colors group">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img class="w-full h-full object-contain" data-alt="Compact modern black Philips Airfryer appliance on clean white background, front view studio product photography, elegant warm neutral illumination, premium product design aesthetics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaBCN348CXX4O-2UBtQRYIZ0Vi-8y-HDGjqN_A0-6NpqWF50MmkMcmJ8L3ntDrGYnRJbqoS_ZpW4O_ofd6-vDvO19LTJtEOoESZkVSWfOOMA9PmAHscmQGzQFkYOBjXlcsBNwv8j93LTYo-HS-ebO1UqbASPefmKwHhP8Xbl704P56GXri9e_nBuF4CS8kUaMMCFMdU4EpSfEz7v0RmIc7t1KHm-na3EyF-yJaC5dLo93pjUoDHwhz">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors flex items-center gap-2">
+<span>Freidora de Aire Philips XL 6.2L</span>
+<span class="material-symbols-outlined text-[16px] text-[#925f00]" title="Precio desalineado en Monge">warning</span>
+</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: PHI-HD9270-XL</span>
+<span>•</span>
+<span class="font-medium text-on-surface">Philips</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>8710103984920</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Electrodomésticos</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-[#ba1a1a]">₡68.900</div>
+<span class="text-body-sm text-[#ba1a1a] font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+                    +₡4.000 vs Gollo
+                  </span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-[#684a00] bg-primary-container border border-[#e0a41c]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#684a00]"></span>
+                    Alerta de Precio
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>3 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">San José, Heredia</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Celular Xiaomi Redmi Note 13 Pro 256GB -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img class="w-full h-full object-contain" data-alt="Sleek modern smartphone Xiaomi Redmi Note in midnight black finish, pristine studio photography, angled view against a pure white background, commercial technology product shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXimK6B2dvEANonBR7lfuDazKWIGdPVPgRQBdVRYm19KhNBI6vEzLx-wph-u2k26nTkugIDc-kHSSZMD4cdZQ40ARN2YCtZDOmZbfqLM2NPIUxdaElkYbGFZUZtCvxuwpmYiyIwie-I-UjbnEFsoD4mONPP-K1Lu56oMe8nPnd5ue9lK84mRzgOCeau6bEi4ub2b15_Vlqkn_9h9WtvRq_noaT40-KqRCnWcoRoMzYesj7v7deHxFk">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Celular Xiaomi Redmi Note 13 Pro 256GB</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: XIA-RN13P-256</span>
+<span>•</span>
+<span class="font-medium text-on-surface">Xiaomi</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>6941812759312</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Smartphones &amp; TV</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-on-surface">₡185.000</div>
+<span class="text-body-sm text-tertiary font-semibold">Mejor precio país</span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-[#16a34a] bg-[#dcfce7] border border-[#bbf7d0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    Activo
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>5 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">GAM Completo</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Microondas Panasonic Inverter 1.2 Cu. Ft. -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img class="w-full h-full object-contain" data-alt="Brushed stainless steel microwave oven with sleek glass digital front panel, professional appliance photography on isolated white backdrop, soft warm interior glow, studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUF-Q1rkX9yOkYoKzNXD5rp2Mca8vB5d6QcUtle7alsMcqawiz3WE5UHf_HYGvWZUCYvYhtMqSBkSWBsHXsdan1j2AakwzJfa3rRkhOuUirO8DFhJS20KiydOU2_d5o31_OGmugLScbp2thKIVE_yahDNKecyrKEFknasSPz6EQdlbdzPO7KsuKzH19BcgQJn8WR-TkAuBrjwRc4xp7k1dk6s41z6ZpU6pB1RiUfpF1SZSo0rhsuE_">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Microondas Panasonic Inverter 1.2 Cu. Ft.</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: PAN-NN-ST67</span>
+<span>•</span>
+<span class="font-medium text-on-surface">Panasonic</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>8851702849104</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Línea Blanca</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-on-surface">₡92.500</div>
+<span class="text-body-sm text-secondary">Margen: 21.0%</span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-[#16a34a] bg-[#dcfce7] border border-[#bbf7d0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    Activo
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>4 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">Alajuela, San José</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Cafetera Oster Prima Latte II Silver (Pausado) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group opacity-85">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img class="w-full h-full object-contain" data-alt="Sophisticated espresso and cappuccino coffee maker with milk frother reservoir, silver metallic finish, crisp product studio shot on white, clean catalog style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATvZzGGT1x8rMRjOHDcoIj4jbOVIMr0GH7UH7wrWGJMqTUCu0gjQnW7OWrXdoVL4ROdB3D1d-iwMhoTPDqdR1AjxDHZY7QeZ31y-LNT6ElkdKZXC4Qz-83BvegGPzyWCe4HmUvBYq6O0p8UqHyv_KnU0wQiv4ajQAXEMlTIgLUU0BHhoXeoE4tXRzD88lGR1Vp518LQEzQ_4ABiiyMhGrmE5LeQH0-p-XjGWXzMH5ljylXGlqjIhxy">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Cafetera Oster Prima Latte II Silver</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: OST-BVSTEM6701</span>
+<span>•</span>
+<span class="font-medium text-on-surface">Oster</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>0538911074421</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Electrodomésticos</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-secondary">₡115.000</div>
+<span class="text-body-sm text-secondary">Pausado manual</span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-secondary bg-surface-container-high border border-outline-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    Pausado
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>2 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">Heredia, Alajuela</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 7: Lavadora Whirlpool 19kg Carga Superior -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-3 px-4 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-on-surface focus:ring-primary-container" type="checkbox">
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden shrink-0 flex items-center justify-center p-1">
+<img class="w-full h-full object-contain" data-alt="High quality top-load washing machine Whirlpool in graphite gray metallic finish with transparent lid, studio product photography, clean white background with soft reflections, commercial home appliance catalog visual." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAM85KFrMiuA0pmj9PdPWlToXD5vD07BEELpcqY04bysQ-MEbBGl-1UhO85w6dLKvA994chHz8y7s71xLHjebYduXJ5Vp6fq9_VSnMqBYMwlmJfN7It6fiXICCcqm3YCFOHPrr6JbzyyQLqX84L94gjyLnX9TH_JiPma0aYZl6t8G8GOVWNy4uldg7BK2fIciSzosbEP_8YZL5CrqwHNG8U9kI_bo1UiXIEjhBjGqZghSQDxfCrMrcf">
+</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Lavadora Whirlpool 19kg Carga Superior</div>
+<div class="text-body-sm text-secondary flex items-center gap-2">
+<span>SKU: WHI-8MWTW19</span>
+<span>•</span>
+<span class="font-medium text-on-surface">Whirlpool</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1.5 font-label-badge font-mono text-[13px] text-on-surface bg-surface-container-low px-2.5 py-1 rounded-lg w-max border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-secondary">barcode</span>
+<span>7501546382910</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-body-sm font-medium bg-surface-container-high text-on-surface">Línea Blanca</span>
+</td>
+<td class="py-3 px-4">
+<div class="font-price-row text-price-row font-bold text-on-surface">₡319.000</div>
+<span class="text-body-sm text-secondary">Margen: 16.8%</span>
+</td>
+<td class="py-3 px-4">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-badge font-label-badge text-[#16a34a] bg-[#dcfce7] border border-[#bbf7d0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                    Activo
+                  </span>
+</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-1 text-on-surface font-medium text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">storefront</span>
+<span>5 sucursales</span>
+</div>
+<span class="text-[11px] text-secondary">SJ, Alaj, Cartago</span>
+</td>
+<td class="py-3 px-4 text-right pr-6">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Editar">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Eliminar">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+<button class="p-1.5 text-secondary hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors" title="Más opciones">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination -->
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-bright flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-4 text-body-sm text-secondary font-medium">
+<span>Mostrando 1 a 7 de 142 productos</span>
+<div class="flex items-center gap-2">
+<span>Filas por página:</span>
+<select class="bg-surface-container-low border border-outline-variant rounded-lg text-body-sm px-2 py-1 text-on-surface focus:outline-none">
+<option selected="">7</option>
+<option>15</option>
+<option>30</option>
+<option>50</option>
+</select>
+</div>
+</div>
+<!-- Pagination Controls -->
+<div class="flex items-center gap-2">
+<button class="px-3.5 py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest text-secondary hover:text-on-surface hover:bg-surface-container-low text-body-sm font-semibold transition-colors flex items-center gap-1 disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+<span>Anterior</span>
+</button>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-full bg-primary-container text-on-surface font-bold text-body-sm flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded-full text-secondary hover:bg-surface-container-low text-body-sm font-medium flex items-center justify-center">2</button>
+<button class="w-8 h-8 rounded-full text-secondary hover:bg-surface-container-low text-body-sm font-medium flex items-center justify-center">3</button>
+<span class="px-1 text-secondary">...</span>
+<button class="w-8 h-8 rounded-full text-secondary hover:bg-surface-container-low text-body-sm font-medium flex items-center justify-center">21</button>
+</div>
+<button class="px-3.5 py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container-low text-body-sm font-semibold transition-colors flex items-center gap-1">
+<span>Siguiente</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Sync Status Utility Banner -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant flex flex-col md:flex-row items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface shrink-0">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div>
+<h4 class="font-body-md font-bold text-on-surface">Sincronización Automática con Sistema ERP / POS</h4>
+<p class="font-body-sm text-body-sm text-secondary">Los cambios de precio en colones (₡) se propagan a PricePeek Marketplace y sucursales físicas en menos de 5 minutos.</p>
+</div>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm font-bold hover:bg-surface-container text-body-sm transition-colors">Configurar API</button>
+<button class="px-4 py-2 rounded-full bg-on-surface text-surface-container-lowest font-body-sm font-bold hover:opacity-90 transition-opacity">Sincronizar ahora</button>
+</div>
+</div>
+</main>
+</div>
+<script src="../js/main.js"></script>
+</body></html>

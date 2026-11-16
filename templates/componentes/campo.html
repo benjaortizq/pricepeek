@@ -1,0 +1,12 @@
+{# Uso: {% include "componentes/campo.html" with field=form.email icono="mail" %} #}
+<div>
+  <label class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  <div class="campo relative flex items-center{% if not icono %} sin-icono{% endif %}">
+    {% if icono %}<span class="material-symbols-outlined absolute left-3.5 text-secondary text-[20px] pointer-events-none">{{ icono }}</span>{% endif %}
+    {{ field }}
+  </div>
+  {% if field.help_text %}<div class="ayuda mt-1.5 text-body-sm font-body-sm text-secondary">{{ field.help_text|safe }}</div>{% endif %}
+  {% for error in field.errors %}
+    <p class="mt-1.5 flex items-center gap-1 text-body-sm font-body-sm text-error"><span class="material-symbols-outlined text-[16px]">error</span>{{ error }}</p>
+  {% endfor %}
+</div>

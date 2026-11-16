@@ -1,13 +1,30 @@
-{% extends "base.html" %}
+{% extends "base_tarjeta.html" %}
 
-{% block content %}
-<h1>Crear cuenta</h1>
+{% block title %}Crear cuenta{% endblock %}
+{% block titulo_tarjeta %}Crear tu cuenta gratis{% endblock %}
+{% block subtitulo_tarjeta %}Monitorea precios, crea alertas y ahorra en colones en los comercios de Costa Rica.{% endblock %}
 
-<form method="post" novalidate>
+{% block tarjeta %}
+<form class="space-y-4" method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Registrarme</button>
+  {% include "componentes/errores_form.html" %}
+  {% include "componentes/campo.html" with field=form.first_name icono="person" %}
+  {% include "componentes/campo.html" with field=form.email icono="mail" %}
+  {% include "componentes/campo.html" with field=form.password1 icono="lock" %}
+  {% include "componentes/campo.html" with field=form.password2 icono="lock" %}
+
+  <div class="pt-2">
+    <button class="boton-primario" type="submit">
+      <span>Crear cuenta</span>
+      <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+    </button>
+  </div>
 </form>
 
-<p>¿Ya tiene cuenta? <a href="{% url 'login' %}">Inicie sesión</a></p>
+<div class="text-center pt-6 mt-6 border-t border-outline-variant/30">
+  <p class="text-body-sm font-body-sm text-secondary">
+    ¿Ya tienes una cuenta?
+    <a class="font-bold text-on-surface hover:text-primary transition-colors ml-1" href="{% url 'login' %}">Iniciar sesión</a>
+  </p>
+</div>
 {% endblock %}

@@ -128,6 +128,7 @@
     {% endif %}
   </section>
 
+<<<<<<< HEAD
   <section aria-labelledby="descripcion-heading" class="mb-12">
     <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/60">
       <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-4" id="descripcion-heading">Descripción del producto</h2>
@@ -173,4 +174,61 @@
     </div>
   </section>
 </div>
+=======
+{% if user.is_authenticated and user.role == "client" %}
+  <section aria-labelledby="publicar-resena-heading">
+    <h2 id="publicar-resena-heading">Escribe tu reseña</h2>
+    {% if ya_reseño %}
+      <p>Ya publicaste una reseña para este producto.</p>
+    {% elif not variantes %}
+      <p>Este producto todavía no tiene una variante para reseñar.</p>
+    {% else %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <fieldset>
+          <legend>{{ review_form.rating.label }}</legend>
+          {{ review_form.rating.errors }}
+          {{ review_form.rating }}
+        </fieldset>
+        <p>
+          {{ review_form.content.label_tag }}<br>
+          {{ review_form.content.errors }}
+          {{ review_form.content }}
+        </p>
+        <p>
+          {{ review_form.photo.label_tag }}<br>
+          {{ review_form.photo.errors }}
+          {{ review_form.photo }}
+        </p>
+        <button type="submit">Publicar reseña</button>
+      </form>
+    {% endif %}
+  </section>
+{% elif not user.is_authenticated %}
+  <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Inicia sesión como cliente para publicar una reseña.</a></p>
+{% endif %}
+
+<section aria-labelledby="resenas-heading">
+  <h2 id="resenas-heading">Reseñas</h2>
+  {% for resena in resenas %}
+    <article>
+      <p>Calificación: {{ resena.score }} / 5</p>
+      <p>{{ resena.content }}</p>
+      {% if resena.review_photo %}
+        <img src="{{ resena.review_photo.image.url }}" alt="Foto de la reseña" width="300">
+      {% endif %}
+      <small>
+        {% if resena.user.first_name or resena.user.last_name %}
+          {{ resena.user.first_name }} {{ resena.user.last_name }}
+        {% else %}
+          {{ resena.user.email }}
+        {% endif %}
+        · {{ resena.created_at|date:"d/m/Y" }}
+      </small>
+    </article>
+  {% empty %}
+    <p>Este producto todavía no tiene reseñas.</p>
+  {% endfor %}
+</section>
+>>>>>>> 050bcd9 (Add review functionality with image upload and media handling)
 {% endblock %}

@@ -15,6 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
+<<<<<<< HEAD
+=======
+from django.conf.urls.static import static
+>>>>>>> 050bcd9 (Add review functionality with image upload and media handling)
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
@@ -30,7 +34,11 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
+<<<<<<< HEAD
     urlpatterns += [
         path("diseno/", vista_previa.lista, name="diseno"),
         path("diseno/<str:nombre>/", vista_previa.pantalla, name="diseno_pantalla"),
     ]
+=======
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+>>>>>>> 050bcd9 (Add review functionality with image upload and media handling)

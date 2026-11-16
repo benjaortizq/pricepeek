@@ -1,17 +1,27 @@
-{% extends "base.html" %}
+{% extends "base_tarjeta.html" %}
 
-{% block title %}Eliminar cuenta · PricePeek{% endblock %}
+{% block title %}Eliminar cuenta{% endblock %}
+{% block icono_tarjeta %}{% include "componentes/icono_tarjeta.html" with icono="person_remove" %}{% endblock %}
+{% block titulo_tarjeta %}Eliminar cuenta{% endblock %}
+{% block subtitulo_tarjeta %}Para confirmar, ingrese su contraseña actual.{% endblock %}
 
-{% block content %}
-<h1>Eliminar cuenta</h1>
-<p><strong>Esta acción es permanente.</strong> Se eliminarán sus datos personales, su lista de deseos y sus reseñas. No se puede deshacer.</p>
-<p>Para confirmar, ingrese su contraseña actual.</p>
+{% block tarjeta %}
+<div class="mb-5 bg-error-container/40 border border-error/30 rounded-xl p-3.5 flex items-start gap-3">
+  <span class="material-symbols-outlined text-[20px] text-error shrink-0">warning</span>
+  <p class="text-body-sm font-body-sm text-on-error-container leading-snug"><strong>Esta acción es permanente.</strong> Se eliminarán sus datos personales, su lista de deseos y sus reseñas. No se puede deshacer.</p>
+</div>
 
-<form method="post" novalidate>
+<form class="space-y-4" method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Eliminar mi cuenta</button>
+  {% include "componentes/campo.html" with field=form.password icono="lock" %}
+  <div class="pt-2">
+    <button class="w-full bg-error hover:bg-[#93000a] text-on-error font-bold font-body-md py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2" type="submit">
+      <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+      <span>Eliminar mi cuenta</span>
+    </button>
+  </div>
 </form>
 
-<p><a href="{% url 'inicio_cliente' %}">Cancelar</a></p>
+{% url 'editar_perfil' as url_perfil %}
+{% include "componentes/volver.html" with url=url_perfil texto="Cancelar" %}
 {% endblock %}

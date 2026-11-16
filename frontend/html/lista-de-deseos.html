@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Mi lista de deseos — PricePeek Costa Rica</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="bg-background text-on-surface antialiased flex flex-col min-h-screen">
+<!-- TOP APP BAR -->
+<header class="bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-margin-desktop h-16 flex items-center justify-between gap-space-md">
+<!-- Brand & Location Pill -->
+<div class="flex items-center gap-space-md flex-shrink-0">
+<a class="text-headline-md font-headline-md font-extrabold text-on-surface dark:text-inverse-on-surface tracking-tight flex items-center" href="#">
+          PricePeek<span class="inline-block w-2 h-2 rounded-full bg-primary-container ml-0.5"></span>
+</a>
+<!-- Regional Location Indicator -->
+<div class="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm border border-outline-variant/60">
+<span class="material-symbols-outlined text-sm leading-none text-primary" data-icon="location_on">location_on</span>
+<span>Costa Rica · San José / GAM</span>
+</div>
+</div>
+<!-- Integrated Center Search Pill Bar -->
+<div class="flex-1 max-w-xl hidden md:block">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-secondary text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low text-on-surface placeholder:text-secondary rounded-full pl-10 pr-24 py-2 border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest font-body-md text-body-md transition-all" placeholder="Buscar electrodomésticos, tecnología, supermercado..." type="text">
+<button class="absolute right-2.5 px-2 py-1 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container flex items-center gap-1 transition-colors text-body-sm font-body-sm" title="Escanear código de barras" type="button">
+<span class="material-symbols-outlined text-base" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="hidden xl:inline text-xs font-medium">Escanear</span>
+</button>
+</div>
+</div>
+<!-- Navigation Links & User Cluster -->
+<div class="flex items-center gap-space-lg flex-shrink-0">
+<nav class="hidden md:flex items-center gap-6 font-body-md text-body-md">
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150" href="#">Inicio</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150" href="#">Buscar</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150" href="#">Categorías</a>
+<!-- Active: Lista de deseos -->
+<a class="text-on-surface dark:text-inverse-on-surface font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary-container after:rounded-full" href="#">Lista de deseos</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150" href="#">Perfil</a>
+</nav>
+<!-- Profile Avatar Pill -->
+<div class="flex items-center pl-2">
+<button class="flex items-center gap-2 p-1 pr-2.5 rounded-full hover:bg-surface-container-low transition-colors" title="Perfil del usuario" type="button">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-surface font-bold flex items-center justify-center text-xs ring-1 ring-outline-variant">
+              CR
+            </div>
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN CANVAS -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-margin-desktop py-space-lg flex flex-col gap-space-lg">
+<!-- GLOBAL ALERT SUMMARY BANNER -->
+<section class="bg-surface-container-lowest border border-tertiary-fixed-dim/60 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-center gap-3.5">
+<div class="w-9 h-9 rounded-full bg-tertiary-fixed/40 text-tertiary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-xl" data-icon="trending_down">trending_down</span>
+</div>
+<div>
+<h2 class="font-headline-md text-base text-on-surface font-bold">
+            ¡Buenas noticias! 2 de tus artículos guardados han bajado de precio en las últimas 24 horas.
+          </h2>
+<p class="font-body-sm text-body-sm text-secondary">
+            Monitoreamos Gollo, Monge, Walmart, Siman, Maxi Palí y más comercios oficiales de Costa Rica cada hora.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container text-secondary font-label-badge text-label-badge uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+          2 Notificaciones
+        </span>
+</div>
+</section>
+<!-- HEADER TITLE & CONTROLS TOOLBAR -->
+<header class="flex flex-col gap-4">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Mi lista de deseos</h1>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-badge text-label-badge font-bold" id="itemsBadge">
+              4 productos guardados
+            </span>
+</div>
+<p class="font-body-md text-body-md text-secondary mt-1 max-w-3xl">
+            Monitorea cambios de precio en tiempo real y recibe alertas cuando tus productos favoritos bajen en Costa Rica.
+          </p>
+</div>
+<!-- Empty State Preview Switcher -->
+<div class="flex items-center gap-2 bg-surface-container-low p-1 rounded-full border border-outline-variant/50 self-start md:self-auto">
+<button class="px-3.5 py-1.5 rounded-full text-xs font-bold transition-all bg-surface-container-lowest text-on-surface shadow-xs" id="viewActiveBtn" onclick="toggleWishlistView(true)">
+            Lista activa (4)
+          </button>
+<button class="px-3.5 py-1.5 rounded-full text-xs font-medium text-secondary hover:text-on-surface transition-all" id="viewEmptyBtn" onclick="toggleWishlistView(false)">
+            Ver cómo luce vacía
+          </button>
+</div>
+</div>
+<!-- Filtering & In-list Search Filter Bar -->
+<div class="bg-surface-container-lowest p-3 rounded-2xl border border-outline-variant/60 flex flex-wrap items-center justify-between gap-3">
+<!-- Search in wishlist -->
+<div class="relative flex-1 min-w-[240px]">
+<span class="material-symbols-outlined absolute left-3 text-secondary text-base" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low text-on-surface placeholder:text-secondary rounded-full pl-9 pr-4 py-1.5 border border-outline-variant/70 focus:outline-none focus:border-on-surface font-body-sm text-body-sm" placeholder="Filtrar por nombre o comercio..." type="text">
+</div>
+<!-- Filter Dropdown & Category Chips -->
+<div class="flex items-center gap-2 flex-wrap">
+<div class="flex items-center gap-1.5">
+<span class="text-secondary font-body-sm text-body-sm">Ordenar por:</span>
+<select class="bg-surface-container-low border border-outline-variant/70 rounded-full px-3 py-1.5 text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-on-surface cursor-pointer">
+<option value="savings">Mayor ahorro reciente</option>
+<option value="lowest">Precio más bajo</option>
+<option value="recent">Añadidos recientemente</option>
+<option value="stores">Comercios con stock</option>
+</select>
+</div>
+<div class="h-5 w-px bg-outline-variant/60 hidden sm:block"></div>
+<!-- Quick Filters -->
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1 rounded-full bg-on-surface text-surface-container-lowest font-body-sm text-xs font-semibold">
+              Todos (4)
+            </button>
+<button class="px-3 py-1 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-body-sm text-xs border border-outline-variant/50">
+              Con rebaja (3)
+            </button>
+<button class="px-3 py-1 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant font-body-sm text-xs border border-outline-variant/50">
+              Electrodomésticos
+            </button>
+</div>
+</div>
+</div>
+</header>
+<!-- SECTION A: SAVED PRODUCTS LIST -->
+<section class="flex flex-col gap-space-md" id="wishlistContainer">
+<!-- ITEM 1: Samsung Refrigerator (Uses DATA:IMAGE:IMAGE_5) -->
+<article class="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5 hover:border-outline transition-colors">
+<div class="flex items-start sm:items-center gap-4 flex-1">
+<!-- Thumbnail -->
+<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-surface-container-low border border-outline-variant/50 flex items-center justify-center p-2 flex-shrink-0 overflow-hidden">
+<img alt="Refrigeradora Samsung 300L No Frost con Dispensador de Agua" class="w-full h-full object-contain mix-blend-multiply" src="https://lh3.googleusercontent.com/aida/AEtjO1Vr8Cj8pcqIcUjbT8mGADsTkoCSYOTuySFv6jLrr3ANu4nGpy5h_eAKJxJf0Mtrlkvku5GP3oVtyg3Mu4naMNnrFp9EPCOsYuPJ9i9wBb9mnIrU5RrklWTeMg5UhRs9fajW_QrnO6PBkKoXhPxXovExAVV5CVTVi2GhV5s5da_-v9R_ufBDRjMVk2yb9blnvjNfp_Awso0XZJjBtp5k4iKTeJA6nnTEWK5lZqljC00eoV89TEdObbGtPVE">
+</div>
+<!-- Product Details -->
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-secondary font-body-sm text-body-sm font-medium">Electrodomésticos · Refrigeración</span>
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+<span class="material-symbols-outlined text-xs" data-icon="arrow_downward">arrow_downward</span>
+                Bajó de precio -₡8.000
+              </span>
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-surface text-label-badge font-label-badge">
+                Mínimo histórico
+              </span>
+</div>
+<h3 class="font-headline-md text-lg text-on-surface leading-tight font-bold">
+              Refrigeradora Samsung 300L No Frost con Dispensador de Agua
+            </h3>
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="inline-flex items-center gap-1 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Mejor precio en Gollo (Sucursal &amp; Web)
+              </span>
+<span>·</span>
+<span class="text-xs">Actualizado hace 22m</span>
+</div>
+</div>
+</div>
+<!-- Comparative Price & CTA Cluster -->
+<div class="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between sm:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-outline-variant/40">
+<div class="flex flex-col sm:text-right">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-row text-on-surface font-bold tracking-tight">₡239.900</span>
+<span class="font-price-row text-xs text-secondary line-through">₡247.900</span>
+</div>
+<span class="text-xs text-tertiary font-medium">4 tiendas comparadas</span>
+</div>
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<!-- Alert Bell Toggle -->
+<button aria-label="Alertas activadas" class="p-2.5 rounded-full bg-surface-container-low hover:bg-surface-container text-primary transition-colors border border-outline-variant/60" title="Alertas de precio activas" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="notifications_active" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</button>
+<!-- Remove Button -->
+<button aria-label="Eliminar de la lista" class="p-2.5 rounded-full bg-surface-container-low hover:bg-error-container hover:text-error text-secondary transition-colors border border-outline-variant/60" onclick="removeItem(this)" title="Eliminar de la lista" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="delete">delete</span>
+</button>
+<!-- CTA Primary -->
+<a class="flex-1 sm:flex-initial rounded-full bg-primary-container text-on-surface font-headline-md text-sm font-bold px-5 py-2.5 hover:bg-[#E0A41C] transition-all flex items-center justify-center gap-1.5 shadow-none" href="#">
+<span>Ver comparación</span>
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+</div>
+</article>
+<!-- ITEM 2: Philips Air Fryer XL -->
+<article class="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5 hover:border-outline transition-colors">
+<div class="flex items-start sm:items-center gap-4 flex-1">
+<!-- Thumbnail with synthetic product placeholder -->
+<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-surface-container-low border border-outline-variant/50 flex items-center justify-center p-2 flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="Modern black matte Philips digital air fryer appliance kitchen counter studio catalog shot crisp directional spotlighting, neutral soft background, realistic consumer electronics product photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJpGI2n_4TI-bgGoiqhC9ypsAZYD2_Nyfk4CTGe2C9GuvEmeKs6hP3v98p1Lxp8g-eckdgC6f7mtg7yRzCWbnRr4X0p1efgi3GqU13MCAmnfeQOnsVUIx3735qtHkA-b8xRO_pjhzeeqLWzHEmMazopVLkw8IOKczQjWQ5UUEJEmg4M37CkjTpLNF3F74XjSfduTa__EjOXhpvd9smpvY6yR_Gt8WFQOgOtfTl4om02UC97DpWwohE">
+</div>
+<!-- Product Details -->
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-secondary font-body-sm text-body-sm font-medium">Electrodomésticos · Cocina</span>
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+<span class="material-symbols-outlined text-xs" data-icon="arrow_downward">arrow_downward</span>
+                Bajó de precio -₡15.000
+              </span>
+</div>
+<h3 class="font-headline-md text-lg text-on-surface leading-tight font-bold">
+              Freidora de Aire Philips XL 6.2L (HD9270)
+            </h3>
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="inline-flex items-center gap-1 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Mejor precio en Gollo
+              </span>
+<span>·</span>
+<span class="text-xs">Verificado hoy 08:30 AM</span>
+</div>
+</div>
+</div>
+<!-- Comparative Price & CTA Cluster -->
+<div class="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between sm:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-outline-variant/40">
+<div class="flex flex-col sm:text-right">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-row text-on-surface font-bold tracking-tight">₡69.900</span>
+<span class="font-price-row text-xs text-secondary line-through">₡84.900</span>
+</div>
+<span class="text-xs text-tertiary font-medium">6 tiendas comparadas (Monge, Siman, Walmart)</span>
+</div>
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<!-- Alert Bell Toggle -->
+<button aria-label="Alertas activadas" class="p-2.5 rounded-full bg-surface-container-low hover:bg-surface-container text-primary transition-colors border border-outline-variant/60" title="Alertas de precio activas" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="notifications_active" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</button>
+<!-- Remove Button -->
+<button aria-label="Eliminar de la lista" class="p-2.5 rounded-full bg-surface-container-low hover:bg-error-container hover:text-error text-secondary transition-colors border border-outline-variant/60" onclick="removeItem(this)" title="Eliminar de la lista" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="delete">delete</span>
+</button>
+<!-- CTA Primary -->
+<a class="flex-1 sm:flex-initial rounded-full bg-primary-container text-on-surface font-headline-md text-sm font-bold px-5 py-2.5 hover:bg-[#E0A41C] transition-all flex items-center justify-center gap-1.5 shadow-none" href="#">
+<span>Ver comparación</span>
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+</div>
+</article>
+<!-- ITEM 3: LG 55'' Smart TV -->
+<article class="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5 hover:border-outline transition-colors">
+<div class="flex items-start sm:items-center gap-4 flex-1">
+<!-- Thumbnail with synthetic product placeholder -->
+<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-surface-container-low border border-outline-variant/50 flex items-center justify-center p-2 flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="Sleek modern ultra-thin 55 inch 4K Smart TV with razor thin black bezel, crisp vibrant cinematic image preview screen, studio catalog lighting on clean neutral gray background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPPZ7vL6SZOOBo6uo_IwN7jGewn0dWimVIFdbHy8o6irVK_7w6v1m4mQ--tixLKmA7AL8SwWBaY2r_Yt9Q_Qq9eigs9-AYgqZfZmBc0l3uVScrV-DigQf0rmmLLtC76ntS7htP9UNcUwudEAdQ64_I7YlnXD40yq7g6Tjyoswlkv7LSkeSiU-zfheuxzBH8l2Dwh3FsZvUkr0iyz2txJZBNUTO8ex0sWcptWx79Jh1W4QKTQDg_P7D">
+</div>
+<!-- Product Details -->
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-secondary font-body-sm text-body-sm font-medium">Tecnología · Televisores</span>
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-secondary text-xs font-semibold">
+<span class="material-symbols-outlined text-xs" data-icon="check">check</span>
+                Precio estable
+              </span>
+</div>
+<h3 class="font-headline-md text-lg text-on-surface leading-tight font-bold">
+              Pantalla LG 55'' 4K UHD Smart TV (55UR7800)
+            </h3>
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="inline-flex items-center gap-1 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Mejor precio en Walmart CR
+              </span>
+<span>·</span>
+<span class="text-xs">Verificado ayer</span>
+</div>
+</div>
+</div>
+<!-- Comparative Price & CTA Cluster -->
+<div class="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between sm:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-outline-variant/40">
+<div class="flex flex-col sm:text-right">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-row text-on-surface font-bold tracking-tight">₡239.900</span>
+</div>
+<span class="text-xs text-secondary">5 comercios activos</span>
+</div>
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<!-- Alert Bell Toggle -->
+<button aria-label="Alertas activadas" class="p-2.5 rounded-full bg-surface-container-low hover:bg-surface-container text-primary transition-colors border border-outline-variant/60" title="Alertas de precio activas" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="notifications_active" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</button>
+<!-- Remove Button -->
+<button aria-label="Eliminar de la lista" class="p-2.5 rounded-full bg-surface-container-low hover:bg-error-container hover:text-error text-secondary transition-colors border border-outline-variant/60" onclick="removeItem(this)" title="Eliminar de la lista" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="delete">delete</span>
+</button>
+<!-- CTA Primary -->
+<a class="flex-1 sm:flex-initial rounded-full bg-primary-container text-on-surface font-headline-md text-sm font-bold px-5 py-2.5 hover:bg-[#E0A41C] transition-all flex items-center justify-center gap-1.5 shadow-none" href="#">
+<span>Ver comparación</span>
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+</div>
+</article>
+<!-- ITEM 4: Pack Leche Dos Pinos 1L x6 -->
+<article class="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5 hover:border-outline transition-colors">
+<div class="flex items-start sm:items-center gap-4 flex-1">
+<!-- Thumbnail with synthetic product placeholder -->
+<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-surface-container-low border border-outline-variant/50 flex items-center justify-center p-2 flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-contain mix-blend-multiply" data-alt="Cardboard multi-pack of six one-liter UHT semi-skimmed milk cartons in blue and white packaging with clean Costa Rican supermarket dairy presentation, commercial product photography, studio light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD32Xh9R8jmhjuIVi68FxsJfugaiAoS0w4s13aq-hT7Ath2V3wCQkfv8rqS_7aMW_uN55eFgF5Lya4m_O0-6qkZok3fyxbRECy3eDg4bWaMawiGiaFBGXuQXCtKGBD--XG7m_fArlAe88QGFt_ZSbC7tE70BHdIb4Zs_MW0RdkVDIT3dyKwg-TpRWoRQ_ZsVZVvJZj2IYv6tIgVKITt3zz58f_SrytlQ3NEE0e0Y380p7VW_u6RlTPN">
+</div>
+<!-- Product Details -->
+<div class="flex flex-col gap-1.5 flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-secondary font-body-sm text-body-sm font-medium">Supermercado · Lácteos</span>
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+<span class="material-symbols-outlined text-xs" data-icon="arrow_downward">arrow_downward</span>
+                Bajó de precio -₡1.150
+              </span>
+</div>
+<h3 class="font-headline-md text-lg text-on-surface leading-tight font-bold">
+              Pack Leche Semidescremada Dos Pinos 1L (Caja x6)
+            </h3>
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span class="inline-flex items-center gap-1 font-semibold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Mejor precio en Maxi Palí
+              </span>
+<span>·</span>
+<span class="text-xs">Actualizado hace 3h</span>
+</div>
+</div>
+</div>
+<!-- Comparative Price & CTA Cluster -->
+<div class="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between sm:justify-end gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-outline-variant/40">
+<div class="flex flex-col sm:text-right">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-row text-on-surface font-bold tracking-tight">₡5.450</span>
+<span class="font-price-row text-xs text-secondary line-through">₡6.600</span>
+</div>
+<span class="text-xs text-tertiary font-medium">Auto Mercado, Walmart, Masxmenos</span>
+</div>
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<!-- Alert Bell Toggle -->
+<button aria-label="Alertas activadas" class="p-2.5 rounded-full bg-surface-container-low hover:bg-surface-container text-primary transition-colors border border-outline-variant/60" title="Alertas de precio activas" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="notifications_active" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</button>
+<!-- Remove Button -->
+<button aria-label="Eliminar de la lista" class="p-2.5 rounded-full bg-surface-container-low hover:bg-error-container hover:text-error text-secondary transition-colors border border-outline-variant/60" onclick="removeItem(this)" title="Eliminar de la lista" type="button">
+<span class="material-symbols-outlined text-lg leading-none" data-icon="delete">delete</span>
+</button>
+<!-- CTA Primary -->
+<a class="flex-1 sm:flex-initial rounded-full bg-primary-container text-on-surface font-headline-md text-sm font-bold px-5 py-2.5 hover:bg-[#E0A41C] transition-all flex items-center justify-center gap-1.5 shadow-none" href="#">
+<span>Ver comparación</span>
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+</div>
+</article>
+</section>
+<!-- SECTION B: EMPTY STATE CARD (HIDDEN BY DEFAULT OR PREVIEWABLE) -->
+<section class="hidden bg-surface-container-lowest border border-dashed border-outline-variant/90 rounded-3xl p-10 lg:p-16 flex flex-col items-center text-center" id="emptyStateContainer">
+<div class="w-20 h-20 rounded-full bg-surface-container-low border border-outline-variant/60 flex items-center justify-center mb-5 text-secondary">
+<span class="material-symbols-outlined text-4xl" data-icon="favorite_border">favorite_border</span>
+</div>
+<h2 class="text-headline-lg font-headline-lg text-on-surface mb-2">
+        Tu lista de deseos está vacía
+      </h2>
+<p class="font-body-md text-body-md text-secondary max-w-lg mb-8 leading-relaxed">
+        Aún no has guardado ningún producto. Haz clic en el ícono de corazón en cualquier producto para monitorear su precio en tiempo real en los comercios de Costa Rica.
+      </p>
+<div class="flex flex-col sm:flex-row items-center gap-3">
+<a class="rounded-full bg-primary-container text-on-surface font-headline-md text-sm font-bold px-6 py-3 hover:bg-[#E0A41C] transition-all flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="local_fire_department">local_fire_department</span>
+<span>Explorar ofertas del día</span>
+</a>
+<a class="rounded-full bg-surface-container-low text-on-surface font-headline-md text-sm font-semibold px-6 py-3 hover:bg-surface-container transition-all border border-outline-variant" href="#">
+          Buscar productos
+        </a>
+</div>
+<!-- Consumer Trust Guarantee Reminder inside Empty State -->
+<div class="mt-12 pt-8 border-t border-outline-variant/40 grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-2xl">
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl flex-shrink-0" data-icon="verified">verified</span>
+<div>
+<h4 class="font-headline-md text-xs font-bold text-on-surface">100% Imparcial</h4>
+<p class="font-body-sm text-xs text-secondary mt-0.5">Sin acuerdos patrocinados. El mejor precio siempre gana el primer lugar.</p>
+</div>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl flex-shrink-0" data-icon="notifications">notifications</span>
+<div>
+<h4 class="font-headline-md text-xs font-bold text-on-surface">Alertas Automáticas</h4>
+<p class="font-body-sm text-xs text-secondary mt-0.5">Te avisamos por correo o app cuando baje en cualquier tienda tica.</p>
+</div>
+</div>
+<div class="flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl flex-shrink-0" data-icon="receipt_long">receipt_long</span>
+<div>
+<h4 class="font-headline-md text-xs font-bold text-on-surface">Historial Real</h4>
+<p class="font-body-sm text-xs text-secondary mt-0.5">Registramos precios de los últimos 90 días para detectar ofertas falsas.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CONSUMER ADVISORY WIDGET (TRANSPARENCY NOTE) -->
+<aside class="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="policy">policy</span>
+<div class="font-body-sm text-body-sm text-secondary">
+<strong class="text-on-surface font-semibold">PricePeek no es una tienda ni cobra comisiones de venta.</strong> Las compras y garantías se formalizan directamente en el sitio o sucursal del comercio oficial seleccionado.
+        </div>
+</div>
+<a class="text-primary hover:text-on-surface font-body-sm text-body-sm font-bold whitespace-nowrap transition-colors flex items-center gap-1" href="#">
+<span>Conocer nuestra metodología de precios</span>
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</aside>
+</main>
+<!-- FOOTER (EXACT JSON SPECIFICATION) -->
+<footer class="bg-surface-container-low dark:bg-inverse-surface border-t border-outline-variant dark:border-outline mt-auto">
+<div class="w-full py-space-xl px-margin-desktop max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-space-lg">
+<!-- Brand & Copyright -->
+<div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+<a class="text-headline-md font-headline-md font-extrabold text-on-surface dark:text-inverse-on-surface" href="#">
+          PricePeek<span class="inline-block w-2 h-2 rounded-full bg-primary-container ml-0.5"></span>
+</a>
+<span class="hidden sm:inline text-secondary dark:text-secondary-fixed-dim">|</span>
+<p class="font-body-sm text-body-sm text-secondary dark:text-secondary-fixed-dim max-w-md">
+          © 2025 PricePeek Costa Rica. Plataforma imparcial de comparación de precios e inteligencia de consumo independiente.
+        </p>
+</div>
+<!-- Navigation Links -->
+<nav class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 font-body-sm text-body-sm">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Metodología de precios</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Comercios afiliados</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Términos de servicio</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Privacidad del consumidor</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Contacto</a>
+</nav>
+</div>
+</footer>
+<!-- SCRIPT FOR INTERACTIVE EMPTY STATE TOGGLE & ITEM DISMISSAL -->
+<script>
+    function toggleWishlistView(showActive) {
+      const activeList = document.getElementById('wishlistContainer');
+      const emptyState = document.getElementById('emptyStateContainer');
+      const activeBtn = document.getElementById('viewActiveBtn');
+      const emptyBtn = document.getElementById('viewEmptyBtn');
+
+      if (showActive) {
+        activeList.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        
+        activeBtn.className = "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all bg-surface-container-lowest text-on-surface shadow-xs";
+        emptyBtn.className = "px-3.5 py-1.5 rounded-full text-xs font-medium text-secondary hover:text-on-surface transition-all";
+      } else {
+        activeList.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        
+        emptyBtn.className = "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all bg-surface-container-lowest text-on-surface shadow-xs";
+        activeBtn.className = "px-3.5 py-1.5 rounded-full text-xs font-medium text-secondary hover:text-on-surface transition-all";
+      }
+    }
+
+    function removeItem(button) {
+      const card = button.closest('article');
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.98)';
+        card.style.transition = 'all 0.2s ease-out';
+        setTimeout(() => {
+          card.remove();
+          const remainingItems = document.querySelectorAll('#wishlistContainer article').length;
+          const badge = document.getElementById('itemsBadge');
+          const btnActive = document.getElementById('viewActiveBtn');
+          if (badge) badge.innerText = `${remainingItems} productos guardados`;
+          if (btnActive) btnActive.innerText = `Lista activa (${remainingItems})`;
+
+          if (remainingItems === 0) {
+            toggleWishlistView(false);
+          }
+        }, 200);
+      }
+    }
+  </script>
+<script src="../js/main.js"></script>
+<script src="../js/lista-de-deseos.js"></script>
+</body></html>

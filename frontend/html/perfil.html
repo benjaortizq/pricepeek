@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Mi Cuenta - Perfil de Usuario | PricePeek Costa Rica</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="bg-background text-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-surface">
+<!-- Top Navigation Bar (Shared Component Execution) -->
+<header class="bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-7xl mx-auto h-16">
+<!-- Brand & Search Pill -->
+<div class="flex items-center gap-space-lg">
+<a class="text-headline-md font-headline-md font-extrabold text-on-surface dark:text-inverse-on-surface tracking-tight flex items-center" href="#">
+          PricePeek<span class="inline-block w-2 h-2 rounded-full bg-primary-container ml-1"></span>
+</a>
+<!-- Integrated Search Pill on Left -->
+<div class="hidden lg:flex items-center bg-surface-container-low border border-outline-variant/60 rounded-full px-3.5 py-1.5 w-80 hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-secondary text-[20px] mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-0 p-0 text-body-sm font-body-sm text-on-surface placeholder:text-secondary focus:ring-0 focus:outline-none w-full" placeholder="Buscar productos, marcas..." type="text">
+<button class="text-secondary hover:text-on-surface transition-colors ml-1 p-0.5 rounded-full flex items-center justify-center" title="Escanear código de barras" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+</div>
+</div>
+<!-- Navigation Links Cluster with 'Perfil' Active -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150 text-body-md font-body-md" href="index.html">
+          Inicio
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150 text-body-md font-body-md" href="#">
+          Buscar
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150 text-body-md font-body-md" href="#">
+          Categorías
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors duration-150 text-body-md font-body-md" href="#">
+          Lista de deseos
+        </a>
+<!-- Active Link: Perfil -->
+<a class="text-on-surface dark:text-inverse-on-surface font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary-container after:rounded-full text-body-md font-body-md" href="#">
+          Perfil
+        </a>
+</nav>
+<!-- Right Action & Profile Image -->
+<div class="flex items-center gap-space-sm">
+<button aria-label="Escanear" class="p-2 text-secondary hover:text-on-surface rounded-full transition-colors flex items-center" type="button">
+<span class="material-symbols-outlined text-[22px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+<div class="w-9 h-9 rounded-full overflow-hidden border border-outline-variant/80 ring-2 ring-primary-container/30 ml-1">
+<img alt="Foto de perfil del usuario" class="w-full h-full object-cover" data-alt="A refined portrait of a young Latin American professional woman with warm ambient morning studio light. She exhibits a calm, welcoming expression with natural features. The background is a clean, neutral white and warm cream tone, adhering strictly to a modern minimalist aesthetic with soft lighting and sophisticated digital clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyx3B8CKRpPym5P1aSdJJCiF7ZTJ5utFLOYZAofYmBsjZs_GVHk_fBQ2SAMmTRpbsY7VQL7DUtcJnJtHvRDcwTlYeNl2fjoAYH7J254T9rSJzA6GQpsT34-1L07CX05PuKFhR4GPee_Dbx5BLoMsvFfphmx4zdRWLKIsi9D5BWxIbG37D0j3PDmZYkkV2ufcZXEPsKnvVatu5xv2tsY902ijT4P5zMyYuos53-InMkmVfmTK3ay-Xd">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-margin-desktop py-space-xl">
+<!-- Breadcrumb & Page Header -->
+<div class="mb-space-lg">
+<nav class="flex items-center gap-2 text-body-sm font-body-sm text-secondary mb-2">
+<a class="hover:text-on-surface transition-colors" href="#">Inicio</a>
+<span class="text-outline-variant">/</span>
+<a class="hover:text-on-surface transition-colors" href="#">Mi Cuenta</a>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface font-semibold">Perfil de Usuario</span>
+</nav>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Mi Cuenta</h1>
+<p class="text-body-md font-body-md text-secondary mt-0.5">Control de credenciales, preferencias de monitoreo e inteligencia de precios en Costa Rica.</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/60 text-secondary text-body-sm font-body-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+            Servidor CR San José Activo
+          </span>
+</div>
+</div>
+</div>
+<!-- Main Two-Column Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- 1. LEFT SIDEBAR (4 cols) -->
+<aside class="lg:col-span-4 flex flex-col gap-space-md">
+<!-- User Identity Card -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg text-center flex flex-col items-center">
+<div class="relative mb-3">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-container p-0.5 bg-surface-container-lowest">
+<img alt="Foto de perfil de María Rodríguez" class="w-full h-full object-cover rounded-full" data-alt="A close-up studio headshot of Maria Rodriguez, a Costa Rican woman with neatly tied dark hair, gentle warm eyes, and professional attire. High-key soft natural lighting on a pristine ivory minimalist background with no distractions, reflecting trust, digital security, and clean modern product design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBXTUDuIT-IBJmcLuL7FqQvh2QAer9E-ulp_hs05oDGfF9s67q-G6mMwvrPm9p4bFcE_StN7T8G6YzG0og7BRaBoZm0uOgQW4ZtJWRzIP8GbCSp4IlNjJCylCKN5DNsuoAnQ6ZNUXlZagzTdGu5J7K6Do0FQlN839PFZQjYWiyP2kHKwd79csfrus5RQ9kQkn5EbRFyUkavMFJ5hHO8wFirH0m2L-mLKQWF__6NoXZEJlCy6dQLrcY">
+</div>
+<span class="absolute bottom-0 right-1 bg-tertiary text-on-tertiary rounded-full p-1 flex items-center justify-center border-2 border-surface-container-lowest" title="Usuario Verificado">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</span>
+</div>
+<h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">María Rodríguez</h2>
+<p class="text-body-sm font-body-sm text-secondary mt-0.5">maria.rodriguez@email.cr</p>
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-badge text-label-badge">
+<span class="material-symbols-outlined text-[13px]" data-icon="check_circle">check_circle</span>
+              Usuario verificado
+            </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-low text-secondary font-label-badge text-label-badge border border-outline-variant/40">
+              Miembro desde 2024
+            </span>
+</div>
+<!-- Quick Stat Mini Bento -->
+<div class="grid grid-cols-2 gap-2 w-full mt-space-md pt-space-md border-t border-outline-variant/40 text-left">
+<div class="p-2.5 bg-surface-container-low rounded-lg">
+<span class="text-body-sm font-body-sm text-secondary block">Ahorro total</span>
+<span class="font-price-row text-price-row text-on-surface">₡142.500</span>
+</div>
+<div class="p-2.5 bg-surface-container-low rounded-lg">
+<span class="text-body-sm font-body-sm text-secondary block">Alertas activas</span>
+<span class="font-price-row text-price-row text-primary">8 artículos</span>
+</div>
+</div>
+</div>
+<!-- Vertical Navigation Menu -->
+<nav class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-2 flex flex-col gap-1">
+<!-- Active Tab: Mis datos -->
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-surface-container-low border-l-4 border-primary-container text-on-surface font-semibold text-body-md font-body-md transition-colors" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="badge">badge</span>
+<span>Mis datos</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[16px]" data-icon="chevron_right">chevron_right</span>
+</a>
+<!-- Mis reseñas -->
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-low/70 transition-colors text-body-md font-body-md" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="rate_review">rate_review</span>
+<span>Mis reseñas</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface text-label-badge font-label-badge">3</span>
+</a>
+<!-- Mis listas -->
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-low/70 transition-colors text-body-md font-body-md" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="bookmark">bookmark</span>
+<span>Mis listas</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface text-label-badge font-label-badge">4 guardados</span>
+</a>
+<!-- Notificaciones y Alertas -->
+<a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-low/70 transition-colors text-body-md font-body-md" href="#alertas">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="notifications_active">notifications_active</span>
+<span>Notificaciones y Alertas</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+</a>
+<div class="my-1 border-t border-outline-variant/40"></div>
+<!-- Bottom Option: Cerrar sesión -->
+<button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-error hover:bg-error-container/30 transition-colors text-left text-body-md font-body-md" type="button">
+<span class="material-symbols-outlined text-error text-[20px]" data-icon="logout">logout</span>
+<span>Cerrar sesión</span>
+</button>
+</nav>
+<!-- Transparency Guarantee Micro-Card -->
+<div class="bg-surface-container-low/80 border border-outline-variant/40 rounded-xl p-space-md flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] mt-0.5" data-icon="security">security</span>
+<div>
+<h4 class="text-body-md font-body-md font-bold text-on-surface">Privacidad Garantizada</h4>
+<p class="text-body-sm font-body-sm text-secondary mt-1">PricePeek nunca vende tus datos de navegación a tiendas ni agencias de publicidad externa.</p>
+</div>
+</div>
+</aside>
+<!-- 2. RIGHT CONTENT AREA (8 cols) -->
+<section class="lg:col-span-8 flex flex-col gap-space-lg">
+<!-- Form Panel: Información Personal -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg">
+<!-- Section Header -->
+<div class="border-b border-outline-variant/40 pb-space-md mb-space-lg">
+<h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">Información Personal</h3>
+<p class="text-body-md font-body-md text-secondary mt-0.5">Gestiona tu información de contacto y cómo te identificas en PricePeek.</p>
+</div>
+<!-- Avatar editing widget -->
+<div class="flex flex-col sm:flex-row items-center gap-space-md p-space-md bg-surface-container-low rounded-xl border border-outline-variant/40 mb-space-lg">
+<div class="w-16 h-16 rounded-full overflow-hidden border border-outline-variant bg-surface-container-lowest flex-shrink-0">
+<img alt="Avatar actual de María" class="w-full h-full object-cover" data-alt="A refined square avatar preview of Maria Rodriguez in Costa Rica, clean high-key studio photograph with balanced soft lighting, warm skin tones, and professional friendly presentation on a bright neutral backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDs6Jves65eoaN_Ol1Vro1ltPECirVK2lFktA5bSgxQnftL8auOfGYTDF0HJ9b3wgtRWapGaY1ydXxFA_IBfTorfsGJPJ-ig-nauCvQ2dP7tIW7kDBfVcAypYgQWv1fAiFYPanZOAC2-DnhJo7RYyxP1t2i9wTFG2au3rliX2wrSEAwO2j5PBLle8xm5Mc9buFJKiS-qq-bq_Jq57YcOMl1ycq4KuYwG8AvOWMw_7nZPlap4JoFbeaC">
+</div>
+<div class="flex-grow text-center sm:text-left">
+<h4 class="text-body-md font-body-md font-semibold text-on-surface">Foto de perfil</h4>
+<p class="text-body-sm font-body-sm text-secondary">Formatos PNG, JPG o WEBP. Máximo 2MB.</p>
+</div>
+<div class="flex items-center gap-2 flex-wrap justify-center">
+<button class="px-4 py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface font-semibold text-body-sm font-body-sm hover:bg-surface-container transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]" data-icon="photo_camera">photo_camera</span>
+                Cambiar foto
+              </button>
+<button class="px-4 py-1.5 rounded-full text-secondary hover:text-error hover:bg-error-container/20 text-body-sm font-body-sm transition-colors" type="button">
+                Eliminar
+              </button>
+</div>
+</div>
+<!-- Form Fields Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Nombre Completo -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="text-body-sm font-body-sm font-semibold text-on-surface" for="fullName">Nombre completo</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant/80 rounded-full px-4 py-2.5 text-body-md font-body-md text-on-surface focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 transition-all" id="fullName" type="text" value="María Rodríguez Salazar">
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[18px]" data-icon="person">person</span>
+</div>
+</div>
+<!-- Correo Electrónico -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="text-body-sm font-body-sm font-semibold text-on-surface" for="emailAddr">Correo electrónico</label>
+<span class="inline-flex items-center gap-1 text-[11px] font-label-badge text-tertiary bg-tertiary/10 px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[12px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                  Verificado
+                </span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant/80 rounded-full px-4 py-2.5 text-body-md font-body-md text-on-surface focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 transition-all" id="emailAddr" type="email" value="maria.rodriguez@email.cr">
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[18px]" data-icon="mail">mail</span>
+</div>
+<span class="text-body-sm font-body-sm text-secondary text-[11px]">Utilizado para alertas de ofertas y acceso seguro.</span>
+</div>
+<!-- Teléfono Móvil / WhatsApp -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="text-body-sm font-body-sm font-semibold text-on-surface" for="phoneNumber">Teléfono móvil / WhatsApp</label>
+<span class="text-body-sm font-body-sm text-secondary text-[11px]">(Opcional)</span>
+</div>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant/80 rounded-full px-4 py-2.5 text-body-md font-body-md text-on-surface focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 transition-all font-mono" id="phoneNumber" type="tel" value="+506 8888-2468">
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[18px]" data-icon="phone_iphone">phone_iphone</span>
+</div>
+<span class="text-body-sm font-body-sm text-secondary text-[11px]">Para alertas relámpago con stock crítico en comercios locales.</span>
+</div>
+<!-- Provincia / Cantón -->
+<div class="flex flex-col gap-1.5 md:col-span-2">
+<label class="text-body-sm font-body-sm font-semibold text-on-surface" for="locationCR">Provincia y Cantón de referencia</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border border-outline-variant/80 rounded-full px-4 py-2.5 text-body-md font-body-md text-on-surface focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 appearance-none transition-all" id="locationCR">
+<option selected="">San José, Montes de Oca</option>
+<option>San José, Central</option>
+<option>San José, Escazú</option>
+<option>San José, Santa Ana</option>
+<option>Alajuela, Central</option>
+<option>Heredia, Central</option>
+<option>Cartago, Central</option>
+<option>Guanacaste, Liberia</option>
+<option>Puntarenas, Central</option>
+<option>Limón, Central</option>
+</select>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-secondary text-[18px] pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+<span class="text-body-sm font-body-sm text-secondary text-[11px]">Personaliza la disponibilidad en tiendas físicas cercanas (Gollo, Monge, Walmart CR, Siman).</span>
+</div>
+</div>
+</div>
+<!-- Section: Alertas de bajada de precio y notificaciones -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg" id="alertas">
+<div class="border-b border-outline-variant/40 pb-space-md mb-space-lg flex items-center justify-between">
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">Alertas de bajada de precio y notificaciones</h3>
+<p class="text-body-md font-body-md text-secondary mt-0.5">Configura cómo y cuándo te avisamos de los cambios de precio en el mercado costarricense.</p>
+</div>
+<span class="material-symbols-outlined text-primary-container text-[28px] hidden sm:block" data-icon="campaign">campaign</span>
+</div>
+<!-- Toggles List -->
+<div class="flex flex-col gap-space-md">
+<!-- Toggle 1 (ON) -->
+<div class="flex items-start justify-between gap-space-md p-space-md rounded-xl bg-surface-container-low/60 border border-outline-variant/40 hover:border-outline-variant transition-colors">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-container/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-on-primary-container text-[20px]" data-icon="trending_down">trending_down</span>
+</div>
+<div>
+<h4 class="text-body-md font-body-md font-bold text-on-surface">Alertas de bajada de precio inmediatas</h4>
+<p class="text-body-sm font-body-sm text-secondary mt-0.5">Notificarme por correo cuando un producto guardado alcance su mínimo histórico o baje de precio.</p>
+</div>
+</div>
+<!-- Switch ON -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Toggle 2 (ON) -->
+<div class="flex items-start justify-between gap-space-md p-space-md rounded-xl bg-surface-container-low/60 border border-outline-variant/40 hover:border-outline-variant transition-colors">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-container/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-on-primary-container text-[20px]" data-icon="calendar_month">calendar_month</span>
+</div>
+<div>
+<h4 class="text-body-md font-body-md font-bold text-on-surface">Resumen semanal de ofertas en Costa Rica</h4>
+<p class="text-body-sm font-body-sm text-secondary mt-0.5">Recibir un correo los viernes con las mejores rebajas en electrodomésticos, tecnología y canasta básica auditada.</p>
+</div>
+</div>
+<!-- Switch ON -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Toggle 3 (OFF) -->
+<div class="flex items-start justify-between gap-space-md p-space-md rounded-xl bg-surface-container-low/60 border border-outline-variant/40 hover:border-outline-variant transition-colors">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="chat">chat</span>
+</div>
+<div>
+<h4 class="text-body-md font-body-md font-bold text-on-surface">Alertas por WhatsApp / SMS</h4>
+<p class="text-body-sm font-body-sm text-secondary mt-0.5">Avisos urgentes si una oferta crítica tiene stock limitado en sucursales cercanas de tu cantón.</p>
+</div>
+</div>
+<!-- Switch OFF -->
+<label class="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-1">
+<input class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+<!-- Historic Lowest Sample Micro-Card in Notification context -->
+<div class="mt-space-md p-3 rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[18px]" data-icon="insights">insights</span>
+<span class="text-body-sm font-body-sm text-secondary">Última alerta enviada con éxito: <strong class="text-on-surface">Smart TV 55" 4K</strong> (Bajó a ₡189.900 en Gollo)</span>
+</div>
+<span class="text-body-sm font-body-sm text-tertiary font-semibold">Ahorro registrado: ₡45.000</span>
+</div>
+</div>
+<!-- Action Footer / Button Row -->
+<div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-2 text-secondary text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary" data-icon="lock">lock</span>
+<span>Tus datos están protegidos y nunca se comparten con comercios ni terceros.</span>
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+<button class="w-full sm:w-auto px-5 py-2.5 rounded-full border border-outline-variant text-on-surface font-semibold text-body-md font-body-md hover:bg-surface-container-low transition-colors" type="button">
+              Cancelar
+            </button>
+<button class="w-full sm:w-auto px-6 py-2.5 rounded-full bg-primary-container text-on-surface font-bold text-body-md font-body-md hover:bg-[#e0a41c] transition-all flex items-center justify-center gap-2 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="check">check</span>
+              Guardar cambios
+            </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Web Footer (Shared Component Execution) -->
+<footer class="bg-surface-container-low dark:bg-inverse-surface border-t border-outline-variant dark:border-outline mt-auto">
+<div class="w-full py-space-xl px-margin-desktop max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-space-lg">
+<!-- Brand & Copyright -->
+<div class="flex flex-col items-center md:items-start text-center md:text-left gap-1">
+<a class="text-headline-md font-headline-md font-extrabold text-on-surface dark:text-inverse-on-surface" href="#">
+          PricePeek<span class="text-primary-container">.</span>cr
+        </a>
+<p class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim max-w-md">
+          © 2025 PricePeek Costa Rica. Plataforma imparcial de comparación de precios e inteligencia de consumo independiente.
+        </p>
+</div>
+<!-- Footer Navigation Links -->
+<div class="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-body-sm font-body-sm">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+          Metodología de precios
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+          Comercios afiliados
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+          Términos de servicio
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+          Privacidad del consumidor
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+          Contacto
+        </a>
+</div>
+</div>
+</footer>
+<script src="../js/main.js"></script>
+</body></html>

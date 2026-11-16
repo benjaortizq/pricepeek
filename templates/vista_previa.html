@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Pantallas de diseño{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
+  <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Pantallas de diseño</h1>
+  <p class="text-body-md font-body-md text-secondary mt-1">
+    Los HTML de <code>frontend/html</code>, tal como vienen del diseño (datos de ejemplo, sin conexión al backend).
+    Solo se ven con <code>DEBUG=True</code>.
+  </p>
+  <ul class="mt-space-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for nombre in pantallas %}
+      <li>
+        <a class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant/60 hover:border-on-surface rounded-xl px-4 py-3 transition-colors" href="{% url 'diseno_pantalla' nombre %}">
+          <span class="font-semibold text-on-surface">{{ nombre }}</span>
+          <span class="material-symbols-outlined text-secondary text-[18px]">open_in_new</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

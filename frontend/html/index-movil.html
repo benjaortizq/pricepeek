@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html class="h-full bg-surface" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PricePeek Costa Rica - Comparador Inteligente de Precios</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-full flex flex-col justify-between selection:bg-primary-container selection:text-on-surface">
+<!-- Mobile Wrapper Simulation (Max ~430px for authentic mobile experience) -->
+<div class="w-full max-w-[440px] mx-auto min-h-screen bg-surface flex flex-col relative pb-28">
+<!-- Top Mobile App Header -->
+<header class="sticky top-0 z-40 bg-surface-container-lowest/95 backdrop-blur-md px-margin py-3 border-b border-surface-container flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-2">
+<a class="flex items-center gap-1 group" href="#">
+<span class="font-headline-md text-headline-md font-extrabold tracking-tight text-on-surface">PricePeek</span>
+<span class="w-2 h-2 rounded-full bg-primary-container inline-block translate-y-0.5"></span>
+</a>
+<div class="flex items-center gap-1 bg-surface-container-low px-2 py-0.5 rounded-full border border-outline-variant/30 text-secondary text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="location_on">location_on</span>
+<span>San José / GAM</span>
+</div>
+</div>
+<!-- Quick Action: Barcode Scanner Icon -->
+<button aria-label="Escanear código de barras" class="w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/40 flex items-center justify-center text-on-surface hover:bg-primary-container hover:text-on-surface active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin pt-4 space-y-space-lg">
+<!-- Hero Section -->
+<section class="space-y-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-container/20 text-on-primary-fixed-variant text-label-badge font-label-badge uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+          Inteligencia Imparcial de Consumo
+        </div>
+<h1 class="font-display-mobile text-display-mobile font-extrabold text-on-surface tracking-tight leading-tight">
+          Busca, compara y ahorra en colones
+        </h1>
+<p class="font-body-md text-body-md text-secondary leading-snug">
+          Verificamos precios al instante en los principales comercios de Costa Rica. Sin sesgos comerciales.
+        </p>
+</section>
+<!-- Pill Search & Scanner Input -->
+<section class="space-y-space-sm">
+<div class="relative flex items-center">
+<div class="absolute left-3.5 flex items-center pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]" data-icon="search">search</span>
+</div>
+<input class="w-full pl-10 pr-24 py-3 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface placeholder:text-secondary/70 text-body-md font-body-md focus:bg-surface-container-lowest focus:outline-none focus:border-on-surface transition-all shadow-sm" placeholder="Buscar producto, marca o código..." type="text">
+<div class="absolute right-1.5 flex items-center gap-1">
+<button class="flex items-center gap-1 py-1.5 px-2.5 rounded-full bg-surface-container text-on-surface text-body-sm font-medium hover:bg-primary-container transition-colors" title="Escanear código en góndola" type="button">
+<span class="material-symbols-outlined text-[16px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="text-[11px] font-bold">Escanear</span>
+</button>
+</div>
+</div>
+<!-- Popular Queries Horizontal Scroll -->
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 text-nowrap">
+<span class="text-body-sm font-body-sm text-secondary text-[11px] pl-1 font-semibold">Tendencias:</span>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-body-sm hover:border-on-surface transition-colors">Arroz 99%</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-body-sm hover:border-on-surface transition-colors">Smart TV 55''</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-body-sm hover:border-on-surface transition-colors">Café Britt</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-body-sm hover:border-on-surface transition-colors">Airfryer</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-body-sm hover:border-on-surface transition-colors">Detergente</button>
+</div>
+</section>
+<!-- Category Filter Pills -->
+<section class="space-y-space-xs">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-[18px] font-bold text-on-surface">Explorar categorías</h2>
+<a class="text-body-sm font-bold text-primary hover:underline" href="#">Ver todas</a>
+</div>
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-on-surface text-surface-container-lowest text-body-sm font-semibold shadow-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="apps">apps</span>
+<span>Todos</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-medium hover:border-on-surface whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="kitchen">kitchen</span>
+<span>Electrodomésticos</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-medium hover:border-on-surface whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="local_mall">local_mall</span>
+<span>Supermercado</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-medium hover:border-on-surface whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="chair">chair</span>
+<span>Hogar</span>
+</button>
+<button class="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-surface-container-lowest border border-outline-variant/40 text-on-surface text-body-sm font-medium hover:border-on-surface whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="soap">soap</span>
+<span>Higiene</span>
+</button>
+</div>
+</section>
+<!-- Daily Verified Comparison Deals -->
+<section class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface tracking-tight">Mejores ofertas del día</h2>
+<p class="font-body-sm text-body-sm text-secondary">Rastreo automatizado cada 2 horas</p>
+</div>
+<span class="flex items-center gap-1 text-[11px] font-label-badge font-bold px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> EN VIVO
+          </span>
+</div>
+<!-- Comparison Card 1: Freidora de Aire Philips -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-4 space-y-3.5 shadow-sm">
+<div class="flex gap-3 items-start">
+<img class="w-20 h-20 rounded-xl object-contain bg-surface-container-low p-1.5 flex-shrink-0 border border-outline-variant/30" data-alt="A clean modern digital air fryer kitchen appliance standing on a bright minimalist white studio counter with subtle warm amber morning lighting, sharp consumer electronics product photography in high definition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYO5Gf3gAFxe4wNTSoTtfOBzYIDz4-oxjMz0KapBJdUY9Q7SCdgrH3GmZcyBEcJNo3F3yifk3aF1GuMYoBvvFAc8I5s0EdxWF1pErHNdJz_eZTMj0z0qTAtYTSOEE6s9GshX7nVfacUZBVMWvqNqwgtWyuzMmJX9CvJt1gNoWDdK7r5UYeIF8FIYuDPxRKdzd39JNsl-9GEuI1iHOCkNvk0LcXw3kbiFFgXIWCCvhQbg5GUD22xhR2">
+<div class="flex-1 min-w-0 space-y-1">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-container text-on-surface text-label-badge font-label-badge">
+<span class="material-symbols-outlined text-[13px]" data-icon="verified">verified</span>
+<span>MEJOR PRECIO EN GOLLO</span>
+</div>
+<h3 class="font-headline-md text-[15px] font-bold text-on-surface leading-snug truncate">
+                Freidora de Aire Philips XL 6.2L Digital
+              </h3>
+<p class="text-body-sm text-secondary text-[11px]">SKU: HD9270-91 • Ref: Gollo Costa Rica</p>
+</div>
+</div>
+<!-- Price & Savings Highlight -->
+<div class="flex items-baseline justify-between pt-1 border-t border-surface-container">
+<div>
+<span class="text-body-sm font-body-sm text-secondary block -mb-1">Precio más bajo</span>
+<span class="font-price-hero text-price-hero font-bold text-on-surface">₡69.900</span>
+</div>
+<div class="text-right">
+<span class="inline-block px-2 py-1 rounded-full bg-[#DCFCE7] text-[#16A34A] text-body-sm font-bold font-price-row">
+                Ahorro de ₡22.100
+              </span>
+</div>
+</div>
+<!-- Retailer Parity Stack -->
+<div class="bg-surface-container-low/70 rounded-xl p-2.5 space-y-2 border border-outline-variant/30 text-body-sm font-body-sm">
+<!-- Retailer 1 (Lowest) -->
+<div class="flex items-center justify-between bg-surface-container-lowest p-2 rounded-lg border border-primary-container">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface">Gollo</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-[11px] text-tertiary font-semibold">Disponible</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-price-row font-bold text-on-surface">₡69.900</span>
+<span class="text-[10px] uppercase font-bold bg-primary-container text-on-surface px-1.5 py-0.5 rounded-full">Top</span>
+</div>
+</div>
+<!-- Retailer 2 -->
+<div class="flex items-center justify-between px-2 text-secondary">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Monge</span>
+<span class="text-[11px] text-secondary">• En stock</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-price-row font-bold text-on-surface">₡84.900</span>
+<span class="text-[11px] text-error font-medium">(+₡15.000)</span>
+</div>
+</div>
+<!-- Retailer 3 -->
+<div class="flex items-center justify-between px-2 text-secondary">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Siman</span>
+<span class="text-[11px] text-secondary">• En stock</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-price-row font-bold text-on-surface">₡92.000</span>
+<span class="text-[11px] text-error font-medium">(+₡22.100)</span>
+</div>
+</div>
+</div>
+<!-- Direct Comparison CTA -->
+<button class="w-full py-2.5 px-4 rounded-full bg-primary-container hover:bg-primary-fixed-dim text-on-surface font-body-md font-bold text-center flex items-center justify-center gap-1.5 transition-colors">
+<span>Ver comparativa completa</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</article>
+<!-- Comparison Card 2: Pantalla LG 55' 4K -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-4 space-y-3.5 shadow-sm">
+<div class="flex gap-3 items-start">
+<img class="w-20 h-20 rounded-xl object-contain bg-surface-container-low p-1.5 flex-shrink-0 border border-outline-variant/30" data-alt="A slim modern 55 inch 4K Ultra HD smart television with vibrant tropical Costa Rican landscape visuals displayed on screen, isolated in a sleek, sunlit modern interior with minimalist white surfaces and gentle warm tone accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_yPSq8FQGAHBDin9M0dQQDnARw_BUatOxF9bEnFWZYjDxksw1wJF1J8thM4PEuOzY2Medp0F_TAUpHBfmoii9ugY4t_ns9LaWVbtJ81VX_exsr1YNkl5UZJAQauIWTgw-IezQ4-PNvkmvrH58k4JK5myUlTj0A5SqL87JX_tlHKLP9Rb58U6TWnkuTu-vlzsWmRdqOZZbn6iP_9A7YuBcGRU6lg_JlLA3Zsy7SBKgAzb3K1T0EIQe">
+<div class="flex-1 min-w-0 space-y-1">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-container text-on-surface text-label-badge font-label-badge">
+<span class="material-symbols-outlined text-[13px]" data-icon="verified">verified</span>
+<span>MEJOR PRECIO EN WALMART</span>
+</div>
+<h3 class="font-headline-md text-[15px] font-bold text-on-surface leading-snug truncate">
+                Pantalla LG 55'' 4K UHD Smart AI ThinQ
+              </h3>
+<p class="text-body-sm text-secondary text-[11px]">Modelo: 55UR7800PSB • Verificado hoy</p>
+</div>
+</div>
+<!-- Price & Savings -->
+<div class="flex items-baseline justify-between pt-1 border-t border-surface-container">
+<div>
+<span class="text-body-sm font-body-sm text-secondary block -mb-1">Precio más bajo</span>
+<span class="font-price-hero text-price-hero font-bold text-on-surface">₡249.900</span>
+</div>
+<div class="text-right">
+<span class="inline-block px-2 py-1 rounded-full bg-[#DCFCE7] text-[#16A34A] text-body-sm font-bold font-price-row">
+                Ahorro de ₡35.000
+              </span>
+</div>
+</div>
+<!-- Retailer Parity Stack -->
+<div class="bg-surface-container-low/70 rounded-xl p-2.5 space-y-2 border border-outline-variant/30 text-body-sm font-body-sm">
+<!-- Retailer 1 (Lowest) -->
+<div class="flex items-center justify-between bg-surface-container-lowest p-2 rounded-lg border border-primary-container">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface">Walmart CR</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-[11px] text-tertiary font-semibold">Disponible</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-price-row font-bold text-on-surface">₡249.900</span>
+<span class="text-[10px] uppercase font-bold bg-primary-container text-on-surface px-1.5 py-0.5 rounded-full">Top</span>
+</div>
+</div>
+<!-- Retailer 2 -->
+<div class="flex items-center justify-between px-2 text-secondary">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Monge</span>
+<span class="text-[11px] text-secondary">• En stock</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-price-row font-bold text-on-surface">₡274.900</span>
+<span class="text-[11px] text-error font-medium">(+₡25.000)</span>
+</div>
+</div>
+<!-- Retailer 3 -->
+<div class="flex items-center justify-between px-2 text-secondary">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Universal</span>
+<span class="text-[11px] text-secondary">• En stock</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-price-row font-bold text-on-surface">₡284.900</span>
+<span class="text-[11px] text-error font-medium">(+₡35.000)</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2.5 px-4 rounded-full bg-primary-container hover:bg-primary-fixed-dim text-on-surface font-body-md font-bold text-center flex items-center justify-center gap-1.5 transition-colors">
+<span>Ver comparativa completa</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</article>
+<!-- Comparison Card 3: Pack Leche Semidescremada Dos Pinos -->
+<article class="bg-surface-container-lowest rounded-2xl border border-outline-variant/50 p-4 space-y-3.5 shadow-sm">
+<div class="flex gap-3 items-start">
+<img class="w-20 h-20 rounded-xl object-contain bg-surface-container-low p-1.5 flex-shrink-0 border border-outline-variant/30" data-alt="Pack of six milk cartons neatly arranged on a clean white kitchen pantry shelf, surrounded by gentle neutral tones and soft sunlight, commercial grocery packaging photography for consumer goods comparison in high detail." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmyQnvvx1LRZkIc4yGM0tbJHl2r2bpwt9lfmsmfDt6jgXP-EBWkMV2IZdJCQjP0_t6W9RiamDlf778JmEi8DhA37DKwRRDHkwXJzz5jscRlBmW7KatXPuDXbhA-se-M0VwLeEUHoLvLIr6blNsDtKQrSWF1SGN8N5S6VYRiyDUsWb5MIqBXjlMUsCWmL-aRC6Wt-Wti76qKtlfDglW1YOrvBHCcEZ6Jskc-dIS-xYHHDlb4tpVdx5I">
+<div class="flex-1 min-w-0 space-y-1">
+<div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-container text-on-surface text-label-badge font-label-badge">
+<span class="material-symbols-outlined text-[13px]" data-icon="verified">verified</span>
+<span>MEJOR PRECIO EN MAXI PALÍ</span>
+</div>
+<h3 class="font-headline-md text-[15px] font-bold text-on-surface leading-snug truncate">
+                Pack Leche Semidescremada Dos Pinos 1L x6
+              </h3>
+<p class="text-body-sm text-secondary text-[11px]">Canasta básica • Actualizado hace 45m</p>
+</div>
+</div>
+<!-- Price & Savings -->
+<div class="flex items-baseline justify-between pt-1 border-t border-surface-container">
+<div>
+<span class="text-body-sm font-body-sm text-secondary block -mb-1">Precio más bajo</span>
+<span class="font-price-hero text-price-hero font-bold text-on-surface">₡5.450</span>
+</div>
+<div class="text-right">
+<span class="inline-block px-2 py-1 rounded-full bg-[#DCFCE7] text-[#16A34A] text-body-sm font-bold font-price-row">
+                Ahorro de ₡1.150
+              </span>
+</div>
+</div>
+<!-- Retailer Parity Stack -->
+<div class="bg-surface-container-low/70 rounded-xl p-2.5 space-y-2 border border-outline-variant/30 text-body-sm font-body-sm">
+<div class="flex items-center justify-between bg-surface-container-lowest p-2 rounded-lg border border-primary-container">
+<div class="flex items-center gap-2">
+<span class="font-bold text-on-surface">Maxi Palí</span>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="text-[11px] text-tertiary font-semibold">Disponible</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-price-row font-bold text-on-surface">₡5.450</span>
+<span class="text-[10px] uppercase font-bold bg-primary-container text-on-surface px-1.5 py-0.5 rounded-full">Top</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-2 text-secondary">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Auto Mercado</span>
+<span class="text-[11px] text-secondary">• En stock</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="font-price-row font-bold text-on-surface">₡6.600</span>
+<span class="text-[11px] text-error font-medium">(+₡1.150)</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2.5 px-4 rounded-full bg-primary-container hover:bg-primary-fixed-dim text-on-surface font-body-md font-bold text-center flex items-center justify-center gap-1.5 transition-colors">
+<span>Ver comparativa completa</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</article>
+</section>
+<!-- Educational Trust Module: "Cómo funciona PricePeek" -->
+<section class="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/40 space-y-4">
+<div>
+<h2 class="font-headline-md text-[18px] font-bold text-on-surface">¿Cómo funciona PricePeek?</h2>
+<p class="text-body-sm text-secondary font-body-sm">Tu asistente independiente en 3 pasos sencillos</p>
+</div>
+<div class="space-y-3">
+<!-- Step 1 -->
+<div class="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30">
+<div class="w-7 h-7 rounded-full bg-primary-container/20 text-on-surface flex items-center justify-center font-bold text-body-sm shrink-0">1</div>
+<div>
+<h3 class="text-body-md font-bold text-on-surface">Busca o escanea</h3>
+<p class="text-body-sm text-secondary">Escribe el artículo o escanea el código de barras en el supermercado o tienda física.</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30">
+<div class="w-7 h-7 rounded-full bg-primary-container/20 text-on-surface flex items-center justify-center font-bold text-body-sm shrink-0">2</div>
+<div>
+<h3 class="text-body-md font-bold text-on-surface">Compara en tiempo real</h3>
+<p class="text-body-sm text-secondary">Analizamos catálogos de cadenas costarricenses con igualdad de condiciones y sin patrocinios.</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex items-start gap-3 bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/30">
+<div class="w-7 h-7 rounded-full bg-primary-container/20 text-on-surface flex items-center justify-center font-bold text-body-sm shrink-0">3</div>
+<div>
+<h3 class="text-body-md font-bold text-on-surface">Elige dónde comprar y ahorra</h3>
+<p class="text-body-sm text-secondary">Te redirigimos al comercio oficial o te informamos en qué sucursal adquirirlo al mejor precio.</p>
+</div>
+</div>
+</div>
+<!-- Neutrality Guarantee Badge -->
+<div class="p-3 bg-surface-container-high/40 rounded-xl border border-outline-variant/40 flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-[24px]" data-icon="policy">policy</span>
+<p class="text-[11px] text-secondary leading-snug">
+<strong class="text-on-surface font-semibold">Garantía de Transparencia:</strong> No somos tienda ni procesamos pagos. No aceptamos dinero para favorecer ningún comercio en los resultados.
+          </p>
+</div>
+</section>
+<!-- App Micro Footer Note -->
+<footer class="pt-2 pb-6 text-center space-y-1">
+<p class="text-[11px] text-secondary font-body-sm">
+          © 2025 PricePeek Costa Rica. Plataforma imparcial de comparación de precios e inteligencia de consumo independiente.
+        </p>
+<div class="flex justify-center gap-3 text-[11px] text-secondary underline">
+<a href="#">Metodología de precios</a>
+<span>•</span>
+<a href="#">Privacidad del consumidor</a>
+</div>
+</footer>
+</main>
+<!-- Fixed Mobile Bottom Tab Bar (CRITICAL MANDATE) -->
+<!-- Contains: "Inicio", "Buscar", "Categorías", "Lista de deseos", "Perfil" -->
+<!-- Active State Logic: Screen is "Inicio" (Mobile Home), marked active with exact JSON token styles -->
+<nav aria-label="Navegación principal" class="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
+<div class="max-w-[440px] mx-auto h-16 px-4 flex items-center justify-between">
+<!-- Tab 1: Inicio (ACTIVE) -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-on-surface font-bold relative after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary-container after:rounded-full" href="#">
+<span class="material-symbols-outlined text-[22px] text-on-surface" data-icon="home" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[11px] tracking-tight mt-0.5">Inicio</span>
+</a>
+<!-- Tab 2: Buscar (INACTIVE) -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-secondary hover:text-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="search">search</span>
+<span class="text-[11px] tracking-tight mt-0.5 font-medium">Buscar</span>
+</a>
+<!-- Tab 3: Categorías (INACTIVE) -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-secondary hover:text-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="grid_view">grid_view</span>
+<span class="text-[11px] tracking-tight mt-0.5 font-medium">Categorías</span>
+</a>
+<!-- Tab 4: Lista de deseos (INACTIVE) -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-secondary hover:text-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="favorite">favorite</span>
+<span class="text-[11px] tracking-tight mt-0.5 font-medium">Lista de deseos</span>
+</a>
+<!-- Tab 5: Perfil (INACTIVE) -->
+<a class="flex flex-col items-center justify-center flex-1 py-1 text-secondary hover:text-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[22px]" data-icon="person">person</span>
+<span class="text-[11px] tracking-tight mt-0.5 font-medium">Perfil</span>
+</a>
+</div>
+</nav>
+</div>
+<script src="../js/main.js"></script>
+</body></html>

@@ -1,0 +1,14 @@
+body {
+  background-color: #fbf9f8;
+  color: #1b1c1c;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* base.css centres the icon font inline-block; this screen kept the default inline flow, so it is restored here */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  line-height: 1;
+  display: inline;
+  vertical-align: baseline;
+}

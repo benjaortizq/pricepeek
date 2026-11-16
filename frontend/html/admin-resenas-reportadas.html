@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PricePeek Admin - Moderación de Reseñas Reportadas</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/admin-resenas-reportadas.css">
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex">
+<!-- SIDEBAR NAVIGATION (Shared Component: SideNavBar) -->
+<aside class="fixed top-0 left-0 h-screen w-64 bg-surface-container-lowest border-r border-outline-variant/40 flex flex-col justify-between z-40 shrink-0">
+<div class="p-5 flex flex-col gap-6">
+<!-- Brand & Moderation Subtext -->
+<div class="flex items-center gap-3 px-1">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center border border-outline-variant/30 text-on-surface">
+<span class="material-symbols-outlined text-primary-container fill-icon" style="font-size: 24px;">shield</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md font-bold tracking-tight text-on-surface flex items-center gap-1.5">
+            PricePeek
+            <span class="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">Panel de Moderación CR</p>
+</div>
+</div>
+<!-- Quick Action / CTA -->
+<div class="px-1">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-3 bg-surface-container hover:bg-surface-variant text-on-surface font-body-sm font-semibold rounded-full border border-outline-variant/40 transition-colors">
+<span class="material-symbols-outlined text-primary" style="font-size: 18px;">bolt</span>
+<span>Auditoría Rápida</span>
+</button>
+</div>
+<!-- Navigation tabs -->
+<nav class="flex flex-col gap-1 mt-1">
+<!-- Resumen -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors text-body-md font-body-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Resumen</span>
+</a>
+<!-- Usuarios -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors text-body-md font-body-md" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Usuarios</span>
+</a>
+<!-- Reseñas (Active with exact style_active_navigation mapping) -->
+<a class="bg-surface-container text-on-surface font-bold border-l-4 border-primary pl-3 py-2.5 rounded-r-lg flex items-center justify-between group" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined fill-icon text-primary">rate_review</span>
+<span class="text-body-md font-body-md font-bold">Reseñas</span>
+</div>
+<span class="px-2 py-0.5 rounded-full text-label-badge font-label-badge bg-primary-container text-on-primary-fixed">18</span>
+</a>
+<!-- Publicaciones -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors text-body-md font-body-md" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Publicaciones</span>
+</a>
+<!-- Reportes -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors text-body-md font-body-md" href="#">
+<span class="material-symbols-outlined">flag</span>
+<span>Reportes</span>
+</a>
+</nav>
+</div>
+<!-- Bottom user info and system options -->
+<div class="p-4 border-t border-outline-variant/30 flex flex-col gap-3">
+<div class="flex flex-col gap-1">
+<a class="text-secondary flex items-center gap-3 px-3 py-2 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors text-body-sm font-body-sm" href="#">
+<span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+<span>Ajustes del Sistema</span>
+</a>
+<a class="text-secondary flex items-center gap-3 px-3 py-2 rounded-lg hover:text-error hover:bg-error-container/20 transition-colors text-body-sm font-body-sm" href="#">
+<span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+<span>Cerrar Sesión</span>
+</a>
+</div>
+<!-- Moderator profile -->
+<div class="flex items-center gap-3 p-2.5 bg-surface-container-low rounded-xl border border-outline-variant/30">
+<div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-on-primary-fixed border border-outline-variant/40 shrink-0">
+          CV
+        </div>
+<div class="overflow-hidden">
+<p class="text-body-sm font-body-sm font-bold text-on-surface truncate">Carlos V.</p>
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<p class="text-label-badge font-label-badge text-secondary truncate">Moderador Senior CR</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- MAIN WRAPPER (Offset for fixed 64 (16rem) sidebar) -->
+<div class="flex-1 ml-64 flex flex-col min-w-0">
+<!-- TOP BAR (Shared Component: TopNavBar admin_bar) -->
+<header class="sticky top-0 z-30 w-full bg-surface-container-lowest border-b border-outline-variant/40 flex justify-between items-center px-8 py-3.5">
+<!-- Search & Filters -->
+<div class="flex items-center gap-3 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none" style="font-size: 18px;">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant/40 rounded-full text-body-md font-body-md text-on-surface placeholder:text-secondary focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 outline-none transition-all" placeholder="Buscar por usuario, ID de reseña, producto o tienda..." type="text">
+</div>
+<!-- Costa Rica filter badge -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/40 text-on-surface shrink-0 text-body-sm font-body-sm font-medium">
+<span class="text-sm">🇨🇷</span>
+<span>Costa Rica</span>
+</div>
+</div>
+<!-- Live Algorithm & Trailing Actions -->
+<div class="flex items-center gap-4">
+<!-- Detection active badge -->
+<div class="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-tertiary/10 border border-tertiary/30 text-tertiary text-body-sm font-body-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span>Algoritmo de Detección Activo</span>
+</div>
+<div class="h-6 w-px bg-outline-variant/30 hidden md:block"></div>
+<!-- Action cluster -->
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container transition-colors relative" title="Notificaciones">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Escudo de Integridad">
+<span class="material-symbols-outlined">shield_with_heart</span>
+</button>
+<button class="p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="Ayuda">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+<!-- Trailing Primary Action -->
+<button class="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low text-on-surface rounded-full text-body-md font-body-md font-semibold transition-colors">
+<span class="material-symbols-outlined text-secondary" style="font-size: 18px;">download</span>
+<span>Exportar Auditoría</span>
+</button>
+</div>
+</header>
+<!-- CONTENT CANVAS -->
+<main class="p-8 flex flex-col gap-6 max-w-[1500px]">
+<!-- HEADER & BREADCRUMBS -->
+<div>
+<nav class="flex items-center gap-2 text-label-badge font-label-badge text-secondary mb-2">
+<span>PricePeek Admin</span>
+<span class="material-symbols-outlined" style="font-size: 14px;">chevron_right</span>
+<span>Moderación</span>
+<span class="material-symbols-outlined" style="font-size: 14px;">chevron_right</span>
+<span class="text-on-surface font-bold">Reseñas Reportadas</span>
+</nav>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="text-headline-lg font-headline-lg font-bold text-on-surface tracking-tight">
+              Moderación y Auditoría de Reseñas
+            </h1>
+<p class="text-body-md font-body-md text-secondary mt-1 max-w-3xl">
+              Control de autenticidad, lenguaje apropiado y verificación de tickets o fotos de compra en comercios de Costa Rica.
+            </p>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="text-body-sm font-body-sm text-secondary">Última actualización: <strong>Hace 3 min</strong></span>
+<button class="p-1.5 rounded-full hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" title="Refrescar">
+<span class="material-symbols-outlined" style="font-size: 18px;">refresh</span>
+</button>
+</div>
+</div>
+</div>
+<!-- KPI METRIC CARDS (Bento Row) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-secondary">En cola de revisión</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-size: 18px;">pending_actions</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="text-price-hero font-price-hero text-on-surface">18</div>
+<div class="text-body-sm font-body-sm text-secondary mt-1 flex items-center gap-1.5">
+<span class="text-error font-semibold flex items-center text-label-badge font-label-badge">
+<span class="material-symbols-outlined" style="font-size: 14px;">arrow_upward</span> +3
+              </span>
+<span>frente a ayer</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-secondary">Detección Automática</span>
+<div class="w-8 h-8 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" style="font-size: 18px;">smart_toy</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="text-price-hero font-price-hero text-on-surface">94.8%</div>
+<div class="text-body-sm font-body-sm text-tertiary mt-1 flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span>
+<span>Filtro heurístico activo</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-secondary">Tiempo prom. resolución</span>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" style="font-size: 18px;">schedule</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="text-price-hero font-price-hero text-on-surface">12 min</div>
+<div class="text-body-sm font-body-sm text-secondary mt-1">
+              Meta del SLA: &lt; 20 min
+            </div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-secondary">Eliminadas este mes</span>
+<div class="w-8 h-8 rounded-full bg-error-container/40 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-size: 18px;">block</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="text-price-hero font-price-hero text-on-surface">32</div>
+<div class="text-body-sm font-body-sm text-secondary mt-1">
+              Por spam o ticket alterado
+            </div>
+</div>
+</div>
+</div>
+<!-- ACTION BAR & FILTER CHIPS -->
+<div class="bg-surface-container-lowest p-3.5 rounded-2xl border border-outline-variant/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<!-- Filter chips group -->
+<div class="flex items-center gap-2 flex-wrap">
+<!-- Todas (Active) -->
+<button class="px-3.5 py-1.5 rounded-full bg-on-surface text-surface-container-lowest text-body-sm font-body-sm font-bold flex items-center gap-1.5 transition-all">
+<span>Todas las reportadas</span>
+<span class="bg-surface-container-lowest/20 text-surface-container-lowest px-1.5 py-0.2 rounded-full text-label-badge font-label-badge">18</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface text-body-sm font-body-sm font-medium flex items-center gap-1.5 transition-colors">
+<span>Spam / Bot</span>
+<span class="text-secondary text-label-badge font-label-badge">(5)</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface text-body-sm font-body-sm font-medium flex items-center gap-1.5 transition-colors">
+<span>Lenguaje Inapropiado</span>
+<span class="text-secondary text-label-badge font-label-badge">(4)</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface text-body-sm font-body-sm font-medium flex items-center gap-1.5 transition-colors">
+<span>Foto Falsa / Catálogo</span>
+<span class="text-secondary text-label-badge font-label-badge">(6)</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface text-body-sm font-body-sm font-medium flex items-center gap-1.5 transition-colors">
+<span>Discrepancia de Precio</span>
+<span class="text-secondary text-label-badge font-label-badge">(3)</span>
+</button>
+</div>
+<!-- Batch & Secondary Actions -->
+<div class="flex items-center gap-3 shrink-0">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-low hover:bg-surface-container border border-outline-variant/40 text-on-surface rounded-full text-body-sm font-body-sm font-medium transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">filter_list</span>
+<span>Filtros avanzados</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-1.5 bg-primary-container text-on-primary-fixed hover:bg-primary-container/90 rounded-full text-body-sm font-body-sm font-bold transition-all shadow-sm">
+<span class="material-symbols-outlined fill-icon" style="font-size: 16px;">verified</span>
+<span>Aprobar lote verificado</span>
+</button>
+</div>
+</div>
+<!-- MAIN REPORTED REVIEWS DATA TABLE -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/70 border-b border-outline-variant/30 text-secondary text-label-badge font-label-badge">
+<th class="py-3 px-4 w-10 text-center">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</th>
+<th class="py-3 px-4">ID Y FECHA</th>
+<th class="py-3 px-4">PRODUCTO Y TIENDA (CR)</th>
+<th class="py-3 px-4">CALIFICACIÓN</th>
+<th class="py-3 px-4 w-72">TEXTO DE RESEÑA Y USUARIO</th>
+<th class="py-3 px-4 text-center">EVIDENCIA FOTO</th>
+<th class="py-3 px-4 text-center">REPORTES</th>
+<th class="py-3 px-4">ESTADO</th>
+<th class="py-3 px-4 text-right">ACCIONES</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 font-body-md text-body-md">
+<!-- ROW 1 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4 text-center align-middle">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-9402</span>
+<div class="text-body-sm font-body-sm text-secondary mt-0.5">Hoy, 10:42 AM</div>
+</td>
+<td class="py-4 px-4 align-top">
+<div class="font-bold text-on-surface line-clamp-1">Refrigeradora Samsung 300L</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="text-body-sm font-body-sm font-medium text-secondary">Gollo Zapote</span>
+<span class="text-secondary text-xs">• ₡289.900</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<div class="flex items-center text-primary-container font-semibold text-sm">
+<span>★☆☆☆☆</span>
+<span class="text-secondary font-label-badge text-xs ml-1">(1.0)</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top">
+<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">
+                    "Pésima experiencia en Gollo, me cobraron ₡45.000 extra diciendo que era seguro obligatorio. El vendedor fue un estafador total."
+                  </p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-xs font-bold text-on-surface">Mariana Solano</span>
+<span class="text-xs text-secondary">• m.solanocr@gmail.com</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-secondary text-[10px] font-label-badge">Verificado</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center">
+<div class="relative group inline-block cursor-pointer">
+<div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A clean top-down photograph of a physical printed paper receipt from a Costa Rican retail store Gollo Zapote showing itemized electronic appliance pricing, soft clean diffused indoor lighting, crisp contrast, warm neutral tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAF-r7ITitu0PCgOkSAF9tjcT-pqXvavoIyBS1erErvfNeiEH88mSNNxAfvJCzS2w0lkpj4NCK5CnwSLNHIK2ISYXUP_azyDFxqgSmEr18CPLdnHvGoy_v07u74gCTLDKf-5t8S-JunY3gENVaXoe5Plz2Ig2356SQNAwkbxaW1RE8NCGgR6bnY5-7ufiDHWzVBQOJ0DrEL7hMrzPdSVoEEm_nXOv2ucMlQsH2dxEQCrqYEwD_vkbGj">
+</div>
+<span class="absolute -bottom-1 -right-1 bg-surface-container-lowest border border-outline-variant/50 rounded-full p-0.5 text-secondary">
+<span class="material-symbols-outlined" style="font-size: 12px;">receipt_long</span>
+</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20">
+<span class="material-symbols-outlined" style="font-size: 12px;">flag</span>
+                    4 reportes
+                  </span>
+<div class="text-[11px] text-secondary mt-1">Acusación difamatoria</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-badge font-label-badge border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                    En Revisión
+                  </span>
+</td>
+<td class="py-4 px-4 align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/50 rounded-full text-body-sm font-body-sm font-semibold text-on-surface transition-colors" title="Aprobar reseña">
+<span class="material-symbols-outlined text-tertiary" style="font-size: 16px;">check</span>
+<span>Aprobar</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-error/30 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Eliminar reseña">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors bg-surface-container-low/20">
+<td class="py-4 px-4 text-center align-middle">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-9398</span>
+<div class="text-body-sm font-body-sm text-secondary mt-0.5">Hoy, 09:15 AM</div>
+</td>
+<td class="py-4 px-4 align-top">
+<div class="font-bold text-on-surface line-clamp-1">Freidora de Aire Philips XL</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="text-body-sm font-body-sm font-medium text-secondary">Walmart Escazú</span>
+<span class="text-secondary text-xs">• ₡54.900</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<div class="flex items-center text-primary-container font-semibold text-sm">
+<span>★★★★★</span>
+<span class="text-secondary font-label-badge text-xs ml-1">(5.0)</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top">
+<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">
+                    "Gana dinero desde casa con criptomonedas y compra electrodomésticos gratis! Entra a este enlace t.me/cr_promo_fácil garantizado."
+                  </p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-xs font-bold text-on-surface">Bot_User882</span>
+<span class="text-xs text-secondary">• cripto_free@outlook.com</span>
+<span class="px-1.5 py-0.2 rounded bg-error-container/40 text-error text-[10px] font-label-badge">Sospechoso</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center">
+<div class="relative group inline-block cursor-pointer">
+<div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A generic stock product advertising graphic of a modern black air fryer floating on a crisp plain white studio background, high key studio lighting, professional clean minimalist commercial aesthetic with no human interaction" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB1Ta-jZ1O1GGmV92TgwMiOgIHqHHnZh__r1lDmiUTqxqlnp2p_mJDm7sAblOwZHXvenREX4b6t_sBKG0ZdAdfIDi604IXex9Z7xd_SreZKq50P--54fstyY2KxDkKtxCsBDPhjpm7050LAtbke-_qNVi-r-jvN8KHALj29kgZ0sGaguPJgVRfjfuKfWBLm_SNhwzlFFs8DQ0cPe7_FVeyMH6TgogtVsxnTKxdn3Obhx_Vx-yCNPEP">
+</div>
+<span class="absolute -bottom-1 -right-1 bg-error-container text-error rounded-full p-0.5 border border-error/30">
+<span class="material-symbols-outlined" style="font-size: 12px;">broken_image</span>
+</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error text-on-error text-label-badge font-label-badge">
+<span class="material-symbols-outlined fill-icon" style="font-size: 12px;">warning</span>
+                    7 reportes
+                  </span>
+<div class="text-[11px] text-error font-medium mt-1">Bot / Phishing link</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-error-container/50 text-error text-label-badge font-label-badge border border-error/30 font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                    Alerta Crítica
+                  </span>
+</td>
+<td class="py-4 px-4 align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/50 rounded-full text-body-sm font-body-sm font-semibold text-on-surface transition-colors" title="Aprobar reseña">
+<span class="material-symbols-outlined text-tertiary" style="font-size: 16px;">check</span>
+<span>Aprobar</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-error text-on-error hover:bg-error/90 rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Eliminar reseña inmediatamente">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete_forever</span>
+<span>Eliminar</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4 text-center align-middle">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-9387</span>
+<div class="text-body-sm font-body-sm text-secondary mt-0.5">Ayer, 18:30 PM</div>
+</td>
+<td class="py-4 px-4 align-top">
+<div class="font-bold text-on-surface line-clamp-1">Smart TV LG 55" 4K UHD</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="text-body-sm font-body-sm font-medium text-secondary">Monge Alajuela</span>
+<span class="text-secondary text-xs">• ₡265.000</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<div class="flex items-center text-primary-container font-semibold text-sm">
+<span>★★★★☆</span>
+<span class="text-secondary font-label-badge text-xs ml-1">(4.0)</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top">
+<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">
+                    "Excelente tele pero ojo con la garantía extendida de Monge, insisten demasiado. Adjunto foto de la factura para probar que me costó 265 mil."
+                  </p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-xs font-bold text-on-surface">Esteban Vargas Q.</span>
+<span class="text-xs text-secondary">• evargas_cr@ice.co.cr</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-secondary text-[10px] font-label-badge">Cliente Antiguo</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center">
+<div class="relative group inline-block cursor-pointer">
+<div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A realistic user captured smartphone camera picture showing an unboxed smart flat television screen installed on a neutral living room wall with authentic ambient indoor domestic lighting in Costa Rica" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsaIjxuzJUn2ZVvM32GPVAlqTpECUWWSiqBemEZxPYYAxXJzeKpB3tvqkKHH5rlIgNdnhn9iJTaBk6VCsEuBI0OnxkJP3YttUeBtZqK44yBITVoTcnKC9uSmUqUzHqBnYoJxNgrDUFc9Os4XhTUTw5ITc1oH2s0dWverlpTkKhQzNYavfcfUb6-dCpDho1fXtjx13P1HYczp_c0YtQqjTVTumt_KfGhV1OOmM7Cj39httL_W5ViSIT">
+</div>
+<span class="absolute -bottom-1 -right-1 bg-surface-container-lowest border border-outline-variant/50 rounded-full p-0.5 text-tertiary">
+<span class="material-symbols-outlined fill-icon" style="font-size: 12px;">verified</span>
+</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-secondary text-label-badge font-label-badge border border-outline-variant/40">
+<span class="material-symbols-outlined" style="font-size: 12px;">flag</span>
+                    2 reportes
+                  </span>
+<div class="text-[11px] text-secondary mt-1">Reportado por comercio</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface text-label-badge font-label-badge border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    Pendiente
+                  </span>
+</td>
+<td class="py-4 px-4 align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-container text-on-primary-fixed hover:bg-primary-container/90 rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Aprobar reseña legítima">
+<span class="material-symbols-outlined" style="font-size: 16px;">check</span>
+<span>Aprobar</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-outline-variant/50 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Eliminar reseña">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4 text-center align-middle">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-9372</span>
+<div class="text-body-sm font-body-sm text-secondary mt-0.5">Ayer, 14:10 PM</div>
+</td>
+<td class="py-4 px-4 align-top">
+<div class="font-bold text-on-surface line-clamp-1">Microondas Panasonic Inverter</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="text-body-sm font-body-sm font-medium text-secondary">PriceSmart Escazú</span>
+<span class="text-secondary text-xs">• ₡79.995</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<div class="flex items-center text-primary-container font-semibold text-sm">
+<span>★☆☆☆☆</span>
+<span class="text-secondary font-label-badge text-xs ml-1">(1.0)</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top">
+<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">
+                    "En PriceSmart la membresía no sirve para nada, unos ladrones de m*****. Producto dañado el primer día."
+                  </p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-xs font-bold text-on-surface">Usuario Anónimo</span>
+<span class="text-xs text-secondary">• anon_821@proton.me</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-secondary text-[10px] font-label-badge">Sin Foto Perfil</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center">
+<div class="w-12 h-12 rounded-lg border border-dashed border-outline-variant/50 bg-surface-container-low flex flex-col items-center justify-center text-secondary/60 mx-auto">
+<span class="material-symbols-outlined" style="font-size: 18px;">no_photography</span>
+<span class="text-[9px] font-label-badge">Sin foto</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20">
+<span class="material-symbols-outlined" style="font-size: 12px;">flag</span>
+                    5 reportes
+                  </span>
+<div class="text-[11px] text-secondary mt-1">Lenguaje ofensivo</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-badge font-label-badge border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                    En Revisión
+                  </span>
+</td>
+<td class="py-4 px-4 align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/50 rounded-full text-body-sm font-body-sm font-semibold text-on-surface transition-colors" title="Aprobar reseña">
+<span class="material-symbols-outlined text-tertiary" style="font-size: 16px;">check</span>
+<span>Aprobar</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-error/30 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Eliminar por insultos">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4 text-center align-middle">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-9365</span>
+<div class="text-body-sm font-body-sm text-secondary mt-0.5">24 Oct, 11:20 AM</div>
+</td>
+<td class="py-4 px-4 align-top">
+<div class="font-bold text-on-surface line-clamp-1">Cafetera Espresso Oster Prima Latte</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="text-body-sm font-body-sm font-medium text-secondary">Siman Multiplaza</span>
+<span class="text-secondary text-xs">• ₡119.000</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<div class="flex items-center text-primary-container font-semibold text-sm">
+<span>★★★★★</span>
+<span class="text-secondary font-label-badge text-xs ml-1">(5.0)</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top">
+<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">
+                    "La conseguí con descuento en Siman pero en la app decía ₡99.000 y en caja me cobraron ₡119.000. Cuidado con la oferta mostrada en PricePeek."
+                  </p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-xs font-bold text-on-surface">Karla Brenes</span>
+<span class="text-xs text-secondary">• kbrenes_cr@gmail.com</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-secondary text-[10px] font-label-badge">Verificado</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center">
+<div class="relative group inline-block cursor-pointer">
+<div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A smartphone shot of a shelf price label inside a department store in Costa Rica showing a red promotional price sticker on clean polished retail fixture, natural warm store lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9eYDgI2knA6TaUymWXeeO91s6g7cKFzEcGRoJQeh-1R-16QmpIJNnka8iNOl1EeY6-jH3KGnNUx9GFTYgsfYM9Q_3YyT8PJ1G6GrRq5FpSN1yz3Hs4nBAazY9L-tiUH9ljvfTJpY1jaGtYT4gPZ2zS3ajcB8z55yB96qyq1ltvCo3EcldtojFdCHfuxbBpMBpp9F8xl2Gdq7jymN5Hn1oKpMZTKMqb86Au0OjMPV1RsBK71hM5PVf">
+</div>
+<span class="absolute -bottom-1 -right-1 bg-surface-container-lowest border border-outline-variant/50 rounded-full p-0.5 text-secondary">
+<span class="material-symbols-outlined" style="font-size: 12px;">sell</span>
+</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-secondary text-label-badge font-label-badge border border-outline-variant/40">
+<span class="material-symbols-outlined" style="font-size: 12px;">flag</span>
+                    3 reportes
+                  </span>
+<div class="text-[11px] text-secondary mt-1">Discrepancia precio</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface text-label-badge font-label-badge border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                    Pendiente
+                  </span>
+</td>
+<td class="py-4 px-4 align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/50 rounded-full text-body-sm font-body-sm font-semibold text-on-surface transition-colors" title="Aprobar reseña">
+<span class="material-symbols-outlined text-tertiary" style="font-size: 16px;">check</span>
+<span>Aprobar</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-outline-variant/50 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Eliminar reseña">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 6 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4 text-center align-middle">
+<input class="rounded border-outline-variant/50 text-primary-container focus:ring-0" type="checkbox">
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-9351</span>
+<div class="text-body-sm font-body-sm text-secondary mt-0.5">24 Oct, 08:45 AM</div>
+</td>
+<td class="py-4 px-4 align-top">
+<div class="font-bold text-on-surface line-clamp-1">Consola PlayStation 5 Slim</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="inline-block w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="text-body-sm font-body-sm font-medium text-secondary">ExtremeTech San José</span>
+<span class="text-secondary text-xs">• ₡360.000</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<div class="flex items-center text-primary-container font-semibold text-sm">
+<span>★★★★★</span>
+<span class="text-secondary font-label-badge text-xs ml-1">(5.0)</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top">
+<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">
+                    "La mejor tienda de gaming del país, entrega el mismo día por mensajería en Tibás. Súper recomendado el combo con dos mandos."
+                  </p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-xs font-bold text-on-surface">Rodrigo Salazar</span>
+<span class="text-xs text-secondary">• r.salazar89@gmail.com</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-secondary text-[10px] font-label-badge">Verificado</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center">
+<div class="relative group inline-block cursor-pointer">
+<div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="An authentic customer photo of a pristine gaming console box sitting on a light wooden table inside a bright modern Costa Rican apartment room, natural soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRSB1k_1V-beIhIm_08lMHrfg4Gg4_HhQaCEBAgiTUPiqxgQgSSifV9mbQBpMmVTxpUOQTwYnLieSSgtj60GpBs13eDh3B7DGSWQK_8Ug1Z3J0-42marU9p4MozH7dK0Z_PM14QeduHSCFOAHatqpL879XNctIdtFjhQccOJj5OKIj03mf3uQ41cmbIO05laLLywqP7cItwpfsqwnkvHwab0cIh93_YNb49amPNefe-rV3IUXfyJiF">
+</div>
+<span class="absolute -bottom-1 -right-1 bg-surface-container-lowest border border-outline-variant/50 rounded-full p-0.5 text-secondary">
+<span class="material-symbols-outlined" style="font-size: 12px;">photo_camera</span>
+</span>
+</div>
+</td>
+<td class="py-4 px-4 align-top text-center whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-secondary text-label-badge font-label-badge border border-outline-variant/40">
+<span class="material-symbols-outlined" style="font-size: 12px;">flag</span>
+                    1 reporte
+                  </span>
+<div class="text-[11px] text-secondary mt-1">Sospecha de autopromoción</div>
+</td>
+<td class="py-4 px-4 align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-badge font-label-badge border border-outline-variant/40">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                    En Revisión
+                  </span>
+</td>
+<td class="py-4 px-4 align-top text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/50 rounded-full text-body-sm font-body-sm font-semibold text-on-surface transition-colors" title="Aprobar reseña">
+<span class="material-symbols-outlined text-tertiary" style="font-size: 16px;">check</span>
+<span>Aprobar</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-outline-variant/50 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" title="Eliminar reseña">
+<span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+<span>Eliminar</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- TABLE PAGINATION FOOTER -->
+<div class="px-6 py-4 bg-surface-container-lowest border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="text-body-sm font-body-sm text-secondary">
+            Mostrando <span class="font-bold text-on-surface">1-6</span> de <span class="font-bold text-on-surface">18</span> reseñas reportadas
+          </div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full border border-outline-variant/40 text-secondary hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined" style="font-size: 18px;">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-on-surface text-surface-container-lowest text-body-sm font-body-sm font-bold flex items-center justify-center">
+              1
+            </button>
+<button class="w-8 h-8 rounded-full border border-outline-variant/40 hover:bg-surface-container text-body-sm font-body-sm font-medium flex items-center justify-center transition-colors">
+              2
+            </button>
+<button class="w-8 h-8 rounded-full border border-outline-variant/40 hover:bg-surface-container text-body-sm font-body-sm font-medium flex items-center justify-center transition-colors">
+              3
+            </button>
+<button class="p-2 rounded-full border border-outline-variant/40 text-secondary hover:text-on-surface hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" style="font-size: 18px;">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script src="../js/main.js"></script>
+</body></html>

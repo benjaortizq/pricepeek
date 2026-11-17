@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "accounts",
     "products",
     "reviews",
+    "ingestion",
 ]
 AUTH_USER_MODEL = "accounts.User"
 

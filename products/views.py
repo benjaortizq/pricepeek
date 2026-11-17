@@ -123,7 +123,7 @@ def detalle_producto(request, pk):
                         )
                         photo = review_form.cleaned_data["photo"]
                         if photo:
-                            review_photo = ReviewPhoto(review_id=resena.pk)
+                            review_photo = ReviewPhoto(review_id=resena)
                             review_photo.image.save(photo.name, photo, save=False)
                             stored_photo_name = review_photo.image.name
                             review_photo.save()
@@ -231,6 +231,8 @@ def buscar(request):
     marca = _parametro_de_consulta(
         request, "marca", "brand", "marca_id", "brand_id"
     )
+    categoria_actual = _categoria_por_filtro(categoria)
+    marca_actual = _marca_por_filtro(marca)
     productos = buscar_productos_con_filtros(palabra, categoria, marca)
     pagina = Paginator(productos, PRODUCTOS_POR_PAGINA).get_page(
         request.GET.get("pagina")
@@ -240,8 +242,12 @@ def buscar(request):
         "products/buscar.html",
         {
             "palabra": palabra,
-            "categoria_seleccionada": categoria or "",
-            "marca_seleccionada": marca or "",
+            "categoria_seleccionada": (
+                str(categoria_actual.pk) if categoria_actual is not None else ""
+            ),
+            "marca_seleccionada": (
+                str(marca_actual.pk) if marca_actual is not None else ""
+            ),
             "categorias": Categories.objects.order_by("name"),
             "marcas": Brands.objects.order_by("name"),
             "pagina": pagina,
@@ -268,6 +274,44 @@ def _valor_de_filtro(valor):
     return valor
 
 
+def _categoria_por_filtro(categoria):
+    """Resuelve una categoría por ID o nombre para canonicalizar la URL."""
+    categoria = _valor_de_filtro(categoria)
+    if categoria is None:
+        return None
+    if isinstance(categoria, Categories):
+        return categoria
+
+    texto = str(categoria)
+    if texto.isdecimal():
+        por_id = Categories.objects.filter(pk=int(texto)).first()
+        if por_id is not None:
+            return por_id
+
+    return Categories.objects.filter(name__iexact=texto).order_by("name").first()
+
+
+def _marca_por_filtro(marca):
+    """Resuelve una marca por ID, nombre o slug para canonicalizar la URL."""
+    marca = _valor_de_filtro(marca)
+    if marca is None:
+        return None
+    if isinstance(marca, Brands):
+        return marca
+
+    texto = str(marca)
+    if texto.isdecimal():
+        por_id = Brands.objects.filter(pk=int(texto)).first()
+        if por_id is not None:
+            return por_id
+
+    return (
+        Brands.objects.filter(Q(name__iexact=texto) | Q(slug__iexact=texto))
+        .order_by("name")
+        .first()
+    )
+
+
 def filtrar_por_categoria(queryset: QuerySet, categoria=None) -> QuerySet:
     """Filtra Products o ProductVariants opcionalmente por categoría.
 
@@ -282,7 +326,7 @@ def filtrar_por_categoria(queryset: QuerySet, categoria=None) -> QuerySet:
         return queryset.filter(**{f"{prefijo}category": categoria})
 
     texto = str(categoria)
-    if texto.isdecimal():
+    if texto.isdecimal() and Categories.objects.filter(pk=int(texto)).exists():
         return queryset.filter(**{f"{prefijo}category_id": int(texto)})
 
     return queryset.filter(**{f"{prefijo}category__name__iexact": texto})
@@ -303,7 +347,7 @@ def filtrar_por_marca(queryset: QuerySet, marca=None) -> QuerySet:
         return queryset.filter(**{f"{prefijo}brand": marca})
 
     texto = str(marca)
-    if texto.isdecimal():
+    if texto.isdecimal() and Brands.objects.filter(pk=int(texto)).exists():
         return queryset.filter(**{f"{prefijo}brand_id": int(texto)})
 
     return queryset.filter(
@@ -381,7 +425,7 @@ def _serializar_precio(precio: Prices) -> dict:
         "tienda": precio.id_store.name.strip(),
         "precio": float(precio.final_price),
         "moneda": precio.currency.symbol,
-        "descuento": float(precio.discount),
+        "descuento": float(precio.discount or 0),
         "disponible": precio.is_available,
         "url": precio.product_web_url,
     }

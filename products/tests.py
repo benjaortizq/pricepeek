@@ -77,6 +77,8 @@ class CatalogoTestCase(TestCase):
             created_at=ahora,
             updated_at=ahora,
         )
+        cls.dos_pinos = marca
+        cls.lacteos = categoria
         cls.producto = Products.objects.create(
             name="Leche entera 1L",
             description="Leche entera pasteurizada.",
@@ -85,6 +87,7 @@ class CatalogoTestCase(TestCase):
             created_at=ahora,
             updated_at=ahora,
         )
+        cls.leche = cls.producto
         cls.variante = ProductVariants.objects.create(
             product=cls.producto,
             gtin="7441001234567",
@@ -92,6 +95,7 @@ class CatalogoTestCase(TestCase):
             created_at=ahora,
             updated_at=ahora,
         )
+        cls.variante_leche = cls.variante
         ProductImages.objects.create(
             variant=cls.variante,
             image_url="https://img.test/secundaria.png",
@@ -109,7 +113,35 @@ class CatalogoTestCase(TestCase):
             updated_at=ahora,
         )
 
-        moneda = Currencies.objects.create(
+        cls.heinz = Brands.objects.create(
+            name="Kraft Heinz",
+            slug="kraft-heinz",
+            logo_url="https://img.test/kraft-heinz.png",
+            created_at=ahora,
+            updated_at=ahora,
+        )
+        cls.salsas = Categories.objects.create(
+            name="Salsas",
+            created_at=ahora,
+            updated_at=ahora,
+        )
+        cls.ketchup = Products.objects.create(
+            name="Salsa de tomate",
+            description="Salsa de tomate Ketchup.",
+            brand=cls.heinz,
+            category=cls.salsas,
+            created_at=ahora,
+            updated_at=ahora,
+        )
+        cls.variante_ketchup = ProductVariants.objects.create(
+            product=cls.ketchup,
+            gtin="7441009876543",
+            name="Salsa de tomate",
+            created_at=ahora,
+            updated_at=ahora,
+        )
+
+        cls.moneda = Currencies.objects.create(
             name="Colón costarricense",
             symbol="₡",
             created_at=ahora,
@@ -140,13 +172,35 @@ class CatalogoTestCase(TestCase):
                 is_available=disponible,
                 created_at=ahora,
                 updated_at=ahora,
-                currency=moneda,
+                currency=cls.moneda,
                 product_web_url=f"https://tienda.test/{precio}",
                 discount=0,
             )
 
     def url(self, pk=None):
         return reverse("detalle_producto", kwargs={"pk": pk or self.producto.pk})
+
+    def precio(self, variante, tienda, precio, descuento=0, disponible=True):
+        return Prices.objects.create(
+            id_store=tienda,
+            gtin=variante,
+            price=precio,
+            is_available=disponible,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+            currency=self.moneda,
+            product_web_url=f"https://tienda.test/{variante.gtin}",
+            discount=Decimal(str(descuento)),
+        )
+
+    def crear_producto(self, nombre, marca, categoria):
+        return Products.objects.create(
+            name=nombre,
+            description="",
+            brand=marca,
+            category=categoria,
+            **fechas(),
+        )
 
     def test_muestra_todos_los_detalles_del_producto(self):
         respuesta = self.client.get(self.url())
@@ -272,29 +326,41 @@ class CatalogoTestCase(TestCase):
     def test_lista_el_precio_de_cada_tienda(self):
         walmart = Stores.objects.create(name="Walmart\n", **fechas())
         automercado = Stores.objects.create(name="Automercado\n", **fechas())
-        self.precio(self.variante_leche, walmart, 1760)
-        self.precio(self.variante_leche, automercado, 1940, descuento="0.25")
+        self.precio(self.variante, walmart, 1760)
+        self.precio(self.variante, automercado, 1940, descuento="0.25")
         respuesta = self.client.get(self.url())
         self.assertContains(respuesta, "₡1.760")
-        self.assertContains(respuesta, "₡1.940")
+        self.assertContains(respuesta, "₡1.455")
         self.assertContains(respuesta, "Descuento de 25 %")
         self.assertContains(respuesta, '<span class="font-bold text-on-surface text-body-lg">Walmart</span>', html=False)
         self.assertContains(respuesta, 'href="https://tienda.test/7441001234567"')
         html = respuesta.content.decode()
         self.assertLess(html.index("₡1.455"), html.index("₡1.760"))
+        precios = respuesta.context["precios"]
+        self.assertEqual(
+            {precio.tienda for precio in precios if precio.tienda.startswith("Walmart")},
+            {"Walmart"},
+        )
 
     def test_destaca_el_mejor_precio_disponible(self):
         respuesta = self.client.get(self.url())
 
-        self.assertContains(respuesta, "Mejor precio")
-        self.assertEqual(respuesta.content.decode().count("Mejor precio"), 1)
-        precios = respuesta.context["precios"]
+        html = respuesta.content.decode()
+        self.assertContains(respuesta, "Mejor precio verificado")
+        self.assertEqual(html.count("data-best-price-card"), 1)
+        self.assertEqual(html.count("data-best-price-badge"), 1)
+        precios = list(respuesta.context["precios"])
         disponibles = [precio for precio in precios if precio.is_available]
         self.assertEqual(
             [precio.final for precio in disponibles],
             sorted(precio.final for precio in disponibles),
         )
         self.assertTrue(disponibles[0].es_mejor)
+        self.assertEqual(sum(precio.es_mejor for precio in precios), 1)
+        self.assertEqual(disponibles[0].diferencia_vs_minimo, Decimal("0"))
+        mas_caro = next(precio for precio in disponibles if precio.final == 2500)
+        self.assertEqual(mas_caro.diferencia_vs_minimo, Decimal("500"))
+        self.assertAlmostEqual(float(mas_caro.diferencia_porcentaje), 25.0, places=2)
         self.assertEqual(
             [precio.final for precio in precios],
             [2000, 2000, 2500, 1000],
@@ -313,10 +379,16 @@ class CatalogoTestCase(TestCase):
 
         respuesta = self.client.get(self.url())
 
-        self.assertEqual(respuesta.content.decode().count("Mejor precio"), 2)
+        html = respuesta.content.decode()
+        self.assertEqual(html.count("data-best-price-card"), 2)
+        self.assertEqual(html.count("data-best-price-badge"), 2)
         precios = respuesta.context["precios"]
         mejores = {precio.gtin_id for precio in precios if precio.es_mejor}
         self.assertEqual(mejores, {self.variante.gtin, otra_variante.gtin})
+        self.assertEqual(
+            [precio.gtin_id for precio in precios],
+            [self.variante.gtin] * 4 + [otra_variante.gtin],
+        )
         precios_por_gtin = {}
         for precio in precios:
             precios_por_gtin.setdefault(precio.gtin_id, []).append(precio)
@@ -331,7 +403,7 @@ class CatalogoTestCase(TestCase):
 
     def test_indica_precios_no_disponibles(self):
         tienda = Stores.objects.create(name="Peri", **fechas())
-        self.precio(self.variante_leche, tienda, None, disponible=False)
+        self.precio(self.variante, tienda, None, disponible=False)
         respuesta = self.client.get(self.url())
         self.assertContains(respuesta, "No disponible")
         self.assertContains(respuesta, "Sin precio")
@@ -339,8 +411,8 @@ class CatalogoTestCase(TestCase):
     def test_producto_sin_precios_lo_indica(self):
         producto = Products.objects.create(
             name="Arroz",
-            brand=self.dos_pinos,
-            category=self.lacteos,
+            brand=self.producto.brand,
+            category=self.producto.category,
             **fechas(),
         )
         respuesta = self.client.get(self.url(producto.pk))
@@ -398,7 +470,7 @@ class BuscarProductosTests(CatalogoTestCase):
     def test_filtra_por_nombres_numericos_cuando_no_son_ids(self):
         categoria = Categories.objects.create(name="2024", **fechas())
         marca = Brands.objects.create(name="Marca 2024", slug="2024", **fechas())
-        producto = self.producto("Producto 2024", marca, categoria)
+        producto = self.crear_producto("Producto 2024", marca, categoria)
 
         productos = buscar_productos_con_filtros(
             "2024", categoria="2024", marca="2024"
@@ -483,7 +555,7 @@ class PaginaBusquedaTests(CatalogoTestCase):
 
     def test_los_resultados_se_paginan_de_24_en_24(self):
         for i in range(25):
-            self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+            self.crear_producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
         primera = self.client.get(reverse("buscar_productos"), {"q": "yogur"})
         self.assertEqual(len(primera.context["productos"]), 24)
         self.assertContains(primera, "Página 1 de 2")
@@ -492,7 +564,7 @@ class PaginaBusquedaTests(CatalogoTestCase):
 
     def test_la_paginacion_conserva_categoria_y_marca(self):
         for i in range(25):
-            self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+            self.crear_producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
 
         respuesta = self.client.get(
             reverse("buscar_productos"),

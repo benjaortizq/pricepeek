@@ -5,15 +5,31 @@ from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.db.models import (
+    BooleanField,
+    Case,
+    CharField,
     DecimalField,
+    Exists,
     ExpressionWrapper,
     F,
+    IntegerField,
+    OuterRef,
     Q,
     QuerySet,
+    Subquery,
     Value,
+    When,
     Window,
 )
-from django.db.models.functions import Coalesce, Rank
+from django.db.models.functions import (
+    Cast,
+    Coalesce,
+    NullIf,
+    Rank,
+    Replace,
+    Round,
+    Trim,
+)
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -33,17 +49,113 @@ from .models import (
 )
 
 
+def _expresion_precio_final() -> ExpressionWrapper:
+    """Expresión SQL reutilizable para calcular el precio con descuento."""
+    return ExpressionWrapper(
+        F("price")
+        * (
+            Value(Decimal("1"))
+            - Coalesce(F("discount"), Value(Decimal("0")))
+        ),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+
 def _anotar_precio_final(queryset: QuerySet) -> QuerySet:
     """Agrega el precio final después de aplicar el descuento."""
-    return queryset.annotate(
-        final_price=ExpressionWrapper(
-            F("price")
-            * (
-                Value(Decimal("1"))
-                - Coalesce(F("discount"), Value(Decimal("0")))
-            ),
-            output_field=DecimalField(max_digits=12, decimal_places=2),
+    return queryset.annotate(final_price=_expresion_precio_final())
+
+
+def _expresion_tienda_limpia() -> ExpressionWrapper:
+    """Normaliza en SQL los saltos de línea que traen algunos nombres."""
+    nombre = Trim("id_store__name")
+    for caracter in ("\r", "\n", "\t"):
+        nombre = Replace(nombre, Value(caracter), Value(""))
+    return ExpressionWrapper(nombre, output_field=CharField(max_length=255))
+
+
+def _existe_precio_mejor_por_gtin() -> QuerySet:
+    """Busca en la base otro precio disponible mejor para el mismo GTIN."""
+    return (
+        Prices.objects.filter(
+            gtin_id=OuterRef("gtin_id"),
+            is_available=True,
+            price__isnull=False,
         )
+        .annotate(final_price_otro=_expresion_precio_final())
+        .filter(
+            Q(final_price_otro__lt=OuterRef("final_price"))
+            | Q(
+                final_price_otro=OuterRef("final_price"),
+                id__lt=OuterRef("id"),
+            )
+        )
+    )
+
+
+def _precio_minimo_disponible_por_gtin() -> QuerySet:
+    """Devuelve el precio disponible más bajo de cada GTIN."""
+    return (
+        Prices.objects.filter(
+            gtin_id=OuterRef("gtin_id"),
+            is_available=True,
+            price__isnull=False,
+        )
+        .annotate(final_price_minimo=_expresion_precio_final())
+        .order_by("final_price_minimo", "id")
+        .values("final_price_minimo")
+    )
+
+
+def _consulta_precios_detalle(producto_id) -> QuerySet:
+    """Prepara en una sola consulta los datos que muestra el detalle."""
+    precios = _anotar_precio_final(
+        Prices.objects.filter(gtin__product_id=producto_id).select_related(
+            "id_store", "currency", "gtin"
+        )
+    ).annotate(
+        final=Cast(Round("final_price"), output_field=IntegerField()),
+        tienda=_expresion_tienda_limpia(),
+    )
+
+    minimo_para_diferencia = Subquery(
+        _precio_minimo_disponible_por_gtin()[:1],
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+    minimo_para_porcentaje = Subquery(
+        _precio_minimo_disponible_por_gtin()[:1],
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    precios = precios.annotate(
+        es_mejor=Case(
+            When(
+                Q(is_available=True)
+                & Q(price__isnull=False)
+                & ~Exists(_existe_precio_mejor_por_gtin()),
+                then=Value(True),
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        diferencia_vs_minimo=ExpressionWrapper(
+            F("final_price") - minimo_para_diferencia,
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        ),
+        diferencia_porcentaje=ExpressionWrapper(
+            (F("final_price") - minimo_para_porcentaje)
+            * Value(Decimal("100"))
+            / NullIf(minimo_para_porcentaje, Value(Decimal("0"))),
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        ),
+    )
+
+    return precios.order_by(
+        "gtin_id",
+        F("is_available").desc(),
+        F("final_price").asc(nulls_last=True),
+        "id_store__name",
+        "id",
     )
 
 
@@ -56,31 +168,8 @@ def detalle_producto(request, pk):
         .first()
     )
     variantes = ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
-    precios = list(
-        _anotar_precio_final(
-            Prices.objects.filter(gtin__product_id=producto.pk).select_related(
-                "id_store", "currency", "gtin"
-            )
-        ).order_by(
-            "gtin_id",
-            F("is_available").desc(),
-            F("final_price").asc(nulls_last=True),
-            "id_store__name",
-            "id",
-        )
-    )
-    for precio in precios:
-        precio.tienda = precio.id_store.name.strip()  # algunos nombres traen un salto de línea
-        if precio.final_price is not None:
-            precio.final = int(round(precio.final_price))
+    precios = _consulta_precios_detalle(producto.pk)
 
-    mejor_por_gtin = {}
-    for precio in precios:
-        if precio.is_available and precio.final_price is not None:
-            mejor_por_gtin.setdefault(precio.gtin_id, precio)
-    for precio in precios:
-        mejor = mejor_por_gtin.get(precio.gtin_id)
-        precio.es_mejor = mejor is not None and mejor.pk == precio.pk
     resenas = (
         Reviews.objects.select_related("variant", "user")
         .filter(variant__product_id=producto.pk)
@@ -211,7 +300,6 @@ def detalle_producto(request, pk):
             "producto": producto,
             "imagen": imagen,
             "variantes": variantes,
-            "precios": precios,
             "precios": precios,
             "resenas": resenas,
             "review_form": review_form,

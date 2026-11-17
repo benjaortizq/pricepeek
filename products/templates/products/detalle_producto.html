@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load precios %}
 
 {% block title %}{{ producto.name }}{% endblock %}
 
@@ -63,11 +64,74 @@
           <span class="text-body-md font-body-md text-secondary">Marca: <strong class="text-on-surface">{{ producto.brand.name }}</strong></span>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/60">
-        <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-4">Descripción del producto</h2>
-        <p class="font-body-lg text-body-lg text-secondary leading-relaxed">{{ producto.description|default:"Sin descripción." }}</p>
+  <section aria-labelledby="precios-heading" class="mb-12">
+    <div class="mb-4">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+        <h2 class="font-headline-md text-headline-md font-extrabold text-on-surface" id="precios-heading">Precios en tiendas de Costa Rica</h2>
       </div>
+      <p class="text-body-sm font-body-sm text-secondary">Precio que reporta cada tienda para este producto.</p>
+    </div>
+
+    {% if precios %}
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 overflow-hidden">
+        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-surface-container-low border-b border-outline-variant/50 text-xs font-bold text-secondary uppercase tracking-wider">
+          <div class="col-span-3">Tienda</div>
+          <div class="col-span-3">Presentación</div>
+          <div class="col-span-2">Disponibilidad</div>
+          <div class="col-span-2 text-right">Precio</div>
+          <div class="col-span-2 text-right">Enlace</div>
+        </div>
+        {% for precio in precios %}
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-6 py-4 items-center border-b border-outline-variant/40 last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
+            <div class="md:col-span-3 flex items-center gap-3">
+              <span class="w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/60 flex items-center justify-center font-bold text-xs text-on-surface uppercase shrink-0">{{ precio.tienda|slice:":2" }}</span>
+              <span class="font-bold text-on-surface text-body-lg">{{ precio.tienda }}</span>
+            </div>
+            <div class="md:col-span-3 text-body-md font-body-md text-on-surface">
+              {{ precio.gtin.name }}
+              <span class="block text-xs text-secondary font-price-row tracking-wider">{{ precio.gtin.gtin }}</span>
+            </div>
+            <div class="md:col-span-2">
+              {% if precio.is_available %}
+                <span class="inline-flex items-center gap-1.5 text-xs text-tertiary font-bold"><span class="w-2 h-2 rounded-full bg-tertiary"></span>Disponible</span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 text-xs text-secondary font-bold"><span class="w-2 h-2 rounded-full bg-outline"></span>No disponible</span>
+              {% endif %}
+            </div>
+            <div class="md:col-span-2 md:text-right">
+              {% if precio.price is not None %}
+                <span class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
+                {% if precio.discount %}
+                  <span class="ml-1 md:ml-0 md:block text-[11px] font-label-badge text-tertiary font-bold">Descuento de {% widthratio precio.discount 1 100 %} %</span>
+                {% endif %}
+              {% else %}
+                <span class="text-body-md font-body-md text-secondary">Sin precio</span>
+              {% endif %}
+            </div>
+            <div class="md:col-span-2 md:text-right">
+              <a class="inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-full border border-outline-variant hover:border-on-surface bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold transition-colors" href="{{ precio.product_web_url }}" rel="noopener noreferrer" target="_blank">
+                <span>Ir a tienda</span>
+                <span class="material-symbols-outlined text-xs">open_in_new</span>
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 p-6 text-body-md font-body-md text-secondary">
+        Todavía no hay precios registrados para este producto.
+      </div>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="descripcion-heading" class="mb-12">
+    <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/60">
+      <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-4" id="descripcion-heading">Descripción del producto</h2>
+      <p class="font-body-lg text-body-lg text-secondary leading-relaxed">{{ producto.description|default:"Sin descripción." }}</p>
     </div>
   </section>
 

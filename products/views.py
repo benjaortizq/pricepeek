@@ -1,24 +1,17 @@
-<<<<<<< HEAD
 from django.core.paginator import Paginator
 from django.db.models import F, Q, DecimalField, ExpressionWrapper, QuerySet, Window
 from django.db.models.functions import Coalesce, Rank
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from .busqueda import buscar_productos, con_imagen
 from .models import Prices, ProductImages, ProductVariants, Products
 from django.views.decorators.http import require_GET
-
-from reviews.models import Reviews
-=======
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
 from django.db import DatabaseError, transaction
-from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import ProductImages, ProductVariants, Products
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, Reviews
->>>>>>> 050bcd9 (Add review functionality with image upload and media handling)
 
 from .models import (
     Brands,

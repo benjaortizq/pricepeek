@@ -1,26 +1,51 @@
 from decimal import Decimal
+from types import SimpleNamespace
 
 from django.db import connection
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-
 from accounts.models import User
 from reviews.models import Reviews
-
 from .busqueda import buscar_productos
-from .models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
+from .views import (
+    _serializar_precio,
+    buscar_productos_con_filtros,
+    buscar_variantes_por_nombre,
+    obtener_precios_por_gtin,
+)
+
+from .models import (
+    Brands,
+    Categories,
+    Currencies,
+    Prices,
+    ProductImages,
+    ProductVariants,
+    Products,
+    Stores,
+)
+
+
 
 # Los modelos son managed = False (las tablas viven en Supabase),
 # así que en la base de pruebas hay que crear las tablas a mano.
 # accounts_user ya existe porque User sí es managed.
-MODELOS = [Brands, Categories, Currencies, Stores, Products, ProductVariants, ProductImages, Prices, Reviews]
-
-
 def fechas():
     ahora = timezone.now()
     return {"created_at": ahora, "updated_at": ahora}
 
+MODELOS = [
+    Brands,
+    Categories,
+    Currencies,
+    Stores,
+    Products,
+    ProductVariants,
+    ProductImages,
+    Prices,
+    Reviews,
+]
 
 class CatalogoTestCase(TestCase):
     @classmethod
@@ -121,7 +146,7 @@ class CatalogoTestCase(TestCase):
             )
 
     def url(self, pk=None):
-        return reverse("detalle_producto", kwargs={"pk": pk or self.leche.pk})
+        return reverse("detalle_producto", kwargs={"pk": pk or self.producto.pk})
 
     def test_muestra_todos_los_detalles_del_producto(self):
         respuesta = self.client.get(self.url())
@@ -138,7 +163,13 @@ class CatalogoTestCase(TestCase):
         self.assertNotContains(respuesta, "secundaria.png")
 
     def test_muestra_el_codigo_de_barras_de_cada_variante(self):
-        self.variante(self.leche, "7441001234574")
+        ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234574",
+            name="Leche entera 1L",
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+        )
         respuesta = self.client.get(self.url())
         self.assertContains(respuesta, "7441001234567")
         self.assertContains(respuesta, "7441001234574")
@@ -188,6 +219,19 @@ class CatalogoTestCase(TestCase):
             [1, 1, 3],
         )
 
+    def test_serializa_un_descuento_nulo_como_cero(self):
+        precio = SimpleNamespace(
+            ranking=1,
+            id_store=SimpleNamespace(name="Tienda"),
+            final_price=Decimal("1000"),
+            currency=SimpleNamespace(symbol="₡"),
+            discount=None,
+            is_available=True,
+            product_web_url="https://tienda.test/producto",
+        )
+
+        self.assertEqual(_serializar_precio(precio)["descuento"], 0.0)
+
     def test_api_exige_el_nombre_para_comparar(self):
         respuesta = self.client.get(reverse("comparar_precios"))
 
@@ -236,11 +280,54 @@ class CatalogoTestCase(TestCase):
         self.assertContains(respuesta, "Descuento de 25 %")
         self.assertContains(respuesta, '<span class="font-bold text-on-surface text-body-lg">Walmart</span>', html=False)
         self.assertContains(respuesta, 'href="https://tienda.test/7441001234567"')
+        html = respuesta.content.decode()
+        self.assertLess(html.index("₡1.455"), html.index("₡1.760"))
 
-    def test_no_marca_ningun_precio_como_el_mejor(self):
-        tienda = Stores.objects.create(name="Walmart", **fechas())
-        self.precio(self.variante_leche, tienda, 1760)
-        self.assertNotContains(self.client.get(self.url()), "Mejor precio")
+    def test_destaca_el_mejor_precio_disponible(self):
+        respuesta = self.client.get(self.url())
+
+        self.assertContains(respuesta, "Mejor precio")
+        self.assertEqual(respuesta.content.decode().count("Mejor precio"), 1)
+        precios = respuesta.context["precios"]
+        disponibles = [precio for precio in precios if precio.is_available]
+        self.assertEqual(
+            [precio.final for precio in disponibles],
+            sorted(precio.final for precio in disponibles),
+        )
+        self.assertTrue(disponibles[0].es_mejor)
+        self.assertEqual(
+            [precio.final for precio in precios],
+            [2000, 2000, 2500, 1000],
+        )
+        self.assertFalse(precios[-1].es_mejor)
+
+    def test_destaca_el_mejor_precio_de_cada_gtin(self):
+        otra_variante = ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234581",
+            name=self.producto.name,
+            **fechas(),
+        )
+        tienda = Stores.objects.create(name="Tienda E", **fechas())
+        self.precio(otra_variante, tienda, 1800)
+
+        respuesta = self.client.get(self.url())
+
+        self.assertEqual(respuesta.content.decode().count("Mejor precio"), 2)
+        precios = respuesta.context["precios"]
+        mejores = {precio.gtin_id for precio in precios if precio.es_mejor}
+        self.assertEqual(mejores, {self.variante.gtin, otra_variante.gtin})
+        precios_por_gtin = {}
+        for precio in precios:
+            precios_por_gtin.setdefault(precio.gtin_id, []).append(precio)
+        self.assertEqual(
+            [precio.final for precio in precios_por_gtin[self.variante.gtin]],
+            [2000, 2000, 2500, 1000],
+        )
+        self.assertEqual(
+            [precio.final for precio in precios_por_gtin[otra_variante.gtin]],
+            [1800],
+        )
 
     def test_indica_precios_no_disponibles(self):
         tienda = Stores.objects.create(name="Peri", **fechas())
@@ -250,7 +337,13 @@ class CatalogoTestCase(TestCase):
         self.assertContains(respuesta, "Sin precio")
 
     def test_producto_sin_precios_lo_indica(self):
-        respuesta = self.client.get(self.url())
+        producto = Products.objects.create(
+            name="Arroz",
+            brand=self.dos_pinos,
+            category=self.lacteos,
+            **fechas(),
+        )
+        respuesta = self.client.get(self.url(producto.pk))
         self.assertContains(respuesta, "Todavía no hay precios registrados")
 
     def test_orden_precios_descripcion_y_resenas(self):
@@ -281,6 +374,38 @@ class BuscarProductosTests(CatalogoTestCase):
     def test_sin_coincidencias_devuelve_lista_vacia(self):
         self.assertEqual(self.buscar("televisor"), [])
 
+    def test_combina_la_busqueda_con_el_filtro_de_categoria(self):
+        productos = buscar_productos_con_filtros("", categoria="Salsas")
+
+        self.assertEqual(list(productos), [self.ketchup])
+
+    def test_combina_la_busqueda_con_el_filtro_de_marca(self):
+        productos = buscar_productos_con_filtros("", marca="kraft-heinz")
+
+        self.assertEqual(list(productos), [self.ketchup])
+
+    def test_combina_una_busqueda_no_vacia_con_categoria_y_marca(self):
+        productos = buscar_productos_con_filtros(
+            "heinz", categoria="Salsas", marca="kraft-heinz"
+        )
+        sin_coincidencia = buscar_productos_con_filtros(
+            "leche", categoria="Salsas", marca="kraft-heinz"
+        )
+
+        self.assertEqual(list(productos), [self.ketchup])
+        self.assertEqual(list(sin_coincidencia), [])
+
+    def test_filtra_por_nombres_numericos_cuando_no_son_ids(self):
+        categoria = Categories.objects.create(name="2024", **fechas())
+        marca = Brands.objects.create(name="Marca 2024", slug="2024", **fechas())
+        producto = self.producto("Producto 2024", marca, categoria)
+
+        productos = buscar_productos_con_filtros(
+            "2024", categoria="2024", marca="2024"
+        )
+
+        self.assertEqual(list(productos), [producto])
+
 
 class PaginaBusquedaTests(CatalogoTestCase):
     def test_muestra_los_resultados(self):
@@ -299,6 +424,63 @@ class PaginaBusquedaTests(CatalogoTestCase):
         respuesta = self.client.get(reverse("buscar_productos"), {"q": "televisor"})
         self.assertContains(respuesta, "No encontramos productos")
 
+    def test_filtra_los_resultados_por_categoria(self):
+        respuesta = self.client.get(
+            reverse("buscar_productos"), {"q": "", "categoria": "Salsas"}
+        )
+
+        self.assertContains(respuesta, "Salsa de tomate")
+        self.assertNotContains(respuesta, "Leche entera 1L")
+
+    def test_filtra_los_resultados_por_marca(self):
+        respuesta = self.client.get(
+            reverse("buscar_productos"), {"q": "", "marca": "kraft-heinz"}
+        )
+
+        self.assertContains(respuesta, "Salsa de tomate")
+        self.assertNotContains(respuesta, "Leche entera 1L")
+
+    def test_filtra_los_resultados_por_ids_de_categoria_y_marca(self):
+        respuesta = self.client.get(
+            reverse("buscar_productos"),
+            {
+                "q": "heinz",
+                "categoria": self.salsas.pk,
+                "marca": self.heinz.pk,
+            },
+        )
+
+        self.assertContains(respuesta, "Salsa de tomate")
+        self.assertNotContains(respuesta, "Leche entera 1L")
+
+    def test_canonicaliza_los_filtros_para_seleccionar_sus_opciones(self):
+        respuesta = self.client.get(
+            reverse("buscar_productos"),
+            {"q": "heinz", "categoria": "salsas", "marca": "KRAFT-HEINZ"},
+        )
+
+        self.assertEqual(
+            respuesta.context["categoria_seleccionada"], str(self.salsas.pk)
+        )
+        self.assertEqual(
+            respuesta.context["marca_seleccionada"], str(self.heinz.pk)
+        )
+        self.assertContains(
+            respuesta, f'<option value="{self.salsas.pk}" selected>Salsas</option>'
+        )
+        self.assertContains(
+            respuesta,
+            f'<option value="{self.heinz.pk}" selected>Kraft Heinz</option>',
+        )
+
+    def test_muestra_las_opciones_de_categoria_y_marca(self):
+        respuesta = self.client.get(reverse("buscar_productos"))
+
+        self.assertContains(respuesta, "Todas las categorías")
+        self.assertContains(respuesta, "Todas las marcas")
+        self.assertContains(respuesta, 'name="categoria"')
+        self.assertContains(respuesta, 'name="marca"')
+
     def test_los_resultados_se_paginan_de_24_en_24(self):
         for i in range(25):
             self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
@@ -307,6 +489,24 @@ class PaginaBusquedaTests(CatalogoTestCase):
         self.assertContains(primera, "Página 1 de 2")
         segunda = self.client.get(reverse("buscar_productos"), {"q": "yogur", "pagina": 2})
         self.assertEqual(len(segunda.context["productos"]), 1)
+
+    def test_la_paginacion_conserva_categoria_y_marca(self):
+        for i in range(25):
+            self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+
+        respuesta = self.client.get(
+            reverse("buscar_productos"),
+            {
+                "q": "yogur",
+                "categoria": self.lacteos.pk,
+                "marca": self.dos_pinos.pk,
+            },
+        )
+
+        html = respuesta.content.decode()
+        self.assertIn(f"categoria={self.lacteos.pk}", html)
+        self.assertIn(f"marca={self.dos_pinos.pk}", html)
+        self.assertIn("pagina=2", html)
 
     def test_la_pantalla_principal_muestra_los_productos(self):
         cliente = User.objects.create_user(email="ana@correo.com", password="Clave2026segura")

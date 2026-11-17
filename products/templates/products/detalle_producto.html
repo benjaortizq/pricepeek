@@ -128,7 +128,6 @@
     {% endif %}
   </section>
 
-<<<<<<< HEAD
   <section aria-labelledby="descripcion-heading" class="mb-12">
     <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/60">
       <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-4" id="descripcion-heading">Descripción del producto</h2>
@@ -143,6 +142,50 @@
         <span class="px-2 py-0.5 rounded-full bg-surface-container text-xs font-bold">{{ resenas|length }}</span>
       </h2>
     </div>
+
+    {% if user.is_authenticated and user.role == "client" %}
+      <div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/60 mb-6" aria-labelledby="publicar-resena-heading">
+        <h3 class="font-headline-md text-headline-md font-bold text-on-surface mb-4" id="publicar-resena-heading">Escribe tu reseña</h3>
+        {% if ya_reseño %}
+          <p class="text-body-md font-body-md text-secondary">Ya publicaste una reseña para este producto.</p>
+        {% elif not variantes %}
+          <p class="text-body-md font-body-md text-secondary">Este producto todavía no tiene una variante para reseñar.</p>
+        {% else %}
+          <form class="space-y-4" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset>
+              <legend class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5">{{ review_form.rating.label }}</legend>
+              <div class="flex flex-wrap gap-2">
+                {% for opcion in review_form.rating %}
+                  <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-outline-variant/60 bg-surface-container-low cursor-pointer text-body-sm font-body-sm text-on-surface has-[:checked]:border-primary-container has-[:checked]:bg-primary-container/20">
+                    {{ opcion.tag }} {{ opcion.choice_label }}
+                  </label>
+                {% endfor %}
+              </div>
+              {% for error in review_form.rating.errors %}<p class="mt-1.5 text-body-sm font-body-sm text-error">{{ error }}</p>{% endfor %}
+            </fieldset>
+            <div>
+              <label class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5" for="{{ review_form.content.id_for_label }}">{{ review_form.content.label }}</label>
+              <div class="[&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:bg-surface-container-low [&_textarea]:border [&_textarea]:border-outline-variant/50 [&_textarea]:px-4 [&_textarea]:py-3 [&_textarea]:text-body-md [&_textarea]:focus:border-on-surface [&_textarea]:focus:ring-0">{{ review_form.content }}</div>
+              {% for error in review_form.content.errors %}<p class="mt-1.5 text-body-sm font-body-sm text-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+              <label class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5" for="{{ review_form.photo.id_for_label }}">{{ review_form.photo.label }}</label>
+              <div class="text-body-sm font-body-sm text-secondary">{{ review_form.photo }}</div>
+              {% for error in review_form.photo.errors %}<p class="mt-1.5 text-body-sm font-body-sm text-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="flex justify-end">
+              <button class="px-6 py-2.5 rounded-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold text-body-md transition-colors" type="submit">Publicar reseña</button>
+            </div>
+          </form>
+        {% endif %}
+      </div>
+    {% elif not user.is_authenticated %}
+      <p class="mb-6 text-body-md font-body-md">
+        <a class="font-semibold text-on-surface hover:underline" href="{% url 'login' %}?next={{ request.path|urlencode }}">Inicia sesión como cliente para publicar una reseña.</a>
+      </p>
+    {% endif %}
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {% for resena in resenas %}
         <article class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/60">
@@ -162,11 +205,14 @@
                 <p class="text-body-sm font-body-sm text-secondary">{{ resena.created_at|date:"d/m/Y" }}</p>
               </div>
             </div>
-            <span class="inline-flex items-center gap-0.5 text-primary-container font-bold text-body-md">
+            <span class="inline-flex items-center gap-0.5 text-primary-container font-bold text-body-md" title="Calificación: {{ resena.score }} / 5">
               <span class="material-symbols-outlined material-symbols-fill text-[18px]">star</span>{{ resena.score }}
             </span>
           </div>
           <p class="text-body-md font-body-md text-secondary leading-relaxed">{{ resena.content }}</p>
+          {% if resena.review_photo %}
+            <img src="{{ resena.review_photo.image.url }}" alt="Foto de la reseña" class="mt-4 rounded-xl border border-outline-variant/50 max-h-64 object-cover">
+          {% endif %}
         </article>
       {% empty %}
         <p class="text-body-md font-body-md text-secondary">Este producto todavía no tiene reseñas.</p>
@@ -174,61 +220,4 @@
     </div>
   </section>
 </div>
-=======
-{% if user.is_authenticated and user.role == "client" %}
-  <section aria-labelledby="publicar-resena-heading">
-    <h2 id="publicar-resena-heading">Escribe tu reseña</h2>
-    {% if ya_reseño %}
-      <p>Ya publicaste una reseña para este producto.</p>
-    {% elif not variantes %}
-      <p>Este producto todavía no tiene una variante para reseñar.</p>
-    {% else %}
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset>
-          <legend>{{ review_form.rating.label }}</legend>
-          {{ review_form.rating.errors }}
-          {{ review_form.rating }}
-        </fieldset>
-        <p>
-          {{ review_form.content.label_tag }}<br>
-          {{ review_form.content.errors }}
-          {{ review_form.content }}
-        </p>
-        <p>
-          {{ review_form.photo.label_tag }}<br>
-          {{ review_form.photo.errors }}
-          {{ review_form.photo }}
-        </p>
-        <button type="submit">Publicar reseña</button>
-      </form>
-    {% endif %}
-  </section>
-{% elif not user.is_authenticated %}
-  <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Inicia sesión como cliente para publicar una reseña.</a></p>
-{% endif %}
-
-<section aria-labelledby="resenas-heading">
-  <h2 id="resenas-heading">Reseñas</h2>
-  {% for resena in resenas %}
-    <article>
-      <p>Calificación: {{ resena.score }} / 5</p>
-      <p>{{ resena.content }}</p>
-      {% if resena.review_photo %}
-        <img src="{{ resena.review_photo.image.url }}" alt="Foto de la reseña" width="300">
-      {% endif %}
-      <small>
-        {% if resena.user.first_name or resena.user.last_name %}
-          {{ resena.user.first_name }} {{ resena.user.last_name }}
-        {% else %}
-          {{ resena.user.email }}
-        {% endif %}
-        · {{ resena.created_at|date:"d/m/Y" }}
-      </small>
-    </article>
-  {% empty %}
-    <p>Este producto todavía no tiene reseñas.</p>
-  {% endfor %}
-</section>
->>>>>>> 050bcd9 (Add review functionality with image upload and media handling)
 {% endblock %}

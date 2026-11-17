@@ -128,7 +128,7 @@ class DetalleProductoTests(CatalogoTestCase):
         self.precio(self.variante_leche, automercado, 1940, descuento="0.25")
         respuesta = self.client.get(self.url())
         self.assertContains(respuesta, "₡1.760")
-        self.assertContains(respuesta, "₡1.940")
+        self.assertContains(respuesta, "₡1.455")  # 1940 con 25 % de descuento
         self.assertContains(respuesta, "Descuento de 25 %")
         self.assertContains(respuesta, '<span class="font-bold text-on-surface text-body-lg">Walmart</span>', html=False)
         self.assertContains(respuesta, 'href="https://tienda.test/7441001234567"')

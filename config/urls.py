@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
@@ -34,3 +35,4 @@ if settings.DEBUG:
         path("diseno/", vista_previa.lista, name="diseno"),
         path("diseno/<str:nombre>/", vista_previa.pantalla, name="diseno_pantalla"),
     ]
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

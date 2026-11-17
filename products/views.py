@@ -1,18 +1,28 @@
-from django.core.paginator import Paginator
-from django.db.models import F, Q, DecimalField, ExpressionWrapper, QuerySet, Window
-from django.db.models.functions import Coalesce, Rank
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render, redirect
-from .busqueda import buscar_productos, con_imagen
-from .models import Prices, ProductImages, ProductVariants, Products
-from django.views.decorators.http import require_GET
+from decimal import Decimal
+
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
+from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
+from django.db.models import (
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Q,
+    QuerySet,
+    Value,
+    Window,
+)
+from django.db.models.functions import Coalesce, Rank
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_GET
+
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, Reviews
 
+from .busqueda import buscar_productos, con_imagen
 from .models import (
     Brands,
     Categories,
@@ -21,6 +31,20 @@ from .models import (
     ProductVariants,
     Products,
 )
+
+
+def _anotar_precio_final(queryset: QuerySet) -> QuerySet:
+    """Agrega el precio final después de aplicar el descuento."""
+    return queryset.annotate(
+        final_price=ExpressionWrapper(
+            F("price")
+            * (
+                Value(Decimal("1"))
+                - Coalesce(F("discount"), Value(Decimal("0")))
+            ),
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        )
+    )
 
 
 def detalle_producto(request, pk):
@@ -33,19 +57,94 @@ def detalle_producto(request, pk):
     )
     variantes = ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
     precios = list(
-        Prices.objects.filter(gtin__product_id=producto.pk)
-        .select_related("id_store", "currency", "gtin")
-        .order_by("id_store__name", "gtin__name")
+        _anotar_precio_final(
+            Prices.objects.filter(gtin__product_id=producto.pk).select_related(
+                "id_store", "currency", "gtin"
+            )
+        ).order_by(
+            "gtin_id",
+            F("is_available").desc(),
+            F("final_price").asc(nulls_last=True),
+            "id_store__name",
+            "id",
+        )
     )
     for precio in precios:
         precio.tienda = precio.id_store.name.strip()  # algunos nombres traen un salto de línea
-        if precio.price is not None:
-            precio.final = round(precio.price * (1 - precio.discount))  
+        if precio.final_price is not None:
+            precio.final = int(round(precio.final_price))
+
+    mejor_por_gtin = {}
+    for precio in precios:
+        if precio.is_available and precio.final_price is not None:
+            mejor_por_gtin.setdefault(precio.gtin_id, precio)
+    for precio in precios:
+        mejor = mejor_por_gtin.get(precio.gtin_id)
+        precio.es_mejor = mejor is not None and mejor.pk == precio.pk
     resenas = (
         Reviews.objects.select_related("variant", "user")
         .filter(variant__product_id=producto.pk)
         .order_by("-created_at")
     )
+    ya_reseño = (
+        request.user.is_authenticated
+        and request.user.role == "client"
+        and Reviews.objects.filter(
+            user_id=request.user.pk,
+            variant__product_id=producto.pk,
+        ).exists()
+    )
+    review_form = ReviewForm()
+
+    if request.method == "POST":
+        if not request.user.is_authenticated or request.user.role != "client":
+            raise PermissionDenied
+
+        review_form = ReviewForm(request.POST, request.FILES)
+        if review_form.is_valid() and variantes.exists():
+            stored_photo_name = None
+            try:
+                with transaction.atomic():
+                    # Lock the product so concurrent submissions cannot pass the duplicate check.
+                    Products.objects.select_for_update().get(pk=producto.pk)
+                    ya_reseño = Reviews.objects.filter(
+                        user_id=request.user.pk,
+                        variant__product_id=producto.pk,
+                    ).exists()
+                    if not ya_reseño:
+                        variante = variantes.first()
+                        resena = Reviews.objects.create(
+                            user_id=request.user.pk,
+                            variant=variante,
+                            content=review_form.cleaned_data["content"],
+                            score=review_form.cleaned_data["rating"],
+                            created_at=timezone.now(),
+                            updated_at=timezone.now(),
+                        )
+                        photo = review_form.cleaned_data["photo"]
+                        if photo:
+                            review_photo = ReviewPhoto(review_id=resena.pk)
+                            review_photo.image.save(photo.name, photo, save=False)
+                            stored_photo_name = review_photo.image.name
+                            review_photo.save()
+            except DatabaseError:
+                if stored_photo_name:
+                    default_storage.delete(stored_photo_name)
+                raise
+
+            if not ya_reseño:
+                return redirect("detalle_producto", pk=producto.pk)
+
+    resenas = list(resenas)
+    fotos = {
+        photo.review_id: photo
+        for photo in ReviewPhoto.objects.filter(
+            review_id__in=[resena.pk for resena in resenas]
+        )
+    }
+    for resena in resenas:
+        resena.review_photo = fotos.get(resena.pk)
+
     ya_reseño = (
         request.user.is_authenticated
         and request.user.role == "client"
@@ -113,6 +212,7 @@ def detalle_producto(request, pk):
             "imagen": imagen,
             "variantes": variantes,
             "precios": precios,
+            "precios": precios,
             "resenas": resenas,
             "review_form": review_form,
             "ya_reseño": ya_reseño,
@@ -125,11 +225,28 @@ PRODUCTOS_POR_PAGINA = 24
 
 def buscar(request):
     palabra = request.GET.get("q", "").strip()
-    pagina = Paginator(buscar_productos(palabra), PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    categoria = _parametro_de_consulta(
+        request, "categoria", "category", "categoria_id", "category_id"
+    )
+    marca = _parametro_de_consulta(
+        request, "marca", "brand", "marca_id", "brand_id"
+    )
+    productos = buscar_productos_con_filtros(palabra, categoria, marca)
+    pagina = Paginator(productos, PRODUCTOS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
     return render(
         request,
         "products/buscar.html",
-        {"palabra": palabra, "pagina": pagina, "productos": con_imagen(pagina)},
+        {
+            "palabra": palabra,
+            "categoria_seleccionada": categoria or "",
+            "marca_seleccionada": marca or "",
+            "categorias": Categories.objects.order_by("name"),
+            "marcas": Brands.objects.order_by("name"),
+            "pagina": pagina,
+            "productos": con_imagen(pagina),
+        },
     )
 
 
@@ -195,6 +312,15 @@ def filtrar_por_marca(queryset: QuerySet, marca=None) -> QuerySet:
     )
 
 
+def buscar_productos_con_filtros(
+    palabra: str, categoria=None, marca=None
+) -> QuerySet[Products]:
+    """Combina la búsqueda existente con los filtros opcionales del catálogo."""
+    productos = buscar_productos(palabra)
+    productos = filtrar_por_categoria(productos, categoria)
+    return filtrar_por_marca(productos, marca)
+
+
 def buscar_variantes_por_nombre(
     nombre: str, categoria=None, marca=None
 ) -> QuerySet[ProductVariants]:
@@ -224,13 +350,8 @@ def obtener_precios_por_gtin(gtin: str, solo_disponibles: bool = True) -> QueryS
     if not gtin:
         return Prices.objects.none()
     
-    precios = Prices.objects.select_related("id_store", "currency").annotate(
-        # Usamos Coalesce por si el campo 'discount' es nulo (lo tratamos como 0).
-        # Usamos ExpressionWrapper para cuidar la precisión decimal (DecimalField).
-        final_price=ExpressionWrapper(
-            F("price") * (1.0 - Coalesce(F("discount"), 0.0)),
-            output_field=DecimalField(max_digits=10, decimal_places=0)
-        )
+    precios = _anotar_precio_final(
+        Prices.objects.select_related("id_store", "currency")
     ).filter(
         gtin_id=gtin,
         price__isnull=False,
@@ -258,7 +379,7 @@ def _serializar_precio(precio: Prices) -> dict:
     return {
         "ranking": precio.ranking,
         "tienda": precio.id_store.name.strip(),
-        "precio": precio.price * (1.0 - float(precio.discount)),
+        "precio": float(precio.final_price),
         "moneda": precio.currency.symbol,
         "descuento": float(precio.discount),
         "disponible": precio.is_available,

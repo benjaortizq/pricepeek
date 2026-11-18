@@ -1,16 +1,19 @@
-{% extends "base.html" %}
+{% extends "base_tarjeta.html" %}
 
-{% block title %}Confirmar cambio de contraseña · PricePeek{% endblock %}
+{% block title %}Confirmar cambio de contraseña{% endblock %}
+{% block icono_tarjeta %}{% include "componentes/icono_tarjeta.html" with icono="mark_email_unread" %}{% endblock %}
+{% block titulo_tarjeta %}Confirmar cambio de contraseña{% endblock %}
+{% block subtitulo_tarjeta %}Enviamos un código de 6 dígitos a {{ user.email }}. El código es válido por {{ minutos }} minutos.{% endblock %}
 
-{% block content %}
-<h1>Confirmar cambio de contraseña</h1>
-<p>Enviamos un código de 6 dígitos a {{ user.email }}. El código es válido por {{ minutos }} minutos.</p>
-
-<form method="post" novalidate>
+{% block tarjeta %}
+<form class="space-y-4" method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Confirmar</button>
+  {% include "componentes/campo.html" with field=form.codigo icono="pin" %}
+  <div class="pt-2">
+    <button class="boton-primario" type="submit">Confirmar</button>
+  </div>
 </form>
 
-<p><a href="{% url 'password_change' %}">Solicitar un nuevo código</a></p>
+{% url 'password_change' as url_cambio %}
+{% include "componentes/volver.html" with url=url_cambio texto="Solicitar un nuevo código" %}
 {% endblock %}

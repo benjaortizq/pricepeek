@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html class="h-full bg-background" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PricePeek - Panel de Moderación CR</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="h-full bg-background font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-surface">
+<!-- ========================================================================= -->
+<!-- SIDE NAVIGATION (Shared Component: SideNavBar)                            -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-64 flex flex-col justify-between bg-surface-container-lowest border-r border-outline-variant z-40">
+<!-- Brand Anchor & Top Header -->
+<div class="p-4">
+<div class="flex items-center justify-between pb-4 mb-4 border-b border-outline-variant">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-on-surface flex items-center justify-center text-primary-container font-price-hero font-bold text-lg shadow-sm">
+<span>P</span>
+</div>
+<div>
+<div class="flex items-center gap-1">
+<span class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">PricePeek</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block"></span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary font-medium">Panel de Moderación CR</p>
+</div>
+</div>
+</div>
+<!-- Quick Action / CTA -->
+<button class="w-full mb-5 flex items-center justify-center gap-2 py-2 px-3 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant text-on-surface font-body-sm font-semibold transition-colors duration-150">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="bolt">bolt</span>
+<span>Auditoría Rápida</span>
+</button>
+<!-- Main Navigation Links -->
+<nav class="space-y-1">
+<!-- Resumen -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface-container-low hover:text-on-surface font-body-md text-body-md transition-colors duration-150" href="#resumen">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+<span>Resumen</span>
+</a>
+<!-- Usuarios -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface-container-low hover:text-on-surface font-body-md text-body-md transition-colors duration-150" href="#usuarios">
+<span class="material-symbols-outlined text-[20px]" data-icon="group">group</span>
+<span>Usuarios</span>
+</a>
+<!-- Reseñas -->
+<a class="text-secondary flex items-center justify-between px-4 py-2.5 rounded-lg hover:bg-surface-container-low hover:text-on-surface font-body-md text-body-md transition-colors duration-150" href="#resenas">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px]" data-icon="rate_review">rate_review</span>
+<span>Reseñas</span>
+</div>
+<span class="font-label-badge text-label-badge bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-bold">14</span>
+</a>
+<!-- Publicaciones -->
+<a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-surface-container-low hover:text-on-surface font-body-md text-body-md transition-colors duration-150" href="#publicaciones">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+<span>Publicaciones</span>
+</a>
+<!-- Reportes (ACTIVE PER INTENT: Style applied from style_active_navigation) -->
+<a class="bg-surface-container text-on-surface font-bold border-l-4 border-primary pl-3 py-2.5 rounded-r-lg flex items-center justify-between transition-colors duration-150" href="#reportes">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[20px] text-primary" data-icon="flag" data-weight="fill" style="font-variation-settings: 'FILL' 1;">flag</span>
+<span>Reportes</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+</a>
+</nav>
+</div>
+<!-- Footer Area & Profile -->
+<div class="p-4 border-t border-outline-variant space-y-3">
+<nav class="space-y-1">
+<a class="text-secondary flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-surface-container-low hover:text-on-surface font-body-md text-body-md transition-colors duration-150" href="#ajustes">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+<span>Ajustes del Sistema</span>
+</a>
+<a class="text-secondary flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-error-container hover:text-on-error-container font-body-md text-body-md transition-colors duration-150" href="#logout">
+<span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
+<span>Cerrar Sesión</span>
+</a>
+</nav>
+<!-- Admin Profile Card -->
+<div class="pt-3 border-t border-outline-variant flex items-center gap-3 px-2">
+<div class="w-9 h-9 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center font-bold text-on-surface text-xs font-label-badge">
+          CV
+        </div>
+<div class="flex-1 min-w-0">
+<p class="font-body-md text-body-md font-semibold text-on-surface truncate">Carlos V.</p>
+<div class="flex items-center gap-1 font-body-sm text-body-sm text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="truncate">San José, CR</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- TOP NAVIGATION BAR (Shared Component: TopNavBar)                         -->
+<!-- ========================================================================= -->
+<header class="sticky top-0 z-30 w-full bg-surface-container-lowest border-b border-outline-variant">
+<div class="flex justify-between items-center w-full px-6 py-3 pl-72">
+<!-- Left: Global Context & Search Input -->
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-secondary" data-icon="search">search</span>
+<input class="w-full pl-10 pr-24 py-1.5 rounded-full bg-surface-container-low border border-outline-variant text-on-surface text-body-md font-body-md placeholder-secondary focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 outline-none transition-all" placeholder="Buscar reporte, usuario, reseña o SKU..." type="search">
+<span class="absolute right-3 top-1/2 -translate-y-1/2 font-label-badge text-label-badge text-secondary border border-outline-variant px-1.5 py-0.5 rounded bg-surface-container-lowest">⌘K</span>
+</div>
+<!-- Regional Filter Selector -->
+<button class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-on-surface font-body-sm text-body-sm transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="place">place</span>
+<span class="font-medium">Costa Rica (Todo el país)</span>
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<!-- Right: Sub-nav links, System Integrity Pill & Admin Controls -->
+<div class="flex items-center gap-3">
+<!-- Integrity Status -->
+<div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low border border-outline-variant text-body-sm">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="font-medium text-on-surface">Algoritmo de Detección Activo <strong class="font-price-row text-xs">99.8%</strong></span>
+</div>
+<!-- Trailing Action: Exportar Log -->
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-outline-variant hover:bg-surface-container-low text-on-surface font-body-sm font-semibold transition-colors duration-150">
+<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+<span>Exportar Log</span>
+</button>
+<!-- Divider -->
+<div class="h-5 w-[1px] bg-outline-variant"></div>
+<!-- Action Icons: Trailing Icon Actions -->
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors relative" title="Notificaciones">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container ring-2 ring-surface-container-lowest"></span>
+</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors" title="Escudo de Seguridad">
+<span class="material-symbols-outlined text-[20px]" data-icon="shield_with_heart">shield_with_heart</span>
+</button>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors" title="Centro de Ayuda">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE                                                            -->
+<!-- ========================================================================= -->
+<main class="pl-64 pt-2 pb-16 min-h-screen">
+<div class="max-w-[1360px] mx-auto px-8 py-6 space-y-6">
+<!-- Breadcrumbs & Header Section -->
+<section class="space-y-3">
+<nav class="flex items-center gap-2 font-body-sm text-body-sm text-secondary">
+<span>PricePeek Admin</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span>Moderación</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-semibold">Cola de Revisión</span>
+</nav>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
+<div class="space-y-1">
+<div class="flex items-center gap-3">
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">
+                Centro de Moderación y Control de Calidad
+              </h1>
+<span class="font-label-badge text-label-badge bg-surface-container-highest text-on-surface border border-outline-variant px-2.5 py-1 rounded-full uppercase tracking-wider font-bold">
+                v2.4 AUDIT
+              </span>
+</div>
+<p class="font-body-md text-body-md text-secondary max-w-3xl">
+              Auditoría de reseñas comunitarias, evidencia fotográfica y reportes de discrepancia de precios en Costa Rica bajo criterio de paridad estricta.
+            </p>
+</div>
+<!-- Quick Control Actions -->
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-on-surface font-body-sm font-semibold transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="tune">tune</span>
+<span>Filtros avanzados</span>
+</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-on-surface font-body-sm font-semibold transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="smart_toy">smart_toy</span>
+<span>Reglas automáticas</span>
+</button>
+<button class="px-5 py-2 rounded-full bg-primary-container hover:bg-primary-fixed-dim text-on-surface font-body-sm font-bold transition-transform active:scale-95 shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="done_all">done_all</span>
+<span>Aprobar lote seleccionado</span>
+</button>
+</div>
+</div>
+</section>
+<!-- KPI METRICS GRID (4 CARDS) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col justify-between hover:border-outline transition-colors">
+<div class="flex items-start justify-between">
+<span class="font-body-sm text-body-sm text-secondary font-medium">Pendientes de Revisión</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="pending_actions">pending_actions</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-hero font-bold text-on-surface">24</span>
+<span class="font-label-badge text-label-badge bg-primary-fixed text-on-primary-fixed px-1.5 py-0.5 rounded font-bold">+6 hoy</span>
+</div>
+<div class="mt-2 flex items-center gap-3 font-body-sm text-body-sm text-secondary border-t border-outline-variant pt-2">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary" data-icon="photo_camera">photo_camera</span>
+<strong>14</strong> con fotografía
+              </span>
+<span>•</span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="price_change">price_change</span>
+<strong>10</strong> discrepancia
+              </span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col justify-between hover:border-outline transition-colors">
+<div class="flex items-start justify-between">
+<span class="font-body-sm text-body-sm text-secondary font-medium">Tiempo Promedio Resolución</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[20px]" data-icon="schedule">schedule</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-hero font-bold text-on-surface">18 min</span>
+<span class="font-label-badge text-label-badge bg-tertiary-fixed text-on-tertiary-fixed px-1.5 py-0.5 rounded font-bold">Estado: Óptimo</span>
+</div>
+<div class="mt-2 flex items-center justify-between font-body-sm text-body-sm text-secondary border-t border-outline-variant pt-2">
+<span>Meta SLA: &lt; 30 min</span>
+<span class="text-tertiary font-bold font-label-badge text-label-badge">-4m vs ayer</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col justify-between hover:border-outline transition-colors">
+<div class="flex items-start justify-between">
+<span class="font-body-sm text-body-sm text-secondary font-medium">Tasa de Rechazo / Spam</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[20px]" data-icon="security_update_warning">security_update_warning</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-hero font-bold text-on-surface">4.2%</span>
+<span class="font-body-sm text-body-sm text-secondary">del total mes</span>
+</div>
+<div class="mt-2 flex items-center gap-1 font-body-sm text-body-sm text-secondary border-t border-outline-variant pt-2">
+<span class="material-symbols-outlined text-[15px] text-error" data-icon="block">block</span>
+<span class="truncate">12 bloqueos automáticos (publicidad)</span>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col justify-between hover:border-outline transition-colors">
+<div class="flex items-start justify-between">
+<span class="font-body-sm text-body-sm text-secondary font-medium">Reseñas Verificadas (Mes)</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center text-primary-container text-on-surface">
+<span class="material-symbols-outlined text-[20px]" data-icon="verified">verified</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="flex items-baseline gap-2">
+<span class="font-price-hero text-price-hero font-bold text-on-surface">1.480</span>
+<span class="font-label-badge text-label-badge bg-tertiary-fixed text-on-tertiary-fixed px-1.5 py-0.5 rounded font-bold">98.2% Fiabilidad</span>
+</div>
+<div class="mt-2 flex items-center gap-1 font-body-sm text-body-sm text-secondary border-t border-outline-variant pt-2">
+<span class="material-symbols-outlined text-[15px] text-tertiary" data-icon="check_circle">check_circle</span>
+<span class="truncate">Validado con ticket y OCR de góndola</span>
+</div>
+</div>
+</div>
+</section>
+<!-- MODERATION QUEUE WORKBENCH -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
+<!-- Queue Header & Filter Tabs -->
+<div class="px-6 py-4 border-b border-outline-variant flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+<!-- Tab 1: Active -->
+<button class="px-3.5 py-1.5 rounded-full bg-on-surface text-surface-container-lowest font-body-sm font-semibold flex items-center gap-2 shrink-0">
+<span>Todos los reportes</span>
+<span class="bg-surface-container text-on-surface text-[11px] font-label-badge px-1.5 py-0.2 rounded-full font-bold">24</span>
+</button>
+<!-- Tab 2 -->
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm font-medium border border-outline-variant flex items-center gap-2 shrink-0">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="image">image</span>
+<span>Reseñas con evidencia</span>
+<span class="text-secondary text-[11px] font-label-badge font-bold">14</span>
+</button>
+<!-- Tab 3 -->
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm font-medium border border-outline-variant flex items-center gap-2 shrink-0">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="price_check">price_check</span>
+<span>Discrepancia de precios</span>
+<span class="text-secondary text-[11px] font-label-badge font-bold">6</span>
+</button>
+<!-- Tab 4 -->
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm font-medium border border-outline-variant flex items-center gap-2 shrink-0">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="smart_toy">smart_toy</span>
+<span>Sospecha de bot/spam</span>
+<span class="text-secondary text-[11px] font-label-badge font-bold">4</span>
+</button>
+</div>
+<!-- Sort dropdown -->
+<div class="flex items-center gap-2 text-body-sm text-secondary">
+<span>Ordenar por:</span>
+<button class="flex items-center gap-1 font-semibold text-on-surface hover:text-primary">
+<span>Más recientes</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="arrow_drop_down">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- Table Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-secondary font-label-badge text-label-badge uppercase tracking-wider">
+<th class="py-3 px-4 w-10 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox">
+</th>
+<th class="py-3 px-4 font-bold">Tipo &amp; ID</th>
+<th class="py-3 px-4 font-bold">Elemento Reportado &amp; Comercio</th>
+<th class="py-3 px-4 font-bold">Usuario &amp; Confianza</th>
+<th class="py-3 px-4 font-bold">Motivo / Alerta Detectada</th>
+<th class="py-3 px-4 font-bold">Fecha &amp; Prioridad</th>
+<th class="py-3 px-4 font-bold">Estado</th>
+<th class="py-3 px-4 font-bold text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant text-body-md font-body-md">
+<!-- ROW 1 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4 text-center">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox">
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="rate_review">rate_review</span>
+<div>
+<span class="font-bold text-on-surface font-label-badge text-label-badge">#MOD-8942</span>
+<p class="text-xs text-secondary font-medium">Reseña</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="max-w-[260px]">
+<p class="font-bold text-on-surface truncate" title="Refrigeradora Samsung 300L No Frost">Refrigeradora Samsung 300L No Frost</p>
+<div class="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
+<span class="font-semibold text-on-surface-variant">Gollo</span>
+<span>•</span>
+<span class="truncate">Sucursal Zapote</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div>
+<span class="font-medium text-on-surface block text-xs">kevin.solis@...</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-badge text-[10px] bg-surface-container px-1.5 py-0.2 rounded font-bold text-on-surface">Nivel 3</span>
+<span class="text-[11px] text-tertiary font-semibold">98% verif.</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-start gap-1.5 max-w-[240px]">
+<span class="material-symbols-outlined text-[16px] text-error mt-0.5 shrink-0" data-icon="report">report</span>
+<span class="text-xs text-on-surface font-medium leading-snug">Evidencia fotográfica dudosa (posible catálogo web)</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-xs text-secondary block font-medium">Hace 14 min</span>
+<span class="font-label-badge text-label-badge text-error font-bold flex items-center gap-0.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Prioridad Alta
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="font-label-badge text-[11px] bg-primary-fixed text-on-primary-fixed px-2.5 py-1 rounded-full font-bold border border-outline-variant">
+                    En revisión
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-tertiary hover:text-on-tertiary border border-outline-variant flex items-center justify-center text-on-surface transition-colors" title="Aprobar">
+<span class="material-symbols-outlined text-[16px]" data-icon="check">check</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-error hover:text-on-error border border-outline-variant flex items-center justify-center text-on-surface transition-colors" title="Rechazar">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant flex items-center justify-center text-secondary hover:text-on-surface transition-colors" title="Ver detalle">
+<span class="material-symbols-outlined text-[16px]" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox">
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary" data-icon="price_change">price_change</span>
+<div>
+<span class="font-bold text-on-surface font-label-badge text-label-badge">#MOD-8940</span>
+<p class="text-xs text-secondary font-medium">Discrepancia</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="max-w-[260px]">
+<p class="font-bold text-on-surface truncate" title="Smart TV LG 55&quot; 4K UHD">Smart TV LG 55" 4K UHD</p>
+<div class="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
+<span class="font-semibold text-on-surface-variant">Walmart</span>
+<span>•</span>
+<span class="truncate">Escazú</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div>
+<span class="font-medium text-on-surface block text-xs">maria.p@...</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-badge text-[10px] bg-surface-container px-1.5 py-0.2 rounded font-bold text-on-surface">Nivel 2</span>
+<span class="text-[11px] text-secondary">7 reseñas</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-start gap-1.5 max-w-[240px]">
+<span class="material-symbols-outlined text-[16px] text-primary mt-0.5 shrink-0" data-icon="info">info</span>
+<span class="text-xs text-on-surface font-medium leading-snug">Diferencia reportada de <strong class="font-price-row font-bold">₡24.000</strong> vs precio en góndola</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-xs text-secondary block font-medium">Hace 32 min</span>
+<span class="font-label-badge text-label-badge text-primary-container text-on-surface font-bold flex items-center gap-0.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span> Prioridad Media
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="font-label-badge text-[11px] bg-surface-container-high text-on-surface px-2.5 py-1 rounded-full font-bold border border-outline-variant">
+                    Pendiente validación
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-xs font-semibold text-on-surface">
+                      Verificar POS
+                    </button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-error-container hover:text-on-error-container border border-outline-variant flex items-center justify-center text-secondary transition-colors" title="Descartar">
+<span class="material-symbols-outlined text-[16px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox">
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="rate_review">rate_review</span>
+<div>
+<span class="font-bold text-on-surface font-label-badge text-label-badge">#MOD-8938</span>
+<p class="text-xs text-secondary font-medium">Reseña</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="max-w-[260px]">
+<p class="font-bold text-on-surface truncate" title="Freidora de Aire Philips XL">Freidora de Aire Philips XL</p>
+<div class="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
+<span class="font-semibold text-on-surface-variant">Monge</span>
+<span>•</span>
+<span class="truncate">Alajuela Centro</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div>
+<span class="font-medium text-on-surface block text-xs">diego.m@...</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-badge text-[10px] bg-surface-container px-1.5 py-0.2 rounded font-bold text-on-surface">Nivel 1</span>
+<span class="text-[11px] text-secondary">Primer aporte</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-start gap-1.5 max-w-[240px]">
+<span class="material-symbols-outlined text-[16px] text-secondary mt-0.5 shrink-0" data-icon="campaign">campaign</span>
+<span class="text-xs text-on-surface font-medium leading-snug">Lenguaje comercial no neutral / posible mención promocional</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-xs text-secondary block font-medium">Hace 1h</span>
+<span class="font-label-badge text-label-badge text-primary-container text-on-surface font-bold flex items-center gap-0.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span> Prioridad Media
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="font-label-badge text-[11px] bg-primary-fixed text-on-primary-fixed px-2.5 py-1 rounded-full font-bold border border-outline-variant">
+                    En revisión
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-xs font-semibold text-on-surface">
+                      Pedir edición
+                    </button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant flex items-center justify-center text-secondary transition-colors" title="Descartar">
+<span class="material-symbols-outlined text-[16px]" data-icon="close">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox">
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="price_change">price_change</span>
+<div>
+<span class="font-bold text-on-surface font-label-badge text-label-badge">#MOD-8935</span>
+<p class="text-xs text-secondary font-medium">Discrepancia</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="max-w-[260px]">
+<p class="font-bold text-on-surface truncate" title="Celular Xiaomi Redmi Note 13 Pro">Celular Xiaomi Redmi Note 13 Pro</p>
+<div class="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
+<span class="font-semibold text-on-surface-variant">Siman</span>
+<span>•</span>
+<span class="truncate">Multiplaza Escazú</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div>
+<span class="font-medium text-on-surface block text-xs">anonimo_cr</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-badge text-[10px] bg-surface-container px-1.5 py-0.2 rounded font-bold text-secondary">Nivel 0</span>
+<span class="text-[11px] text-error font-medium">Sin historial</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-start gap-1.5 max-w-[240px]">
+<span class="material-symbols-outlined text-[16px] text-secondary mt-0.5 shrink-0" data-icon="update">update</span>
+<span class="text-xs text-on-surface font-medium leading-snug">Sospecha de dato desactualizado (-₡15.000)</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-xs text-secondary block font-medium">Hace 2h</span>
+<span class="font-label-badge text-label-badge text-secondary font-bold flex items-center gap-0.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Prioridad Baja
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="font-label-badge text-[11px] bg-surface-container-high text-secondary px-2.5 py-1 rounded-full font-bold border border-outline-variant">
+                    En análisis
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-xs font-semibold text-on-surface">
+                      Validar crawler
+                    </button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface transition-colors" title="Aprobar">
+<span class="material-symbols-outlined text-[16px]" data-icon="check">check</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-3.5 px-4 text-center">
+<input class="rounded border-outline-variant text-primary focus:ring-0 w-4 h-4 cursor-pointer" type="checkbox">
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary" data-icon="photo_camera">photo_camera</span>
+<div>
+<span class="font-bold text-on-surface font-label-badge text-label-badge">#MOD-8929</span>
+<p class="text-xs text-secondary font-medium">Reseña con foto</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="max-w-[260px]">
+<p class="font-bold text-on-surface truncate" title="Microondas Panasonic Inverter">Microondas Panasonic Inverter</p>
+<div class="flex items-center gap-1.5 text-xs text-secondary mt-0.5">
+<span class="font-semibold text-on-surface-variant">PriceSmart</span>
+<span>•</span>
+<span class="truncate">Santa Ana</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div>
+<span class="font-medium text-on-surface block text-xs">elena.vargas@...</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-badge text-[10px] bg-tertiary-fixed text-on-tertiary-fixed px-1.5 py-0.2 rounded font-bold">Nivel 4</span>
+<span class="text-[11px] text-tertiary font-bold">Top Contribuidor</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-start gap-1.5 max-w-[240px]">
+<span class="material-symbols-outlined text-[16px] text-tertiary mt-0.5 shrink-0" data-icon="task_alt">task_alt</span>
+<span class="text-xs text-tertiary font-medium leading-snug">Factura física y foto verificada por OCR</span>
+</div>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="text-xs text-secondary block font-medium">Hace 3h</span>
+<span class="font-label-badge text-label-badge text-secondary font-bold flex items-center gap-0.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Normal
+                  </span>
+</td>
+<td class="py-3.5 px-4 whitespace-nowrap">
+<span class="font-label-badge text-[11px] bg-tertiary-fixed text-on-tertiary-fixed px-2.5 py-1 rounded-full font-bold border border-outline-variant">
+                    Listo para aprobar
+                  </span>
+</td>
+<td class="py-3.5 px-4 text-right whitespace-nowrap">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-3 py-1 rounded-full bg-tertiary hover:bg-on-tertiary-container text-on-tertiary text-xs font-bold transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]" data-icon="check">check</span>
+<span>Aprobar</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant flex items-center justify-center text-secondary transition-colors" title="Ver foto">
+<span class="material-symbols-outlined text-[16px]" data-icon="image">image</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Sticky Bulk Action & Pagination Bar -->
+<div class="px-6 py-3.5 bg-surface-container-low border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4">
+<!-- Bulk selection stats & triggers -->
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">1 seleccionado</span>
+<div class="h-4 w-[1px] bg-outline-variant"></div>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-xs font-bold text-on-surface transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-tertiary" data-icon="check_circle">check_circle</span>
+<span>Aprobar</span>
+</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-error-container hover:text-on-error-container border border-outline-variant text-xs font-bold text-secondary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]" data-icon="gavel">gavel</span>
+<span>Rechazar por spam</span>
+</button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-surface-container border border-outline-variant text-xs font-semibold text-secondary transition-colors">
+              Asignar moderador...
+            </button>
+</div>
+<!-- Pagination Controls -->
+<div class="flex items-center gap-4 text-body-sm text-secondary">
+<span>Mostrando <strong class="text-on-surface">1 - 5</strong> de 24 casos</span>
+<div class="flex items-center gap-1">
+<button class="w-7 h-7 rounded border border-outline-variant bg-surface-container-lowest flex items-center justify-center hover:bg-surface-container text-secondary disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-7 h-7 rounded border border-on-surface bg-on-surface text-surface-container-lowest font-label-badge text-xs font-bold flex items-center justify-center">
+                1
+              </button>
+<button class="w-7 h-7 rounded border border-outline-variant bg-surface-container-lowest flex items-center justify-center hover:bg-surface-container text-on-surface font-label-badge text-xs font-bold">
+                2
+              </button>
+<button class="w-7 h-7 rounded border border-outline-variant bg-surface-container-lowest flex items-center justify-center hover:bg-surface-container text-on-surface font-label-badge text-xs font-bold">
+                3
+              </button>
+<button class="w-7 h-7 rounded border border-outline-variant bg-surface-container-lowest flex items-center justify-center hover:bg-surface-container text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- AUDIT REVENUE & OCR VERIFICATION MINI-DRAWER BENTO -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+<!-- Live Stream Audit Activity -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant lg:col-span-2 space-y-4">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary" data-icon="history">history</span>
+<h2 class="font-headline-md text-sm font-bold text-on-surface">Registro de Auditoría en Tiempo Real (San José)</h2>
+</div>
+<span class="font-label-badge text-label-badge text-secondary">Sincronizado vía WebSocket</span>
+</div>
+<div class="space-y-3 font-body-sm text-body-sm">
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-tertiary"></div>
+<div>
+<span class="font-bold text-on-surface">Auto-aprobado:</span>
+<span class="text-secondary">Foto de góndola validada para 'Café Britt Tueste Oscuro 340g' (Walmart Curridabat).</span>
+</div>
+</div>
+<span class="font-label-badge text-xs text-secondary shrink-0">11:42 AM</span>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<div>
+<span class="font-bold text-on-surface">Bloqueo IP:</span>
+<span class="text-secondary">Detección de crawler no autorizado intentando inyectar 18 precios falsos en Siman CR.</span>
+</div>
+</div>
+<span class="font-label-badge text-xs text-secondary shrink-0">11:39 AM</span>
+</div>
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low border border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+<div>
+<span class="font-bold text-on-surface">Alerta Discrepancia:</span>
+<span class="text-secondary">Diferencia de ₡32.000 detectada en 'Lavadora Mabe 19kg' entre Gollo y Monge.</span>
+</div>
+</div>
+<span class="font-label-badge text-xs text-secondary shrink-0">11:30 AM</span>
+</div>
+</div>
+</div>
+<!-- Strict Consumer Parity Rules Box -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant space-y-4 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 pb-3 border-b border-outline-variant">
+<span class="material-symbols-outlined text-[20px] text-tertiary" data-icon="policy">policy</span>
+<h2 class="font-headline-md text-sm font-bold text-on-surface">Criterio de Paridad PricePeek</h2>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mt-3 leading-relaxed">
+              PricePeek opera como una capa neutral de inteligencia de precios para Costa Rica. Queda estrictamente prohibido alterar rankings para favorecer comercios específicos. Todo reporte aprobado impacta de forma inmediata el índice comparativo nacional.
+            </p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="flex items-center justify-between text-xs font-semibold text-on-surface mb-1">
+<span>Cumplimiento SLA Moderadores</span>
+<span class="font-label-badge text-tertiary font-bold">96.4%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 96.4%"></div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<script src="../js/main.js"></script>
+</body></html>

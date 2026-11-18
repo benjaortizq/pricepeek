@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html class="h-full" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Recuperar contraseña - PricePeek Costa Rica</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="bg-background text-on-surface min-h-full flex flex-col font-body-md antialiased selection:bg-primary-container selection:text-on-surface">
+<!-- TopNavBar (Shared Component) -->
+<header class="w-full bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant/30 sticky top-0 z-50">
+<div class="max-w-7xl mx-auto h-16 px-4 md:px-12 flex justify-between items-center gap-4">
+<!-- Brand Logo & Left search trigger -->
+<div class="flex items-center gap-8">
+<a class="text-headline-md font-headline-md font-extrabold text-on-surface dark:text-inverse-on-surface tracking-tight flex items-center gap-0.5" href="#">
+<span>PricePeek</span><span class="w-2 h-2 rounded-full bg-primary-container inline-block ml-0.5"></span>
+</a>
+<!-- Search Bar: pill integrated style -->
+<div class="hidden md:flex items-center bg-surface-container-low rounded-full px-4 py-2 border border-outline-variant/30 w-80 text-secondary focus-within:border-on-surface focus-within:bg-surface-container-lowest transition-all">
+<span class="material-symbols-outlined text-secondary text-[20px] mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none text-body-md text-on-surface placeholder:text-secondary focus:ring-0 p-0 w-full" placeholder="Buscar productos, marcas o tiendas..." readonly="" type="text">
+<button class="text-secondary hover:text-on-surface flex items-center transition-colors" title="Escanear código de barras" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden lg:flex items-center space-x-7">
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors text-body-md" href="#">Inicio</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors text-body-md" href="#">Buscar</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors text-body-md" href="#">Categorías</a>
+<a class="text-secondary dark:text-secondary-fixed-dim font-medium hover:text-primary dark:hover:text-inverse-primary transition-colors text-body-md" href="#">Lista de deseos</a>
+<a class="text-on-surface dark:text-inverse-on-surface font-bold relative after:content-[''] after:absolute after:bottom-[-4px] after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:bg-primary-container after:rounded-full text-body-md" href="#">Perfil</a>
+</nav>
+<!-- Right profile image action -->
+<div class="flex items-center gap-3">
+<a class="flex items-center gap-2 p-1 rounded-full hover:bg-surface-container-low transition-colors" href="#">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface border border-outline-variant/40">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+</div>
+</a>
+</div>
+</div>
+</header>
+<!-- Main Recovery Canvas -->
+<main class="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+<!-- Subtle background accent structure -->
+<div class="absolute inset-0 pointer-events-none flex justify-center items-center overflow-hidden">
+<div class="w-[600px] h-[600px] bg-primary-fixed/20 rounded-full blur-3xl opacity-40"></div>
+</div>
+<!-- Centered Card: matching login exact specifications -->
+<div class="relative w-full max-w-[460px] bg-surface-container-lowest border border-[#E5E5E0] rounded-2xl p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.03)] z-10 transition-all">
+<!-- Brand Anchor on Card -->
+<div class="text-center mb-8">
+<div class="inline-flex items-center justify-center mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center border border-[#E5E5E0] text-on-surface">
+<span class="material-symbols-outlined text-[26px] text-on-surface" data-icon="lock_reset">lock_reset</span>
+</div>
+</div>
+<h1 class="text-headline-md font-headline-md text-on-surface tracking-tight mb-2">
+          ¿Olvidaste tu contraseña?
+        </h1>
+<p class="text-body-md font-body-md text-secondary leading-relaxed">
+          No te preocupes. Escribe el correo electrónico asociado a tu cuenta de PricePeek y te enviaremos un enlace seguro para restablecerla al instante.
+        </p>
+</div>
+<!-- Form Container -->
+<form action="#" class="space-y-5" method="POST" onsubmit="event.preventDefault();">
+<!-- Input Field: Correo electrónico -->
+<div>
+<label class="block text-body-md font-medium text-on-surface mb-1.5" for="recovery-email">
+            Correo electrónico
+          </label>
+<div class="relative rounded-xl">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-secondary">
+<span class="material-symbols-outlined text-[20px]" data-icon="mail">mail</span>
+</div>
+<input class="w-full pl-10 pr-4 py-3 bg-[#F7F7F5] border border-[#E5E5E0] rounded-xl text-body-md text-on-surface placeholder:text-secondary/70 focus:outline-none focus:ring-0 focus:border-on-surface focus:bg-white transition-colors" id="recovery-email" name="email" placeholder="ejemplo@correo.com" required="" type="email">
+</div>
+</div>
+<!-- Notice Box (Soft Neutral / Amber Tint) -->
+<div class="bg-primary-fixed/25 border border-primary-container/40 rounded-xl p-3.5 flex items-start gap-3">
+<span class="material-symbols-outlined text-[20px] text-on-primary-fixed-variant shrink-0 mt-0.5" data-icon="info">info</span>
+<p class="text-body-sm font-body-sm text-on-primary-fixed-variant leading-snug">
+            Te enviaremos un correo con instrucciones válidas durante 60 minutos.
+          </p>
+</div>
+<!-- Primary Action Button: Warm Yellow #F5B82E -->
+<button class="w-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold py-3.5 rounded-xl text-body-md transition-colors duration-150 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-container active:opacity-90" type="submit">
+<span>Enviar enlace de recuperación</span>
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</form>
+<!-- Secondary Return Action -->
+<div class="mt-7 pt-6 border-t border-[#E5E5E0] flex flex-col items-center gap-3">
+<a class="inline-flex items-center text-body-md font-semibold text-on-surface hover:text-primary transition-colors gap-1.5 group" href="#">
+<span class="material-symbols-outlined text-[18px] transition-transform group-hover:-translate-x-1" data-icon="arrow_back">arrow_back</span>
+<span>Volver a Iniciar sesión</span>
+</a>
+<!-- Help Link -->
+<div class="text-center mt-2">
+<p class="text-body-sm text-secondary">
+            ¿Necesitas ayuda adicional? 
+            <a class="font-semibold text-on-surface hover:underline ml-0.5" href="#">Contactar a soporte</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full bg-surface-container-low dark:bg-inverse-surface border-t border-outline-variant/30 mt-auto">
+<div class="w-full py-space-xl px-4 md:px-12 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-space-lg">
+<!-- Brand & Impartial notice -->
+<div class="flex flex-col items-center md:items-start gap-1">
+<div class="text-headline-md font-headline-md font-extrabold text-on-surface dark:text-inverse-on-surface tracking-tight flex items-center gap-0.5">
+<span>PricePeek</span><span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block ml-0.5"></span>
+</div>
+<p class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim text-center md:text-left max-w-md">
+          © 2025 PricePeek Costa Rica. Plataforma imparcial de comparación de precios e inteligencia de consumo independiente.
+        </p>
+</div>
+<!-- Links matching JSON -->
+<div class="flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Metodología de precios</a>
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Comercios afiliados</a>
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Términos de servicio</a>
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Privacidad del consumidor</a>
+<a class="text-body-sm font-body-sm text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">Contacto</a>
+</div>
+</div>
+</footer>
+<script src="../js/main.js"></script>
+</body></html>

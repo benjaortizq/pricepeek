@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="h-full bg-surface" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Escribir reseña del producto | PricePeek Costa Rica</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/modal-escribir-resena.css">
+</head>
+<body class="bg-surface text-on-surface antialiased relative min-h-screen overflow-x-hidden">
+<!-- ========================================== -->
+<!-- BACKGROUND CANVAS: SIMULATED PRODUCT VIEW  -->
+<!-- ========================================== -->
+<div class="filter blur-sm select-none pointer-events-none opacity-40 transition-all duration-300">
+<!-- Top Bar Mock from JSON context -->
+<header class="w-full bg-surface-container-lowest border-b border-outline-variant h-16 px-6 max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="text-headline-md font-headline-md font-extrabold text-on-surface tracking-tight">PricePeek<span class="text-primary-container">.</span>cr</span>
+<span class="text-body-sm font-body-sm text-secondary bg-surface-container-low px-2 py-0.5 rounded-full">Inteligencia Imparcial</span>
+</div>
+<div class="flex items-center gap-6">
+<span class="text-body-md font-body-md text-secondary">Categorías</span>
+<span class="text-body-md font-body-md text-secondary">Lista de deseos</span>
+<span class="text-body-md font-body-md text-on-surface font-bold">Reseñas</span>
+</div>
+</header>
+<!-- Content backdrop representation -->
+<main class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-12 gap-8">
+<div class="col-span-7 bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant space-y-6">
+<div class="h-6 w-32 bg-surface-container rounded-full"></div>
+<div class="h-10 w-3/4 bg-surface-container rounded-full"></div>
+<div class="h-96 w-full bg-surface-container-low rounded-xl"></div>
+</div>
+<div class="col-span-5 space-y-6">
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant space-y-4">
+<div class="h-6 w-1/2 bg-surface-container rounded-full"></div>
+<div class="h-12 w-2/3 bg-surface-container rounded-full"></div>
+<div class="h-10 w-full bg-surface-container-low rounded-full"></div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant space-y-3">
+<div class="h-4 w-full bg-surface-container rounded-full"></div>
+<div class="h-4 w-4/5 bg-surface-container rounded-full"></div>
+<div class="h-4 w-3/4 bg-surface-container rounded-full"></div>
+</div>
+</div>
+</main>
+</div>
+<!-- ========================================== -->
+<!-- MODAL BACKDROP LAYER                       -->
+<!-- ========================================== -->
+<div class="fixed inset-0 z-50 bg-inverse-surface/40 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto" id="modal-backdrop">
+<!-- MODAL CONTAINER (Level 0 Clean White, Flat Planar Contrast with Hairline Containment) -->
+<div aria-labelledby="modal-title" aria-modal="true" class="relative w-full max-w-2xl bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-[0_8px_30px_rgba(0,0,0,0.06)] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200" role="dialog">
+<!-- TOP STRIP: ETHICAL BADGE & DISMISS BUTTON -->
+<div class="flex items-center justify-between px-6 pt-5 pb-3 border-b border-outline-variant/50 bg-surface-container-lowest">
+<!-- Trust Badge -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-container/20 text-on-tertiary-container border border-tertiary-container/30">
+<span class="material-symbols-outlined text-[16px] text-tertiary" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-badge text-label-badge tracking-wide">Comunidad Verificada PricePeek</span>
+</div>
+<!-- Close Dialog Button -->
+<button aria-label="Cerrar ventana emergente" class="inline-flex items-center justify-center w-8 h-8 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container transition-colors duration-150" onclick="alert('Diálogo cerrado (simulación)')" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- MODAL SCROLLABLE CONTENT BODY -->
+<div class="px-6 py-5 max-h-[calc(90vh-140px)] overflow-y-auto custom-scrollbar space-y-6">
+<!-- HEADER BLOCK -->
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight" id="modal-title">
+            Escribir reseña del producto
+          </h2>
+<p class="font-body-md text-body-md text-secondary mt-1">
+            Tus opiniones ayudan a otros compradores en Costa Rica a tomar decisiones imparciales e inteligentes.
+          </p>
+</div>
+<!-- 3. MINI-TARJETA DEL PRODUCTO A CALIFICAR -->
+<div class="flex items-center gap-4 p-3.5 bg-surface-container-low rounded-2xl border border-outline-variant">
+<!-- Required Image Placeholder with exact string requested -->
+<div class="relative w-18 h-18 sm:w-20 sm:h-20 shrink-0 bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex items-center justify-center p-1.5">
+<img alt="Refrigeradora Samsung 300L No Frost con Dispensador de Agua" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Vr8Cj8pcqIcUjbT8mGADsTkoCSYOTuySFv6jLrr3ANu4nGpy5h_eAKJxJf0Mtrlkvku5GP3oVtyg3Mu4naMNnrFp9EPCOsYuPJ9i9wBb9mnIrU5RrklWTeMg5UhRs9fajW_QrnO6PBkKoXhPxXovExAVV5CVTVi2GhV5s5da_-v9R_ufBDRjMVk2yb9blnvjNfp_Awso0XZJjBtp5k4iKTeJA6nnTEWK5lZqljC00eoV89TEdObbGtPVE">
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-badge text-label-badge text-secondary bg-surface-container px-2 py-0.5 rounded-full inline-block">
+                Electrodomésticos • Comprado o probado
+              </span>
+</div>
+<h3 class="font-body-md text-body-md font-bold text-on-surface truncate">
+              Refrigeradora Samsung 300L No Frost con Dispensador de Agua
+            </h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-secondary">
+<span class="material-symbols-outlined text-[15px] text-tertiary">trending_down</span>
+                Mejor precio registrado:
+              </span>
+<span class="font-price-row text-body-md font-bold text-on-surface">₡239.900</span>
+<span class="text-body-sm text-secondary font-medium">en Gollo</span>
+</div>
+</div>
+</div>
+<!-- 4. SELECTOR DE CALIFICACIÓN DE 1 A 5 ESTRELLAS -->
+<div class="space-y-3 bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+<label class="font-body-md text-body-md font-bold text-on-surface flex items-center gap-1">
+              Calificación general <span class="text-primary">*</span>
+</label>
+<span class="font-body-sm text-body-sm font-bold text-on-surface bg-primary-container/20 border border-primary-container px-2.5 py-0.5 rounded-full" id="rating-label">
+              Excelente (4 de 5 estrellas)
+            </span>
+</div>
+<!-- Star Rating Interactive Cluster -->
+<div class="flex items-center gap-1.5" id="star-cluster">
+<button aria-label="1 estrella" class="star-btn p-1 text-primary-container hover:scale-110 transition-transform" data-index="1" type="button">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button aria-label="2 estrellas" class="star-btn p-1 text-primary-container hover:scale-110 transition-transform" data-index="2" type="button">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button aria-label="3 estrellas" class="star-btn p-1 text-primary-container hover:scale-110 transition-transform" data-index="3" type="button">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button aria-label="4 estrellas" class="star-btn p-1 text-primary-container hover:scale-110 transition-transform" data-index="4" type="button">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</button>
+<button aria-label="5 estrellas" class="star-btn p-1 text-secondary-fixed-dim hover:scale-110 transition-transform" data-index="5" type="button">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 0;">star</span>
+</button>
+</div>
+<!-- Criterios rápidos de evaluación complementaria -->
+<div class="pt-2 border-t border-outline-variant/60 flex flex-wrap items-center gap-2">
+<span class="font-body-sm text-body-sm text-secondary font-medium mr-1">Evaluación rápida:</span>
+<button class="font-label-badge text-label-badge px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-highest transition-colors" type="button">
+              + Consumo eléctrico bajo
+            </button>
+<button class="font-label-badge text-label-badge px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-highest transition-colors" type="button">
+              + Silenciosa (dB)
+            </button>
+<button class="font-label-badge text-label-badge px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-highest transition-colors" type="button">
+              + Relación calidad/precio
+            </button>
+</div>
+</div>
+<!-- 5. CAMPOS DE TEXTO: TÍTULO Y DETALLE DE LA RESEÑA -->
+<div class="space-y-4">
+<!-- Título breve -->
+<div class="space-y-1.5">
+<label class="block font-body-md text-body-md font-bold text-on-surface" for="review-title">
+              Título breve de la reseña
+            </label>
+<input class="w-full px-4 py-2.5 rounded-full bg-surface-container-low border border-outline-variant text-on-surface font-body-md text-body-md placeholder:text-secondary focus:bg-surface-container-lowest focus:border-on-surface focus:outline-none transition-all" id="review-title" name="review-title" placeholder="Ej: Muy espaciosa y ahorra bastante electricidad" type="text" value="Muy espaciosa, enfría rápido y ahorra bastante electricidad">
+</div>
+<!-- Textarea con contador de caracteres -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="block font-body-md text-body-md font-bold text-on-surface" for="review-body">
+                Detalle de tu experiencia de uso <span class="text-primary">*</span>
+</label>
+<span class="font-label-badge text-label-badge text-secondary font-medium" id="char-counter">
+                178 / 500 caracteres (mín. 50)
+              </span>
+</div>
+<textarea class="w-full p-4 rounded-2xl bg-surface-container-low border border-outline-variant text-on-surface font-body-md text-body-md placeholder:text-secondary focus:bg-surface-container-lowest focus:border-on-surface focus:outline-none transition-all resize-none leading-relaxed" id="review-body" placeholder="Describe tu experiencia real con el producto. ¿Cumple lo que promete? ¿Cómo ha sido el rendimiento energético o durabilidad en el hogar costarricense?" rows="4">Llevo 4 meses con este modelo en San José. El dispensador no gotea y el recibo del ICE se mantuvo prácticamente igual que con una refrigeradora más pequeña. Es muy silenciosa de noche.</textarea>
+<p class="font-body-sm text-body-sm text-secondary">
+              Por política de transparencia, las reseñas con lenguaje promocional o sin argumentos técnicos son revisadas por moderación.
+            </p>
+</div>
+</div>
+<!-- 6. ZONA DE CARGA DE FOTOS (PHOTO UPLOAD DROPZONE) -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="font-body-md text-body-md font-bold text-on-surface flex items-center gap-1.5">
+<span>Evidencia visual del producto</span>
+<span class="font-label-badge text-label-badge bg-tertiary-container/30 text-on-tertiary-container border border-tertiary-container/40 px-2 py-0.5 rounded-full">
+                Esencial
+              </span>
+</label>
+<span class="font-body-sm text-body-sm text-secondary">1 archivo adjunto (máx. 3)</span>
+</div>
+<!-- Dropzone Card -->
+<div class="p-4 rounded-2xl border-2 border-dashed border-outline-variant bg-surface-container-low/60 hover:bg-surface-container-low text-center transition-colors">
+<!-- Gallery / Upload layout -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+<!-- Miniatura subida con distintivo de comprobación -->
+<div class="relative bg-surface-container-lowest p-2 rounded-xl border border-outline-variant flex items-center gap-3">
+<div class="w-14 h-14 rounded-lg bg-surface-container-high overflow-hidden shrink-0 relative flex items-center justify-center border border-outline-variant/60">
+<!-- Product thumbnail in household context -->
+<span class="material-symbols-outlined text-[24px] text-secondary">kitchen</span>
+<div class="absolute bottom-0 inset-x-0 bg-tertiary text-on-tertiary text-[9px] font-bold text-center py-0.5">
+                    VERIFICADO
+                  </div>
+</div>
+<div class="flex-1 min-w-0 text-left">
+<p class="font-body-sm text-body-sm font-bold text-on-surface truncate">foto_refrigeradora_instalada.jpg</p>
+<p class="font-body-sm text-[11px] text-tertiary flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+                    Evidencia adjunta
+                  </p>
+</div>
+<button aria-label="Eliminar foto" class="p-1 text-secondary hover:text-error rounded-full hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+<!-- Upload Call To Action Trigger -->
+<label class="cursor-pointer border border-outline-variant rounded-xl p-3 bg-surface-container-lowest flex items-center justify-center gap-2.5 hover:border-on-surface transition-colors">
+<input accept="image/*" class="hidden" type="file">
+<span class="material-symbols-outlined text-primary text-[22px]">add_a_photo</span>
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">Agregar otra foto</span>
+</label>
+</div>
+<!-- Mandatory neutrality disclaimer -->
+<div class="mt-3 pt-3 border-t border-outline-variant/50 flex items-start gap-2 text-left">
+<span class="material-symbols-outlined text-[17px] text-primary shrink-0 mt-0.5">shield</span>
+<p class="font-body-sm text-body-sm text-secondary">
+<strong class="text-on-surface font-semibold">Filtro antifraude de PricePeek:</strong> Sube una foto real como evidencia de posesión física. Evita pantallazos de catálogos o fotos de sitios de tiendas para proteger la imparcialidad del índice comunitario.
+              </p>
+</div>
+</div>
+</div>
+<!-- 7. CASILLA DE VERIFICACIÓN DE IMPARCIALIDAD -->
+<div class="p-3.5 bg-surface-container-low rounded-2xl border border-outline-variant">
+<label class="flex items-start gap-3 cursor-pointer select-none">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary-container focus:ring-0 focus:ring-offset-0 border-outline accent-primary-container" type="checkbox">
+<span class="font-body-sm text-body-sm text-on-surface leading-snug">
+              Confirmo que esta reseña se basa en mi propia <strong class="font-bold">experiencia genuina y neutral</strong>. Declaro bajo buena fe no tener vínculos laborales ni haber recibido muestras gratis, comisiones o incentivos de Samsung ni de tiendas distribuidoras (Gollo, Monge, Walmart, Siman, etc.).
+            </span>
+</label>
+</div>
+</div>
+<!-- 8. BOTONES DE ACCIÓN (FOOTER FLUIDO DEL MODAL) -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+<!-- Secundario / Cancelar -->
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<button class="w-full sm:w-auto px-5 py-2.5 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md font-bold hover:bg-surface-container transition-colors duration-150" onclick="alert('Borrador guardado localmente')" type="button">
+            Guardar borrador
+          </button>
+<button class="px-4 py-2.5 rounded-full text-secondary hover:text-on-surface font-body-md text-body-md font-medium transition-colors" onclick="alert('Acción cancelada')" type="button">
+            Cancelar
+          </button>
+</div>
+<!-- Botón primario llamativo con acento amarillo institucional -->
+<button class="w-full sm:w-auto px-7 py-2.5 rounded-full bg-primary-container hover:bg-primary-fixed-dim text-on-primary-fixed font-body-md text-body-md font-bold flex items-center justify-center gap-2 transition-all duration-150 shadow-sm active:scale-98" onclick="alert('¡Reseña enviada para validación comunitaria!')" type="button">
+<span>Publicar reseña</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Inline vanilla script for star selector & char counter micro-interactions -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const starButtons = document.querySelectorAll('.star-btn');
+      const ratingLabel = document.getElementById('rating-label');
+      const ratingsText = [
+        "Deficiente (1 de 5 estrellas)",
+        "Regular (2 de 5 estrellas)",
+        "Buena (3 de 5 estrellas)",
+        "Excelente (4 de 5 estrellas)",
+        "Excepcional (5 de 5 estrellas)"
+      ];
+
+      function updateStars(rating) {
+        starButtons.forEach((btn, idx) => {
+          const icon = btn.querySelector('.material-symbols-outlined');
+          if (idx < rating) {
+            btn.classList.remove('text-secondary-fixed-dim');
+            btn.classList.add('text-primary-container');
+            icon.style.fontVariationSettings = "'FILL' 1";
+          } else {
+            btn.classList.add('text-secondary-fixed-dim');
+            btn.classList.remove('text-primary-container');
+            icon.style.fontVariationSettings = "'FILL' 0";
+          }
+        });
+        ratingLabel.textContent = ratingsText[rating - 1];
+      }
+
+      starButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const index = parseInt(btn.getAttribute('data-index'), 10);
+          updateStars(index);
+        });
+      });
+
+      // Character count update
+      const textarea = document.getElementById('review-body');
+      const charCounter = document.getElementById('char-counter');
+      if (textarea && charCounter) {
+        textarea.addEventListener('input', () => {
+          const length = textarea.value.length;
+          charCounter.textContent = `${length} / 500 caracteres (mín. 50)`;
+          if (length < 50) {
+            charCounter.classList.add('text-error');
+            charCounter.classList.remove('text-secondary');
+          } else {
+            charCounter.classList.remove('text-error');
+            charCounter.classList.add('text-secondary');
+          }
+        });
+      }
+    });
+  </script>
+<script src="../js/main.js"></script>
+<script src="../js/modal-escribir-resena.js"></script>
+</body></html>

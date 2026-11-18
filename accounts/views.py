@@ -11,6 +11,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from products.busqueda import buscar_productos, con_imagen
+
 from .decorators import role_required
 from .forms import (
     CambioContrasenaForm,
@@ -49,19 +51,27 @@ def panel(request):
     return redirect("inicio_cliente")
 
 
+PRODUCTOS_EN_INICIO = 12
+
+
+def mostrar_inicio(request, titulo):
+    productos = con_imagen(buscar_productos("")[:PRODUCTOS_EN_INICIO])
+    return render(request, "accounts/mainpage.html", {"titulo": titulo, "productos": productos})
+
+
 @role_required(User.Role.CLIENT)
 def inicio_cliente(request):
-    return render(request, "accounts/mainpage.html", {"titulo": "Inicio del cliente"})
+    return mostrar_inicio(request, "Inicio del cliente")
 
 
 @role_required(User.Role.ENTERPRISE)
 def inicio_empresa(request):
-    return render(request, "accounts/mainpage.html", {"titulo": "Panel de empresa"})
+    return mostrar_inicio(request, "Panel de empresa")
 
 
 @role_required(User.Role.ADMIN)
 def inicio_administrador(request):
-    return render(request, "accounts/mainpage.html", {"titulo": "Panel de administración"})
+    return mostrar_inicio(request, "Panel de administración")
 
 
 @role_required(User.Role.CLIENT)

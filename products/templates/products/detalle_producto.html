@@ -1,89 +1,223 @@
 {% extends "base.html" %}
+{% load precios %}
 
-{% block title %}{{ producto.name }} | PricePeek{% endblock %}
+{% block title %}{{ producto.name }}{% endblock %}
 
 {% block content %}
-<h1>{{ producto.name }}</h1>
+<div class="max-w-7xl w-full mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-6">
+  <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-body-sm font-body-sm text-secondary mb-6">
+    <a class="hover:text-on-surface transition-colors" href="{% url 'panel' %}">Inicio</a>
+    <span class="material-symbols-outlined text-xs text-secondary-fixed-dim">chevron_right</span>
+    <span>{{ producto.category.name }}</span>
+    <span class="material-symbols-outlined text-xs text-secondary-fixed-dim">chevron_right</span>
+    <span class="text-on-surface font-semibold truncate max-w-xs md:max-w-md">{{ producto.name }}</span>
+  </nav>
 
-{% if imagen %}
-  <img src="{{ imagen.image_url }}" alt="{{ producto.name }}" width="300">
-{% else %}
-  <p>Este producto no tiene imagen.</p>
-{% endif %}
+  <section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop mb-12">
+    <div class="lg:col-span-5 flex flex-col gap-4">
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+        <div class="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-surface-container-low px-3 py-1 rounded-full text-label-badge font-label-badge text-secondary border border-outline-variant/40">
+          <span class="material-symbols-outlined text-xs text-tertiary">verified</span>
+          <span>CATÁLOGO INDEPENDIENTE</span>
+        </div>
+        <div class="w-full aspect-square max-w-[340px] flex items-center justify-center p-4 transition-transform duration-300 group-hover:scale-[1.02]">
+          {% if imagen %}
+            <img src="{{ imagen.image_url }}" alt="{{ producto.name }}" class="max-h-full max-w-full object-contain drop-shadow-sm">
+          {% else %}
+            <div class="flex flex-col items-center gap-2 text-secondary">
+              <span class="material-symbols-outlined text-[48px]">image_not_supported</span>
+              <p class="text-body-md font-body-md">Este producto no tiene imagen.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
 
-<dl>
-  <dt>Marca</dt>
-  <dd>{{ producto.brand.name }}</dd>
+      <div class="bg-surface-container-low rounded-xl p-3.5 border border-outline-variant/40 flex items-start gap-3">
+        <span class="material-symbols-outlined text-secondary text-lg mt-0.5">qr_code_2</span>
+        <div class="text-body-sm font-body-sm text-secondary leading-snug">
+          <p class="font-bold text-on-surface mb-0.5">Código de barras</p>
+          {% for variante in variantes %}
+            <p class="font-price-row tracking-wider text-on-surface">{{ variante.gtin }}</p>
+          {% empty %}
+            <p>Sin código de barras.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
 
-  <dt>Categoría</dt>
-  <dd>{{ producto.category.name }}</dd>
+    <div class="lg:col-span-7 flex flex-col gap-5">
+      <div>
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-label-badge font-label-badge uppercase tracking-wider bg-surface-container text-secondary font-semibold">
+            {{ producto.category.name }}
+          </span>
+          <div class="flex items-center gap-1.5 text-body-sm font-body-sm text-tertiary font-semibold">
+            <span class="material-symbols-outlined text-sm">shield</span>
+            <span>100% Imparcial · Sin comisiones de posicionamiento</span>
+          </div>
+        </div>
+        <h1 class="font-headline-lg text-headline-lg text-on-surface font-extrabold tracking-tight mb-3">{{ producto.name }}</h1>
+        <div class="flex items-center gap-3 pb-4 border-b border-outline-variant/40">
+          {% if producto.brand.logo_url %}
+            <img src="{{ producto.brand.logo_url }}" alt="" class="w-8 h-8 rounded-full object-contain border border-outline-variant/50 bg-surface-container-lowest">
+          {% endif %}
+          <span class="text-body-md font-body-md text-secondary">Marca: <strong class="text-on-surface">{{ producto.brand.name }}</strong></span>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <dt>Descripción</dt>
-  <dd>{{ producto.description|default:"Sin descripción." }}</dd>
+  <section aria-labelledby="precios-heading" class="mb-12">
+    <div class="mb-4">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+        <h2 class="font-headline-md text-headline-md font-extrabold text-on-surface" id="precios-heading">Precios en tiendas de Costa Rica</h2>
+      </div>
+      <p class="text-body-sm font-body-sm text-secondary">Precio que reporta cada tienda para este producto.</p>
+    </div>
 
-  <dt>Código de barras</dt>
-  <dd>
-    {% for variante in variantes %}
-      {{ variante.gtin }}{% if not forloop.last %}<br>{% endif %}
-    {% empty %}
-      Sin código de barras.
-    {% endfor %}
-  </dd>
-</dl>
-
-{% if user.is_authenticated and user.role == "client" %}
-  <section aria-labelledby="publicar-resena-heading">
-    <h2 id="publicar-resena-heading">Escribe tu reseña</h2>
-    {% if ya_reseño %}
-      <p>Ya publicaste una reseña para este producto.</p>
-    {% elif not variantes %}
-      <p>Este producto todavía no tiene una variante para reseñar.</p>
+    {% if precios %}
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 overflow-hidden">
+        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-surface-container-low border-b border-outline-variant/50 text-xs font-bold text-secondary uppercase tracking-wider">
+          <div class="col-span-3">Tienda</div>
+          <div class="col-span-3">Presentación</div>
+          <div class="col-span-2">Disponibilidad</div>
+          <div class="col-span-2 text-right">Precio</div>
+          <div class="col-span-2 text-right">Enlace</div>
+        </div>
+        {% for precio in precios %}
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-6 py-4 items-center border-b border-outline-variant/40 last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
+            <div class="md:col-span-3 flex items-center gap-3">
+              <span class="w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/60 flex items-center justify-center font-bold text-xs text-on-surface uppercase shrink-0">{{ precio.tienda|slice:":2" }}</span>
+              <span class="font-bold text-on-surface text-body-lg">{{ precio.tienda }}</span>
+            </div>
+            <div class="md:col-span-3 text-body-md font-body-md text-on-surface">
+              {{ precio.gtin.name }}
+              <span class="block text-xs text-secondary font-price-row tracking-wider">{{ precio.gtin.gtin }}</span>
+            </div>
+            <div class="md:col-span-2">
+              {% if precio.is_available %}
+                <span class="inline-flex items-center gap-1.5 text-xs text-tertiary font-bold"><span class="w-2 h-2 rounded-full bg-tertiary"></span>Disponible</span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 text-xs text-secondary font-bold"><span class="w-2 h-2 rounded-full bg-outline"></span>No disponible</span>
+              {% endif %}
+            </div>
+            <div class="md:col-span-2 md:text-right">
+              {% if precio.price is not None %}
+                <span class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
+                {% if precio.discount %}
+                  <span class="ml-1 md:ml-0 md:block text-[11px] font-label-badge text-tertiary font-bold">Descuento de {% widthratio precio.discount 1 100 %} %</span>
+                {% endif %}
+              {% else %}
+                <span class="text-body-md font-body-md text-secondary">Sin precio</span>
+              {% endif %}
+            </div>
+            <div class="md:col-span-2 md:text-right">
+              <a class="inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-full border border-outline-variant hover:border-on-surface bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold transition-colors" href="{{ precio.product_web_url }}" rel="noopener noreferrer" target="_blank">
+                <span>Ir a tienda</span>
+                <span class="material-symbols-outlined text-xs">open_in_new</span>
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
     {% else %}
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <fieldset>
-          <legend>{{ review_form.rating.label }}</legend>
-          {{ review_form.rating.errors }}
-          {{ review_form.rating }}
-        </fieldset>
-        <p>
-          {{ review_form.content.label_tag }}<br>
-          {{ review_form.content.errors }}
-          {{ review_form.content }}
-        </p>
-        <p>
-          {{ review_form.photo.label_tag }}<br>
-          {{ review_form.photo.errors }}
-          {{ review_form.photo }}
-        </p>
-        <button type="submit">Publicar reseña</button>
-      </form>
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 p-6 text-body-md font-body-md text-secondary">
+        Todavía no hay precios registrados para este producto.
+      </div>
     {% endif %}
   </section>
-{% elif not user.is_authenticated %}
-  <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Inicia sesión como cliente para publicar una reseña.</a></p>
-{% endif %}
 
-<section aria-labelledby="resenas-heading">
-  <h2 id="resenas-heading">Reseñas</h2>
-  {% for resena in resenas %}
-    <article>
-      <p>Calificación: {{ resena.score }} / 5</p>
-      <p>{{ resena.content }}</p>
-      {% if resena.review_photo %}
-        <img src="{{ resena.review_photo.image.url }}" alt="Foto de la reseña" width="300">
-      {% endif %}
-      <small>
-        {% if resena.user.first_name or resena.user.last_name %}
-          {{ resena.user.first_name }} {{ resena.user.last_name }}
+  <section aria-labelledby="descripcion-heading" class="mb-12">
+    <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/60">
+      <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-4" id="descripcion-heading">Descripción del producto</h2>
+      <p class="font-body-lg text-body-lg text-secondary leading-relaxed">{{ producto.description|default:"Sin descripción." }}</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="resenas-heading" class="mb-14">
+    <div class="flex items-center gap-2 border-b border-outline-variant/60 mb-6">
+      <h2 class="px-1 py-3 font-body-md text-body-md font-bold text-on-surface border-b-2 border-primary-container flex items-center gap-2" id="resenas-heading">
+        Reseñas de usuarios
+        <span class="px-2 py-0.5 rounded-full bg-surface-container text-xs font-bold">{{ resenas|length }}</span>
+      </h2>
+    </div>
+
+    {% if user.is_authenticated and user.role == "client" %}
+      <div class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/60 mb-6" aria-labelledby="publicar-resena-heading">
+        <h3 class="font-headline-md text-headline-md font-bold text-on-surface mb-4" id="publicar-resena-heading">Escribe tu reseña</h3>
+        {% if ya_reseño %}
+          <p class="text-body-md font-body-md text-secondary">Ya publicaste una reseña para este producto.</p>
+        {% elif not variantes %}
+          <p class="text-body-md font-body-md text-secondary">Este producto todavía no tiene una variante para reseñar.</p>
         {% else %}
-          {{ resena.user.email }}
+          <form class="space-y-4" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset>
+              <legend class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5">{{ review_form.rating.label }}</legend>
+              <div class="flex flex-wrap gap-2">
+                {% for opcion in review_form.rating %}
+                  <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-outline-variant/60 bg-surface-container-low cursor-pointer text-body-sm font-body-sm text-on-surface has-[:checked]:border-primary-container has-[:checked]:bg-primary-container/20">
+                    {{ opcion.tag }} {{ opcion.choice_label }}
+                  </label>
+                {% endfor %}
+              </div>
+              {% for error in review_form.rating.errors %}<p class="mt-1.5 text-body-sm font-body-sm text-error">{{ error }}</p>{% endfor %}
+            </fieldset>
+            <div>
+              <label class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5" for="{{ review_form.content.id_for_label }}">{{ review_form.content.label }}</label>
+              <div class="[&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:bg-surface-container-low [&_textarea]:border [&_textarea]:border-outline-variant/50 [&_textarea]:px-4 [&_textarea]:py-3 [&_textarea]:text-body-md [&_textarea]:focus:border-on-surface [&_textarea]:focus:ring-0">{{ review_form.content }}</div>
+              {% for error in review_form.content.errors %}<p class="mt-1.5 text-body-sm font-body-sm text-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div>
+              <label class="block text-body-sm font-body-sm font-semibold text-on-surface mb-1.5" for="{{ review_form.photo.id_for_label }}">{{ review_form.photo.label }}</label>
+              <div class="text-body-sm font-body-sm text-secondary">{{ review_form.photo }}</div>
+              {% for error in review_form.photo.errors %}<p class="mt-1.5 text-body-sm font-body-sm text-error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="flex justify-end">
+              <button class="px-6 py-2.5 rounded-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold text-body-md transition-colors" type="submit">Publicar reseña</button>
+            </div>
+          </form>
         {% endif %}
-        · {{ resena.created_at|date:"d/m/Y" }}
-      </small>
-    </article>
-  {% empty %}
-    <p>Este producto todavía no tiene reseñas.</p>
-  {% endfor %}
-</section>
+      </div>
+    {% elif not user.is_authenticated %}
+      <p class="mb-6 text-body-md font-body-md">
+        <a class="font-semibold text-on-surface hover:underline" href="{% url 'login' %}?next={{ request.path|urlencode }}">Inicia sesión como cliente para publicar una reseña.</a>
+      </p>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for resena in resenas %}
+        <article class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/60">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-full bg-surface-container-low border border-outline-variant/50 flex items-center justify-center font-semibold text-body-sm uppercase">
+                {{ resena.user.first_name|default:resena.user.email|slice:":1" }}
+              </span>
+              <div>
+                <p class="font-semibold text-on-surface text-body-md">
+                  {% if resena.user.first_name or resena.user.last_name %}
+                    {{ resena.user.first_name }} {{ resena.user.last_name }}
+                  {% else %}
+                    {{ resena.user.email }}
+                  {% endif %}
+                </p>
+                <p class="text-body-sm font-body-sm text-secondary">{{ resena.created_at|date:"d/m/Y" }}</p>
+              </div>
+            </div>
+            <span class="inline-flex items-center gap-0.5 text-primary-container font-bold text-body-md" title="Calificación: {{ resena.score }} / 5">
+              <span class="material-symbols-outlined material-symbols-fill text-[18px]">star</span>{{ resena.score }}
+            </span>
+          </div>
+          <p class="text-body-md font-body-md text-secondary leading-relaxed">{{ resena.content }}</p>
+          {% if resena.review_photo %}
+            <img src="{{ resena.review_photo.image.url }}" alt="Foto de la reseña" class="mt-4 rounded-xl border border-outline-variant/50 max-h-64 object-cover">
+          {% endif %}
+        </article>
+      {% empty %}
+        <p class="text-body-md font-body-md text-secondary">Este producto todavía no tiene reseñas.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
 {% endblock %}

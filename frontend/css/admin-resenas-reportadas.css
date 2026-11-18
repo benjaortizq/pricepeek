@@ -1,0 +1,12 @@
+/* base.css centres the icon font inline-block; this screen kept the default inline flow, so it is restored here */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  font-size: 20px;
+  line-height: 1;
+  display: inline;
+  vertical-align: baseline;
+}
+
+.material-symbols-outlined.fill-icon {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}

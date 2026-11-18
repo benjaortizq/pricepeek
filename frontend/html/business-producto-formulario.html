@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html class="h-full bg-surface" lang="es">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>PricePeek Business - Agregar Nuevo Producto</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="../js/tailwind.config.js"></script>
+<link rel="stylesheet" href="../css/base.css">
+</head>
+<body class="h-full bg-surface text-on-surface antialiased overflow-x-hidden">
+<!-- ========================================================================= -->
+<!-- SideNavBar Component (Shared Anchor) -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-64 flex flex-col justify-between bg-surface-container-lowest border-r border-outline-variant z-50">
+<div class="h-screen w-64 p-4 flex flex-col justify-between shrink-0">
+<div class="flex flex-col gap-6">
+<!-- Logo Header -->
+<div class="flex items-center gap-3 px-2 pt-2">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container font-black text-xl shadow-sm">
+<span class="material-symbols-outlined text-2xl font-bold" data-icon="search">search</span>
+</div>
+<div>
+<div class="flex items-center gap-1">
+<span class="text-headline-md font-headline-md text-on-surface tracking-tight font-extrabold">PricePeek</span>
+<span class="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+</div>
+<p class="text-body-sm font-body-sm text-secondary">Inteligencia de Precios CR</p>
+</div>
+</div>
+<!-- Scan Action Trigger -->
+<button class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full border border-outline-variant bg-surface hover:bg-surface-container-low transition-colors duration-150 text-body-md font-headline-md text-on-surface active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span>Escanear código</span>
+</button>
+<!-- Navigation Links -->
+<nav aria-label="Navegación principal" class="flex flex-col gap-1.5">
+<!-- Item 1: Resumen -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span class="text-body-md font-body-md">Resumen</span>
+</a>
+<!-- Item 2: Productos (ACTIVE) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full bg-primary-container text-on-primary-container font-headline-md text-body-md active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span>Productos</span>
+</a>
+<!-- Item 3: Ofertas y precios -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="local_offer">local_offer</span>
+<span class="text-body-md font-body-md">Ofertas y precios</span>
+</a>
+<!-- Item 4: Sucursales -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="storefront">storefront</span>
+<span class="text-body-md font-body-md">Sucursales</span>
+</a>
+<!-- Item 5: Configuración -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span class="text-body-md font-body-md">Configuración</span>
+</a>
+</nav>
+</div>
+<!-- Footer SideNav -->
+<div class="pt-4 border-t border-outline-variant flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="help">help</span>
+<span class="text-body-md font-body-md">Ayuda y soporte</span>
+</a>
+<div class="px-4 py-2 bg-surface-container-low rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="inline-block w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="text-body-sm font-body-sm text-secondary">Red GS1 CR Activa</span>
+</div>
+<span class="text-label-badge font-label-badge bg-surface px-1.5 py-0.5 rounded text-secondary">v2.4</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- TopNavBar Component (Shared Anchor) -->
+<!-- ========================================================================= -->
+<header class="docked full-width top-0 z-40 fixed top-0 right-0 left-64 bg-surface-container-lowest border-b border-outline-variant h-16 px-8 flex justify-between items-center">
+<!-- Left: Search and Context -->
+<div class="flex items-center gap-6 w-full max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low text-body-md font-body-md text-on-surface pl-10 pr-10 py-2 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all" placeholder="Buscar SKU, código de barras o producto en inventario..." type="text">
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="qr_code_scanner">qr_code_scanner</span>
+</button>
+</div>
+<!-- Navigation links in TopBar -->
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-on-surface-variant hover:text-on-surface font-body-md text-body-md whitespace-nowrap" href="#">Ver alertas</a>
+<a class="text-on-surface-variant hover:text-on-surface font-body-md text-body-md whitespace-nowrap" href="#">Auditoría</a>
+</nav>
+</div>
+<!-- Right: Quick Actions & Profile -->
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-outline-variant bg-surface hover:bg-surface-container-low text-body-sm font-headline-md text-on-surface transition-colors active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-base" data-icon="filter_alt">filter_alt</span>
+<span class="hidden sm:inline">Filtro de tiendas</span>
+</button>
+<button class="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-outline-variant bg-surface hover:bg-surface-container-low text-body-sm font-headline-md text-on-surface transition-colors active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-base" data-icon="download">download</span>
+<span class="hidden sm:inline">Descargar reporte</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<!-- Notification button -->
+<button class="relative p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-container rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<!-- Profile Avatar -->
+<div class="flex items-center gap-2 pl-1 cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-headline-md text-xs font-bold ring-2 ring-outline-variant">
+          CR
+        </div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- Main Page Workspace -->
+<!-- ========================================================================= -->
+<main class="ml-64 pt-16 min-h-screen pb-28">
+<div class="max-w-[1280px] mx-auto px-8 py-8">
+<!-- Breadcrumbs -->
+<nav aria-label="Ruta de navegación" class="flex items-center gap-2 text-body-sm font-body-sm text-secondary mb-4">
+<a class="hover:text-on-surface transition-colors" href="#">PricePeek Business</a>
+<span class="text-xs">/</span>
+<a class="hover:text-on-surface transition-colors" href="#">Catálogo Comercial</a>
+<span class="text-xs">/</span>
+<a class="hover:text-on-surface transition-colors" href="#">Gestión de Productos</a>
+<span class="text-xs">/</span>
+<span class="text-on-surface font-semibold">Nuevo Producto</span>
+</nav>
+<!-- Top Header & Primary Actions -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-outline-variant">
+<div>
+<a class="inline-flex items-center gap-1.5 text-body-sm font-headline-md text-secondary hover:text-on-surface transition-colors mb-2" href="#">
+<span class="material-symbols-outlined text-base" data-icon="arrow_back">arrow_back</span>
+<span>Volver al catálogo</span>
+</a>
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Agregar Nuevo Producto al Catálogo</h1>
+<p class="text-body-md font-body-md text-secondary mt-1">Registra la información técnica, código de barras y desglose de precios por sucursal en Costa Rica.</p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<button class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface text-body-md font-headline-md hover:bg-surface-container-low transition-colors active:scale-[0.98]" type="button">
+            Guardar como borrador
+          </button>
+<button class="px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container text-body-md font-headline-md hover:opacity-95 transition-opacity active:scale-[0.98] shadow-sm flex items-center gap-2" type="button">
+<span>Guardar y Publicar</span>
+<span class="material-symbols-outlined text-lg" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+</div>
+<!-- Main Form 2-Column Grid (65% / 35%) -->
+<form class="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- =================================================================== -->
+<!-- LEFT COLUMN (65% / 8 Cols) -->
+<!-- =================================================================== -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Card 1: Datos Principales del Producto -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 shadow-none">
+<div class="flex items-center justify-between pb-4 border-b border-outline-variant mb-6">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="info">info</span>
+<h2 class="text-headline-md font-headline-md text-on-surface">Datos Principales del Producto</h2>
+</div>
+<span class="text-label-badge font-label-badge text-secondary bg-surface-container-low px-2.5 py-1 rounded-full uppercase">Paso 1 de 2</span>
+</div>
+<div class="space-y-5">
+<!-- Nombre del Producto -->
+<div>
+<label class="block text-body-sm font-headline-md text-on-surface mb-1.5" for="product-name">
+                  Nombre del producto <span class="text-error">*</span>
+</label>
+<input class="w-full bg-surface-container-low text-body-md font-body-md text-on-surface px-4 py-2.5 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all" id="product-name" placeholder="Ej. Refrigeradora Samsung 300L No Frost con Dispensador" type="text" value="Refrigeradora Samsung 300L No Frost con Dispensador">
+</div>
+<!-- Categoría y Marca (Grid 2 cols) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block text-body-sm font-headline-md text-on-surface mb-1.5" for="category">
+                    Categoría <span class="text-error">*</span>
+</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-container-low text-body-md font-body-md text-on-surface px-4 py-2.5 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all cursor-pointer pr-10" id="category">
+<option selected="">Línea Blanca</option>
+<option>Smartphones &amp; TV</option>
+<option>Electrodomésticos</option>
+<option>Computación</option>
+<option>Hogar y Herramientas</option>
+</select>
+<span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-secondary pointer-events-none text-xl" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div>
+<label class="block text-body-sm font-headline-md text-on-surface mb-1.5" for="brand">
+                    Marca <span class="text-error">*</span>
+</label>
+<input class="w-full bg-surface-container-low text-body-md font-body-md text-on-surface px-4 py-2.5 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all" id="brand" placeholder="Ej. Samsung" type="text" value="Samsung">
+</div>
+</div>
+<!-- Modelo / SKU & Código de Barras -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block text-body-sm font-headline-md text-on-surface mb-1.5" for="sku">
+                    Modelo / SKU Interno <span class="text-error">*</span>
+</label>
+<input class="w-full bg-surface-container-low text-body-md font-body-md text-on-surface px-4 py-2.5 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all font-mono" id="sku" placeholder="Ej. SAM-RF300-CR" type="text" value="SAM-RF300-CR">
+</div>
+<div>
+<label class="block text-body-sm font-headline-md text-on-surface mb-1.5" for="barcode">
+                    Código de barras (EAN-13 / UPC) <span class="text-error">*</span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low text-body-md font-body-md text-on-surface pl-10 pr-4 py-2.5 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all font-mono" id="barcode" placeholder="7441029481023" type="text" value="7441029481023">
+<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-lg" data-icon="barcode">barcode</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1.5 text-body-sm font-body-sm text-tertiary">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Validación automática con base de datos de comercios de Costa Rica (GS1 CR).</span>
+</div>
+</div>
+</div>
+<!-- Descripción técnica o características clave -->
+<div>
+<label class="block text-body-sm font-headline-md text-on-surface mb-1.5" for="description">
+                  Descripción técnica o características clave
+                </label>
+<textarea class="w-full bg-surface-container-low text-body-md font-body-md text-on-surface px-4 py-3 rounded-2xl border border-outline-variant focus:outline-none focus:border-on-surface focus:bg-surface-container-lowest transition-all resize-none" id="description" placeholder="Detalla especificaciones técnicas: Eficiencia energética A, motor Digital Inverter con 20 años de garantía, sistema All-Around Cooling, dispensador de agua exterior sin plomería y dimensiones (163.5 x 60 x 67.2 cm)." rows="4">Eficiencia energética A+ con compresor Digital Inverter de alta durabilidad y 20 años de garantía. Tecnología All-around Cooling para un enfriamiento uniforme y constante. Incluye dispensador de agua frontal de 2L sin conexión a tubería. Acabado en acero inoxidable cepillado antihuellas resistente a la corrosión en clima tropical.</textarea>
+</div>
+</div>
+</section>
+<!-- Card 2: Precios y Disponibilidad por Sucursal en Costa Rica -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 shadow-none">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-outline-variant mb-6 gap-2">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="store">store</span>
+<div>
+<h2 class="text-headline-md font-headline-md text-on-surface">Precios y Disponibilidad por Sucursal en Costa Rica</h2>
+<p class="text-body-sm font-body-sm text-secondary">Configura el precio base oficial y personaliza si existen variaciones entre puntos de venta físicos.</p>
+</div>
+</div>
+</div>
+<!-- Precio Base Sugerido (PVP Nacional) -->
+<div class="p-4 bg-surface-container-low rounded-2xl border border-outline-variant mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<span class="text-body-sm font-headline-md text-on-surface block">Precio Base Sugerido (PVP Nacional)</span>
+<span class="text-body-sm font-body-sm text-secondary">Este monto se aplicará como predeterminado para todas las tiendas registradas.</span>
+</div>
+<div class="relative w-full sm:w-56 shrink-0">
+<span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-body-md font-headline-md text-on-surface">₡</span>
+<input class="w-full bg-surface-container-lowest text-price-row font-price-row text-on-surface pl-8 pr-4 py-2 rounded-full border border-outline-variant focus:outline-none focus:border-on-surface" type="text" value="349.900">
+</div>
+</div>
+<!-- Table of Branches -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant text-label-badge font-label-badge text-secondary uppercase">
+<th class="py-3 px-3">Punto de Venta / Cantón</th>
+<th class="py-3 px-3">Precio Local (CRC)</th>
+<th class="py-3 px-3">Inventario</th>
+<th class="py-3 px-3 text-right">Estado</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1: San José Centro -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3.5 px-3">
+<div class="font-headline-md text-body-md text-on-surface">Sucursal San José Centro</div>
+<div class="text-body-sm font-body-sm text-secondary">Av. Central, San José</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="relative w-36">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-body-sm font-bold text-secondary">₡</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-body-md font-price-row text-on-surface bg-surface-container-lowest rounded-full border border-outline-variant focus:outline-none focus:border-on-surface" type="text" value="349.900">
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="text-body-md font-headline-md text-on-surface">12 uds</span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-label-badge font-label-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                        Disponible
+                      </span>
+</td>
+</tr>
+<!-- Row 2: Alajuela City Mall -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3.5 px-3">
+<div class="font-headline-md text-body-md text-on-surface">Sucursal Alajuela</div>
+<div class="text-body-sm font-body-sm text-secondary">City Mall, Radial Francisco J. Orlich</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="relative w-36">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-body-sm font-bold text-secondary">₡</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-body-md font-price-row text-on-surface bg-surface-container-lowest rounded-full border border-outline-variant focus:outline-none focus:border-on-surface" type="text" value="349.900">
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="text-body-md font-headline-md text-on-surface">8 uds</span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-label-badge font-label-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                        Disponible
+                      </span>
+</td>
+</tr>
+<!-- Row 3: Heredia Paseo de las Flores (Oferta Especial) -->
+<tr class="bg-primary-fixed/20 hover:bg-primary-fixed/30 transition-colors">
+<td class="py-3.5 px-3">
+<div class="font-headline-md text-body-md text-on-surface flex items-center gap-2">
+<span>Sucursal Heredia</span>
+<span class="text-label-badge font-label-badge bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full">Oferta local</span>
+</div>
+<div class="text-body-sm font-body-sm text-secondary">Paseo de las Flores, Heredia</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="relative w-36">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-body-sm font-bold text-secondary">₡</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-body-md font-price-row text-on-surface bg-surface-container-lowest rounded-full border-2 border-primary-container focus:outline-none font-bold" type="text" value="344.900">
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="text-body-md font-headline-md text-on-surface">5 uds</span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-label-badge font-label-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                        Disponible
+                      </span>
+</td>
+</tr>
+<!-- Row 4: Cartago Metrocentro -->
+<tr class="hover:bg-surface-container-low transition-colors opacity-75">
+<td class="py-3.5 px-3">
+<div class="font-headline-md text-body-md text-on-surface">Sucursal Cartago</div>
+<div class="text-body-sm font-body-sm text-secondary">Metrocentro Cartago</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="relative w-36">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-body-sm font-bold text-secondary">₡</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-body-md font-price-row text-on-surface bg-surface-container-lowest rounded-full border border-outline-variant focus:outline-none focus:border-on-surface" type="text" value="349.900">
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="text-body-md font-headline-md text-secondary">0 uds</span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container text-on-error-container text-label-badge font-label-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                        Sin stock
+                      </span>
+</td>
+</tr>
+<!-- Row 5: Escazú Multiplaza -->
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3.5 px-3">
+<div class="font-headline-md text-body-md text-on-surface">Sucursal Escazú</div>
+<div class="text-body-sm font-body-sm text-secondary">Multiplaza Escazú, Roble</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="relative w-36">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-body-sm font-bold text-secondary">₡</span>
+<input class="w-full pl-7 pr-3 py-1.5 text-body-md font-price-row text-on-surface bg-surface-container-lowest rounded-full border border-outline-variant focus:outline-none focus:border-on-surface" type="text" value="349.900">
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="text-body-md font-headline-md text-on-surface">15 uds</span>
+</td>
+<td class="py-3.5 px-3 text-right">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-label-badge font-label-badge">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                        Disponible
+                      </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Add branch action link -->
+<div class="pt-4 border-t border-outline-variant mt-4">
+<button class="inline-flex items-center gap-2 text-body-md font-headline-md text-primary hover:text-on-primary-fixed-variant transition-colors" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="add_circle">add_circle</span>
+<span>+ Agregar otra sucursal de Costa Rica</span>
+</button>
+</div>
+</section>
+</div>
+<!-- =================================================================== -->
+<!-- RIGHT COLUMN (35% / 4 Cols) -->
+<!-- =================================================================== -->
+<div class="lg:col-span-4 flex flex-col gap-6">
+<!-- Card 1: Imagen del Producto -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 shadow-none">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="image">image</span>
+<h3 class="text-body-lg font-headline-md text-on-surface">Imagen del Producto</h3>
+</div>
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="verified">verified</span>
+</div>
+<!-- Dropzone / Image Preview Area -->
+<div class="relative rounded-2xl border-2 border-dashed border-outline-variant bg-surface-container-low p-4 flex flex-col items-center justify-center text-center group hover:border-on-surface transition-colors">
+<div class="relative w-full aspect-square max-w-[240px] rounded-xl overflow-hidden bg-white p-2 border border-outline-variant mb-4 flex items-center justify-center">
+<img alt="Refrigeradora Samsung 300L No Frost con Dispensador" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Vr8Cj8pcqIcUjbT8mGADsTkoCSYOTuySFv6jLrr3ANu4nGpy5h_eAKJxJf0Mtrlkvku5GP3oVtyg3Mu4naMNnrFp9EPCOsYuPJ9i9wBb9mnIrU5RrklWTeMg5UhRs9fajW_QrnO6PBkKoXhPxXovExAVV5CVTVi2GhV5s5da_-v9R_ufBDRjMVk2yb9blnvjNfp_Awso0XZJjBtp5k4iKTeJA6nnTEWK5lZqljC00eoV89TEdObbGtPVE">
+<span class="absolute top-3 left-3 bg-on-surface/85 backdrop-blur-sm text-surface text-label-badge font-label-badge px-2 py-0.5 rounded-full">
+                  Fondo Blanco Oficial
+                </span>
+</div>
+<p class="text-body-sm font-headline-md text-on-surface mb-1">Imagen Principal (800x800 px)</p>
+<p class="text-body-sm font-body-sm text-secondary mb-4 px-2">Arrastra y suelta la foto principal del producto aquí o haz clic para explorar tus archivos.</p>
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-body-sm font-headline-md text-on-surface transition-colors active:scale-[0.98]" type="button">
+                  Cambiar imagen
+                </button>
+<button class="p-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-error-container hover:text-on-error-container text-secondary transition-colors" title="Eliminar" type="button">
+<span class="material-symbols-outlined text-base" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- PricePeek photo rules callout -->
+<div class="mt-4 p-3 bg-surface-container-low rounded-xl border border-outline-variant flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-lg mt-0.5" data-icon="shield">shield</span>
+<p class="text-body-sm font-body-sm text-secondary leading-snug">
+                Por políticas de <strong class="font-bold text-on-surface">PricePeek</strong>, las fotos deben tener fondo blanco neutro y sin marcas de agua de tiendas para garantizar neutralidad algorítmica.
+              </p>
+</div>
+</section>
+<!-- Card 2: Paridad y Monitoreo Competitivo -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 shadow-none">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="analytics">analytics</span>
+<h3 class="text-body-lg font-headline-md text-on-surface">Paridad y Monitoreo Competitivo</h3>
+</div>
+<span class="text-label-badge font-label-badge bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded-full">En tiempo real</span>
+</div>
+<p class="text-body-sm font-body-sm text-secondary mb-4">
+              Referencia del mercado actual detectada en Costa Rica para el código EAN <span class="font-mono text-on-surface font-semibold">7441029481023</span>:
+            </p>
+<!-- Metrics Bento -->
+<div class="space-y-3">
+<!-- Competitor baseline -->
+<div class="p-3.5 bg-surface-container-low rounded-xl border border-outline-variant flex justify-between items-center">
+<div>
+<span class="text-body-sm font-body-sm text-secondary block">Precio mínimo en mercado</span>
+<span class="text-body-sm font-headline-md text-on-surface">Walmart Costa Rica</span>
+</div>
+<span class="text-price-row font-price-row text-secondary">₡354.500</span>
+</div>
+<!-- Proposed price -->
+<div class="p-3.5 bg-surface-container rounded-xl border-2 border-primary-container flex justify-between items-center">
+<div>
+<span class="text-body-sm font-headline-md text-on-surface block">Tu precio propuesto</span>
+<span class="text-body-sm font-body-sm text-tertiary font-semibold">Oferta competitiva</span>
+</div>
+<span class="text-price-hero font-price-hero text-on-surface">₡349.900</span>
+</div>
+<!-- Projected State Badge Banner -->
+<div class="p-4 bg-tertiary-container/30 border border-tertiary-container rounded-xl flex items-center justify-between">
+<div>
+<span class="text-label-badge font-label-badge text-on-tertiary-container uppercase block mb-0.5">Estado proyectado</span>
+<div class="inline-flex items-center gap-1.5 text-body-md font-headline-md text-tertiary">
+<span class="material-symbols-outlined text-base" data-icon="trending_down">trending_down</span>
+<span>Mínimo Histórico (-₡4.600)</span>
+</div>
+</div>
+<div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container" title="Top 1 Ranking">
+<span class="material-symbols-outlined text-xl" data-icon="military_tech" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+</div>
+<!-- Algorithmic seal highlight notice -->
+<div class="mt-4 p-3.5 rounded-xl bg-surface-container-low border border-outline-variant flex items-start gap-2.5">
+<span class="material-symbols-outlined text-primary-container text-lg mt-0.5" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+                Al publicar a este precio, obtendrás automáticamente el sello de <strong class="font-bold text-on-surface">"Mejor precio garantizado"</strong> en el feed de PricePeek Costa Rica.
+              </p>
+</div>
+</section>
+<!-- Audit Check Mini Card -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant">
+<div class="flex items-center justify-between mb-2">
+<span class="text-body-sm font-headline-md text-on-surface">Completitud del Registro</span>
+<span class="text-label-badge font-label-badge text-tertiary">95%</span>
+</div>
+<div class="w-full bg-outline-variant/40 h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 95%"></div>
+</div>
+<p class="text-body-sm font-body-sm text-secondary mt-2">Cumple con las normas GS1 Costa Rica y MEIC para publicación comercial.</p>
+</div>
+</div>
+</form>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- Bottom Sticky Action Bar (Global Save/Cancel) -->
+<!-- ========================================================================= -->
+<footer class="fixed bottom-0 right-0 left-64 bg-surface-container-lowest border-t border-outline-variant py-3.5 px-8 z-40">
+<div class="max-w-[1280px] mx-auto flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="inline-block w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="text-body-sm font-body-sm text-secondary">Borrador autoguardado hace 1 minuto</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface hover:bg-surface-container-low text-body-md font-headline-md text-on-surface transition-colors active:scale-[0.98]" type="button">
+          Cancelar
+        </button>
+<button class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-body-md font-headline-md text-on-surface transition-colors active:scale-[0.98]" type="button">
+          Guardar Borrador
+        </button>
+<button class="px-7 py-2.5 rounded-full bg-primary-container text-on-primary-container text-body-md font-headline-md hover:opacity-95 transition-opacity active:scale-[0.98] shadow-sm flex items-center gap-2" type="button">
+<span>Guardar y Publicar Producto</span>
+<span class="material-symbols-outlined text-lg" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</footer>
+<script src="../js/main.js"></script>
+</body></html>

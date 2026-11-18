@@ -1,16 +1,25 @@
-{% extends "base.html" %}
+{% extends "base_tarjeta.html" %}
 
-{% block title %}Cambiar contraseña · PricePeek{% endblock %}
+{% block title %}Cambiar contraseña{% endblock %}
+{% block icono_tarjeta %}{% include "componentes/icono_tarjeta.html" with icono="password" %}{% endblock %}
+{% block titulo_tarjeta %}Cambiar contraseña{% endblock %}
+{% block subtitulo_tarjeta %}Ingrese su contraseña actual y la nueva contraseña. Le enviaremos un código a su correo para confirmar el cambio.{% endblock %}
 
-{% block content %}
-<h1>Cambiar contraseña</h1>
-<p>Ingrese su contraseña actual y la nueva contraseña. Le enviaremos un código a su correo para confirmar el cambio.</p>
-
-<form method="post" novalidate>
+{% block tarjeta %}
+<form class="space-y-4" method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Enviar código</button>
+  {% include "componentes/errores_form.html" %}
+  {% include "componentes/campo.html" with field=form.old_password icono="lock" %}
+  {% include "componentes/campo.html" with field=form.new_password1 icono="lock_reset" %}
+  {% include "componentes/campo.html" with field=form.new_password2 icono="lock_reset" %}
+  <div class="pt-2">
+    <button class="boton-primario" type="submit">
+      <span>Enviar código</span>
+      <span class="material-symbols-outlined text-[18px]">send</span>
+    </button>
+  </div>
 </form>
 
-<p><a href="{% url 'panel' %}">Cancelar</a></p>
+{% url 'editar_perfil' as url_perfil %}
+{% include "componentes/volver.html" with url=url_perfil texto="Volver a mi perfil" %}
 {% endblock %}

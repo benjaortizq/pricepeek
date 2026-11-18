@@ -16,6 +16,7 @@ class Reviews(models.Model):
         managed = False
         db_table = 'reviews'
         unique_together = (('user', 'variant'),)
+    review_photo = None
 
 
 class ReviewPhoto(models.Model):

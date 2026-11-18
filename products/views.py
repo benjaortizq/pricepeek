@@ -2,6 +2,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .busqueda import buscar_productos, con_imagen
@@ -33,6 +34,7 @@ def detalle_producto(request, pk):
         .filter(variant__product_id=producto.pk)
         .order_by("-created_at")
     )
+    calificacion_promedio = resenas.aggregate(promedio=Avg("score"))["promedio"]
     ya_reseño = (
         request.user.is_authenticated
         and request.user.role == "client"
@@ -101,6 +103,7 @@ def detalle_producto(request, pk):
             "variantes": variantes,
             "precios": precios,
             "resenas": resenas,
+            "calificacion_promedio": calificacion_promedio,
             "review_form": review_form,
             "ya_reseño": ya_reseño,
         },

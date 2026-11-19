@@ -9,6 +9,12 @@ class Incident(models.Model):
 
     class Kind(models.TextChoices):
         INVALID_BARCODE = "invalid_barcode", "Código de barras inválido"
+        # Actualización de precios desde las tiendas (SCRUM-56)
+        DOWNLOAD_FAILED = "download_failed", "No se pudo descargar la página"
+        PRODUCT_NOT_FOUND = "product_not_found", "Producto no encontrado en la tienda"
+        PRICE_NOT_FOUND = "price_not_found", "Precio no encontrado en la página"
+        BARCODE_MISMATCH = "barcode_mismatch", "El código de barras no coincide"
+        SUSPICIOUS_PRICE = "suspicious_price", "Cambio de precio sospechoso"
 
     kind = models.CharField("tipo", max_length=30, choices=Kind.choices, default=Kind.INVALID_BARCODE)
     store_name = models.CharField("comercio", max_length=NAME_MAX_LENGTH, blank=True)

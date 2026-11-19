@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
@@ -9,6 +11,26 @@ from .busqueda import buscar_productos, con_imagen
 from .models import Prices, ProductImages, ProductVariants, Products
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, Reviews
+
+
+def marcar_mejores_precios(precios):
+    """Marca con .es_mejor las ofertas con el menor precio final de cada presentación.
+
+    Solo compiten las ofertas que se pueden comprar (disponibles y con precio) de la
+    misma presentación y moneda. Si varias tiendas empatan en el menor precio, se marcan
+    todas. Si una presentación tiene una sola oferta, no hay con qué compararla y no se marca.
+    """
+    ofertas_por_presentacion = defaultdict(list)
+    for precio in precios:
+        precio.es_mejor = False
+        if precio.is_available and precio.price is not None:
+            ofertas_por_presentacion[(precio.gtin_id, precio.currency_id)].append(precio)
+    for ofertas in ofertas_por_presentacion.values():
+        if len(ofertas) < 2:
+            continue
+        menor = min(oferta.final for oferta in ofertas)
+        for oferta in ofertas:
+            oferta.es_mejor = oferta.final == menor
 
 
 def detalle_producto(request, pk):
@@ -28,7 +50,8 @@ def detalle_producto(request, pk):
     for precio in precios:
         precio.tienda = precio.id_store.name.strip()  # algunos nombres traen un salto de línea
         if precio.price is not None:
-            precio.final = round(precio.price * (1 - precio.discount))  
+            precio.final = round(precio.price * (1 - precio.discount))
+    marcar_mejores_precios(precios)
     resenas = (
         Reviews.objects.select_related("variant", "user")
         .filter(variant__product_id=producto.pk)

@@ -134,9 +134,65 @@ class DetalleProductoTests(CatalogoTestCase):
         self.assertContains(respuesta, 'href="https://tienda.test/7441001234567"')
 
     def test_no_marca_ningun_precio_como_el_mejor(self):
+        # Con una sola tienda no hay con qué comparar.
         tienda = Stores.objects.create(name="Walmart", **fechas())
         self.precio(self.variante_leche, tienda, 1760)
         self.assertNotContains(self.client.get(self.url()), "Mejor precio")
+
+    def mejores(self, respuesta):
+        """Tiendas (y presentación) marcadas como mejor precio."""
+        return {(p.tienda, p.gtin.gtin) for p in respuesta.context["precios"] if p.es_mejor}
+
+    def test_resalta_la_tienda_con_el_menor_precio(self):
+        walmart = Stores.objects.create(name="Walmart\n", **fechas())
+        automercado = Stores.objects.create(name="Automercado\n", **fechas())
+        mas_x_menos = Stores.objects.create(name="Más x Menos", **fechas())
+        self.precio(self.variante_leche, walmart, 1760)
+        self.precio(self.variante_leche, automercado, 1940, descuento="0.25")  # queda en 1455
+        self.precio(self.variante_leche, mas_x_menos, 1500)
+        respuesta = self.client.get(self.url())
+        self.assertEqual(self.mejores(respuesta), {("Automercado", "7441001234567")})
+        self.assertContains(respuesta, "Mejor precio", count=1)
+
+    def test_resalta_todas_las_tiendas_empatadas(self):
+        walmart = Stores.objects.create(name="Walmart", **fechas())
+        automercado = Stores.objects.create(name="Automercado", **fechas())
+        pali = Stores.objects.create(name="Pali", **fechas())
+        self.precio(self.variante_leche, walmart, 1500)
+        self.precio(self.variante_leche, automercado, 2000, descuento="0.25")  # también 1500
+        self.precio(self.variante_leche, pali, 1600)
+        respuesta = self.client.get(self.url())
+        self.assertEqual(
+            self.mejores(respuesta),
+            {("Walmart", "7441001234567"), ("Automercado", "7441001234567")},
+        )
+        self.assertContains(respuesta, "Mejor precio", count=2)
+
+    def test_compara_cada_presentacion_por_separado(self):
+        litro_y_medio = self.variante(self.leche, "7441001234574")
+        walmart = Stores.objects.create(name="Walmart", **fechas())
+        pali = Stores.objects.create(name="Pali", **fechas())
+        self.precio(self.variante_leche, walmart, 1760)
+        self.precio(self.variante_leche, pali, 1800)
+        self.precio(litro_y_medio, walmart, 2600)
+        self.precio(litro_y_medio, pali, 2500)
+        respuesta = self.client.get(self.url())
+        self.assertEqual(
+            self.mejores(respuesta),
+            {("Walmart", "7441001234567"), ("Pali", "7441001234574")},
+        )
+
+    def test_no_considera_tiendas_sin_precio_ni_no_disponibles(self):
+        walmart = Stores.objects.create(name="Walmart", **fechas())
+        pali = Stores.objects.create(name="Pali", **fechas())
+        agotada = Stores.objects.create(name="Agotada", **fechas())
+        sin_precio = Stores.objects.create(name="Peri", **fechas())
+        self.precio(self.variante_leche, walmart, 1760)
+        self.precio(self.variante_leche, pali, 1800)
+        self.precio(self.variante_leche, agotada, 900, disponible=False)
+        self.precio(self.variante_leche, sin_precio, None, disponible=False)
+        respuesta = self.client.get(self.url())
+        self.assertEqual(self.mejores(respuesta), {("Walmart", "7441001234567")})
 
     def test_indica_precios_no_disponibles(self):
         tienda = Stores.objects.create(name="Peri", **fechas())

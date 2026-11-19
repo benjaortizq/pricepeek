@@ -323,30 +323,31 @@ class CatalogoTestCase(TestCase):
         respuesta = self.client.get(self.url(999))
         self.assertEqual(respuesta.status_code, 404)
 
-    def test_lista_el_precio_de_cada_tienda(self):
+    def test_muestra_las_tiendas_y_el_porcentaje_sobre_el_minimo(self):
         walmart = Stores.objects.create(name="Walmart\n", **fechas())
         automercado = Stores.objects.create(name="Automercado\n", **fechas())
         self.precio(self.variante, walmart, 1760)
         self.precio(self.variante, automercado, 1940, descuento="0.25")
         respuesta = self.client.get(self.url())
-        self.assertContains(respuesta, "₡1.760")
         self.assertContains(respuesta, "₡1.455")
-        self.assertContains(respuesta, "Descuento de 25 %")
-        self.assertContains(respuesta, '<span class="font-bold text-on-surface text-body-lg">Walmart</span>', html=False)
+        self.assertEqual(respuesta.content.decode().count("₡1.455"), 1)
+        self.assertContains(respuesta, "₡1.760")
+        self.assertContains(respuesta, "+₡305 (+21%)")
+        self.assertContains(respuesta, "25 % de descuento")
+        self.assertContains(respuesta, "Automercado")
+        self.assertContains(respuesta, "Walmart")
         self.assertContains(respuesta, 'href="https://tienda.test/7441001234567"')
-        html = respuesta.content.decode()
-        self.assertLess(html.index("₡1.455"), html.index("₡1.760"))
-        precios = respuesta.context["precios"]
-        self.assertEqual(
-            {precio.tienda for precio in precios if precio.tienda.startswith("Walmart")},
-            {"Walmart"},
-        )
+        grupos = respuesta.context["grupos_precios"]
+        self.assertEqual(len(grupos), 1)
+        self.assertEqual(grupos[0]["mejor"].final, 1455)
+        self.assertEqual(grupos[0]["mejor"].tienda, "Automercado")
+        self.assertEqual(len(grupos[0]["opciones"]), 5)
 
-    def test_destaca_el_mejor_precio_disponible(self):
+    def test_destaca_un_solo_mejor_precio_disponible(self):
         respuesta = self.client.get(self.url())
 
         html = respuesta.content.decode()
-        self.assertContains(respuesta, "Mejor precio verificado")
+        self.assertContains(respuesta, "Mejor precio disponible")
         self.assertEqual(html.count("data-best-price-card"), 1)
         self.assertEqual(html.count("data-best-price-badge"), 1)
         precios = list(respuesta.context["precios"])
@@ -361,11 +362,11 @@ class CatalogoTestCase(TestCase):
         mas_caro = next(precio for precio in disponibles if precio.final == 2500)
         self.assertEqual(mas_caro.diferencia_vs_minimo, Decimal("500"))
         self.assertAlmostEqual(float(mas_caro.diferencia_porcentaje), 25.0, places=2)
-        self.assertEqual(
-            [precio.final for precio in precios],
-            [2000, 2000, 2500, 1000],
-        )
-        self.assertFalse(precios[-1].es_mejor)
+        self.assertContains(respuesta, "+₡500 (+25%)")
+        grupos = respuesta.context["grupos_precios"]
+        self.assertEqual(len(grupos), 1)
+        self.assertEqual(grupos[0]["mejor"].final, 2000)
+        self.assertEqual(len(grupos[0]["opciones"]), 3)
 
     def test_destaca_el_mejor_precio_de_cada_gtin(self):
         otra_variante = ProductVariants.objects.create(
@@ -382,6 +383,8 @@ class CatalogoTestCase(TestCase):
         html = respuesta.content.decode()
         self.assertEqual(html.count("data-best-price-card"), 2)
         self.assertEqual(html.count("data-best-price-badge"), 2)
+        self.assertEqual(html.count('role="tab"'), 2)
+        self.assertEqual(html.count("data-gtin-panel="), 2)
         precios = respuesta.context["precios"]
         mejores = {precio.gtin_id for precio in precios if precio.es_mejor}
         self.assertEqual(mejores, {self.variante.gtin, otra_variante.gtin})
@@ -389,24 +392,52 @@ class CatalogoTestCase(TestCase):
             [precio.gtin_id for precio in precios],
             [self.variante.gtin] * 4 + [otra_variante.gtin],
         )
-        precios_por_gtin = {}
-        for precio in precios:
-            precios_por_gtin.setdefault(precio.gtin_id, []).append(precio)
-        self.assertEqual(
-            [precio.final for precio in precios_por_gtin[self.variante.gtin]],
-            [2000, 2000, 2500, 1000],
+        grupos = {grupo["gtin"]: grupo for grupo in respuesta.context["grupos_precios"]}
+        self.assertEqual(len(grupos), 2)
+        self.assertEqual(grupos[self.variante.gtin]["mejor"].final, 2000)
+        self.assertEqual(grupos[otra_variante.gtin]["mejor"].final, 1800)
+        self.assertEqual(len(grupos[self.variante.gtin]["opciones"]), 3)
+        self.assertEqual(len(grupos[otra_variante.gtin]["opciones"]), 0)
+
+    def test_el_porcentaje_se_calcula_contra_el_minimo_del_mismo_gtin(self):
+        otra_variante = ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234581",
+            name=self.producto.name,
+            **fechas(),
         )
-        self.assertEqual(
-            [precio.final for precio in precios_por_gtin[otra_variante.gtin]],
-            [1800],
+        tienda_f = Stores.objects.create(name="Tienda F", **fechas())
+        tienda_g = Stores.objects.create(name="Tienda G", **fechas())
+        self.precio(otra_variante, tienda_f, 1800)
+        self.precio(otra_variante, tienda_g, 2160)
+
+        respuesta = self.client.get(self.url())
+
+        grupos = {grupo["gtin"]: grupo for grupo in respuesta.context["grupos_precios"]}
+        mas_caro_primero = next(
+            precio for precio in grupos[self.variante.gtin]["opciones"]
+            if precio.final == 2500
         )
+        mas_caro_segundo = grupos[otra_variante.gtin]["opciones"][0]
+        self.assertAlmostEqual(float(mas_caro_primero.diferencia_porcentaje), 25.0)
+        self.assertAlmostEqual(float(mas_caro_segundo.diferencia_porcentaje), 20.0)
+        self.assertContains(respuesta, "+₡500 (+25%)")
+        self.assertContains(respuesta, "+₡360 (+20%)")
 
     def test_indica_precios_no_disponibles(self):
+        variante = ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234598",
+            name=self.producto.name,
+            **fechas(),
+        )
         tienda = Stores.objects.create(name="Peri", **fechas())
-        self.precio(self.variante, tienda, None, disponible=False)
+        self.precio(variante, tienda, None, disponible=False)
         respuesta = self.client.get(self.url())
+        self.assertContains(respuesta, "Precio no disponible")
         self.assertContains(respuesta, "No disponible")
         self.assertContains(respuesta, "Sin precio")
+        self.assertContains(respuesta, variante.gtin)
 
     def test_producto_sin_precios_lo_indica(self):
         producto = Products.objects.create(
@@ -420,11 +451,20 @@ class CatalogoTestCase(TestCase):
 
     def test_orden_precios_descripcion_y_resenas(self):
         html = self.client.get(self.url()).content.decode()
-        precios = html.index('id="precios-heading"')
+        precios = html.index('id="comparativa-gtin"')
         descripcion = html.index('id="descripcion-heading"')
         resenas = html.index('id="resenas-heading"')
         self.assertLess(precios, descripcion)
         self.assertLess(descripcion, resenas)
+
+    def test_no_muestra_la_comparativa_generica_redundante(self):
+        respuesta = self.client.get(self.url())
+
+        self.assertNotContains(
+            respuesta,
+            "Comparativa de precios en comercios de Costa Rica",
+        )
+        self.assertContains(respuesta, f'id="precio-heading-{self.variante.gtin}"')
 
 
 class BuscarProductosTests(CatalogoTestCase):
@@ -478,19 +518,103 @@ class BuscarProductosTests(CatalogoTestCase):
 
         self.assertEqual(list(productos), [producto])
 
+    def test_devuelve_una_variante_distinta_por_gtin(self):
+        otra_variante = ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234581",
+            name=self.producto.name,
+            **fechas(),
+        )
+        tienda = Stores.objects.create(name="Tienda E", **fechas())
+        self.precio(otra_variante, tienda, 1800)
+
+        variantes = buscar_variantes_por_nombre("leche")
+
+        self.assertEqual(
+            {variante.gtin for variante in variantes},
+            {self.variante.gtin, otra_variante.gtin},
+        )
+
+    def test_la_comparacion_conserva_las_opciones_de_cada_gtin(self):
+        otra_variante = ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234581",
+            name=self.producto.name,
+            **fechas(),
+        )
+        tienda = Stores.objects.create(name="Tienda E", **fechas())
+        self.precio(otra_variante, tienda, 1800)
+
+        respuesta = self.client.get(reverse("comparar_precios"), {"nombre": "leche"})
+
+        contenido = respuesta.json()
+        self.assertEqual(contenido["total"], 2)
+        resultados = {resultado["gtin"]: resultado for resultado in contenido["resultados"]}
+        self.assertEqual(
+            set(resultados),
+            {self.variante.gtin, otra_variante.gtin},
+        )
+        self.assertEqual(len(resultados[self.variante.gtin]["precios"]), 3)
+        self.assertEqual(len(resultados[otra_variante.gtin]["precios"]), 1)
+        self.assertEqual(
+            [precio["ranking"] for precio in resultados[self.variante.gtin]["precios"]],
+            [1, 1, 3],
+        )
+        self.assertEqual(
+            [precio["ranking"] for precio in resultados[otra_variante.gtin]["precios"]],
+            [1],
+        )
+
 
 class PaginaBusquedaTests(CatalogoTestCase):
+    def crear_variantes_yogur(self, cantidad):
+        for i in range(cantidad):
+            producto = self.crear_producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+            ProductVariants.objects.create(
+                product=producto,
+                gtin=f"7441000000{i:04d}",
+                name=producto.name,
+                **fechas(),
+            )
+
     def test_muestra_los_resultados(self):
         respuesta = self.client.get(reverse("buscar_productos"), {"q": "heinz"})
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Salsa de tomate")
         self.assertNotContains(respuesta, "Leche entera 1L")
 
-    def test_todavia_no_muestra_precio(self):
-        tienda = Stores.objects.create(name="Walmart", **fechas())
-        self.precio(self.variante_ketchup, tienda, 1760)
+    def test_muestra_el_precio_mas_bajo_de_cada_variante(self):
+        walmart = Stores.objects.create(name="Walmart", **fechas())
+        automercado = Stores.objects.create(name="Automercado", **fechas())
+        self.precio(self.variante_ketchup, walmart, 1760)
+        self.precio(self.variante_ketchup, automercado, 1500)
         respuesta = self.client.get(reverse("buscar_productos"), {"q": "heinz"})
-        self.assertNotContains(respuesta, "₡")
+        self.assertContains(respuesta, "Precio más bajo")
+        self.assertContains(respuesta, "₡1.500")
+        self.assertNotContains(respuesta, "₡1.760")
+        self.assertContains(respuesta, self.variante_ketchup.gtin)
+
+    def test_muestra_un_producto_distinto_por_gtin_de_la_misma_familia(self):
+        otra_variante = ProductVariants.objects.create(
+            product=self.producto,
+            gtin="7441001234581",
+            name=self.producto.name,
+            **fechas(),
+        )
+        tienda = Stores.objects.create(name="Tienda E", **fechas())
+        self.precio(otra_variante, tienda, 1800)
+
+        respuesta = self.client.get(reverse("buscar_productos"), {"q": "leche"})
+
+        self.assertEqual(len(respuesta.context["variantes"]), 2)
+        self.assertEqual(
+            {variante.gtin for variante in respuesta.context["variantes"]},
+            {self.variante.gtin, otra_variante.gtin},
+        )
+        html = respuesta.content.decode()
+        self.assertEqual(html.count("data-resultado-gtin="), 2)
+        self.assertContains(respuesta, f"#precio-{self.variante.gtin}")
+        self.assertContains(respuesta, f"#precio-{otra_variante.gtin}")
 
     def test_avisa_cuando_no_hay_resultados(self):
         respuesta = self.client.get(reverse("buscar_productos"), {"q": "televisor"})
@@ -554,17 +678,15 @@ class PaginaBusquedaTests(CatalogoTestCase):
         self.assertContains(respuesta, 'name="marca"')
 
     def test_los_resultados_se_paginan_de_24_en_24(self):
-        for i in range(25):
-            self.crear_producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+        self.crear_variantes_yogur(25)
         primera = self.client.get(reverse("buscar_productos"), {"q": "yogur"})
-        self.assertEqual(len(primera.context["productos"]), 24)
+        self.assertEqual(len(primera.context["variantes"]), 24)
         self.assertContains(primera, "Página 1 de 2")
         segunda = self.client.get(reverse("buscar_productos"), {"q": "yogur", "pagina": 2})
-        self.assertEqual(len(segunda.context["productos"]), 1)
+        self.assertEqual(len(segunda.context["variantes"]), 1)
 
     def test_la_paginacion_conserva_categoria_y_marca(self):
-        for i in range(25):
-            self.crear_producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+        self.crear_variantes_yogur(25)
 
         respuesta = self.client.get(
             reverse("buscar_productos"),

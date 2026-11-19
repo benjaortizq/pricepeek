@@ -19,13 +19,10 @@ from django.db.models import (
     Subquery,
     Value,
     When,
-    Window,
 )
 from django.db.models.functions import (
     Cast,
-    Coalesce,
     NullIf,
-    Rank,
     Replace,
     Round,
     Trim,
@@ -38,7 +35,11 @@ from django.views.decorators.http import require_GET
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, Reviews
 
-from .busqueda import buscar_productos, con_imagen
+from .busqueda import (
+    buscar_productos,
+    buscar_variantes,
+    con_imagen_variante,
+)
 from .models import (
     Brands,
     Categories,
@@ -47,23 +48,13 @@ from .models import (
     ProductVariants,
     Products,
 )
-
-
-def _expresion_precio_final() -> ExpressionWrapper:
-    """Expresión SQL reutilizable para calcular el precio con descuento."""
-    return ExpressionWrapper(
-        F("price")
-        * (
-            Value(Decimal("1"))
-            - Coalesce(F("discount"), Value(Decimal("0")))
-        ),
-        output_field=DecimalField(max_digits=12, decimal_places=2),
-    )
-
-
-def _anotar_precio_final(queryset: QuerySet) -> QuerySet:
-    """Agrega el precio final después de aplicar el descuento."""
-    return queryset.annotate(final_price=_expresion_precio_final())
+from .precios import (
+    anotar_precio_final as _anotar_precio_final,
+    agrupar_precios_por_gtin,
+    con_precio_minimo,
+    expresion_precio_final as _expresion_precio_final,
+    precios_por_gtin,
+)
 
 
 def _expresion_tienda_limpia() -> ExpressionWrapper:
@@ -108,7 +99,7 @@ def _precio_minimo_disponible_por_gtin() -> QuerySet:
 
 
 def _consulta_precios_detalle(producto_id) -> QuerySet:
-    """Prepara en una sola consulta los datos que muestra el detalle."""
+    """Prepara los precios y las diferencias de cada GTIN para el detalle."""
     precios = _anotar_precio_final(
         Prices.objects.filter(gtin__product_id=producto_id).select_related(
             "id_store", "currency", "gtin"
@@ -168,7 +159,8 @@ def detalle_producto(request, pk):
         .first()
     )
     variantes = ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
-    precios = _consulta_precios_detalle(producto.pk)
+    precios = list(_consulta_precios_detalle(producto.pk))
+    grupos_precios = agrupar_precios_por_gtin(variantes, precios)
 
     resenas = (
         Reviews.objects.select_related("variant", "user")
@@ -300,6 +292,7 @@ def detalle_producto(request, pk):
             "producto": producto,
             "imagen": imagen,
             "variantes": variantes,
+            "grupos_precios": grupos_precios,
             "precios": precios,
             "resenas": resenas,
             "review_form": review_form,
@@ -321,10 +314,11 @@ def buscar(request):
     )
     categoria_actual = _categoria_por_filtro(categoria)
     marca_actual = _marca_por_filtro(marca)
-    productos = buscar_productos_con_filtros(palabra, categoria, marca)
-    pagina = Paginator(productos, PRODUCTOS_POR_PAGINA).get_page(
+    variantes = buscar_variantes_por_nombre(palabra, categoria, marca)
+    pagina = Paginator(variantes, PRODUCTOS_POR_PAGINA).get_page(
         request.GET.get("pagina")
     )
+    variantes_pagina = con_imagen_variante(con_precio_minimo(pagina))
     return render(
         request,
         "products/buscar.html",
@@ -339,7 +333,7 @@ def buscar(request):
             "categorias": Categories.objects.order_by("name"),
             "marcas": Brands.objects.order_by("name"),
             "pagina": pagina,
-            "productos": con_imagen(pagina),
+            "variantes": variantes_pagina,
         },
     )
 
@@ -447,7 +441,7 @@ def filtrar_por_marca(queryset: QuerySet, marca=None) -> QuerySet:
 def buscar_productos_con_filtros(
     palabra: str, categoria=None, marca=None
 ) -> QuerySet[Products]:
-    """Combina la búsqueda existente con los filtros opcionales del catálogo."""
+    """Busca familias para vistas de catálogo; la búsqueda pública usa variantes."""
     productos = buscar_productos(palabra)
     productos = filtrar_por_categoria(productos, categoria)
     return filtrar_por_marca(productos, marca)
@@ -456,46 +450,24 @@ def buscar_productos_con_filtros(
 def buscar_variantes_por_nombre(
     nombre: str, categoria=None, marca=None
 ) -> QuerySet[ProductVariants]:
-    """Busca variantes cuyo nombre contiene ``nombre``.
+    """Busca variantes por presentación, producto o marca.
 
     La búsqueda no distingue mayúsculas de minúsculas y puede acotarse con
-    una categoría y una marca, ambas opcionales. Los filtros pertenecen al
-    producto asociado a cada variante.
+    una categoría y una marca, ambas opcionales. Cada GTIN es un resultado
+    independiente aunque comparta la familia de producto con otra variante.
     """
-    nombre = (nombre or "").strip()
-    variantes = ProductVariants.objects.select_related(
-        "product", "product__brand", "product__category"
-    ).filter(name__icontains=nombre)
-
+    variantes = buscar_variantes(nombre)
     variantes = filtrar_por_categoria(variantes, categoria)
-    variantes = filtrar_por_marca(variantes, marca)
-    return variantes.order_by("name", "gtin")
+    return filtrar_por_marca(variantes, marca)
 
 
 def obtener_precios_por_gtin(gtin: str, solo_disponibles: bool = True) -> QuerySet:
-    """Obtiene y rankea los precios de un GTIN, de menor a mayor.
+    """Obtiene y rankea todos los precios de un GTIN, de menor a mayor.
 
-    ``Prices`` garantiza un único precio por tienda y GTIN. Se excluyen los
-    precios nulos y, por defecto, los productos que no están disponibles.
+    Se excluyen los precios nulos y, por defecto, las ofertas no disponibles.
     Los precios empatados reciben el mismo puesto de ranking.
     """
-    if not gtin:
-        return Prices.objects.none()
-    
-    precios = _anotar_precio_final(
-        Prices.objects.select_related("id_store", "currency")
-    ).filter(
-        gtin_id=gtin,
-        price__isnull=False,
-    )
-
-    # Excluimos los precios que no están disponibles si se solicita.
-    if solo_disponibles:
-        precios = precios.filter(is_available=True)
-
-    return precios.annotate(
-        ranking=Window(Rank(), order_by=F("final_price").asc())
-    ).order_by("final_price", "id_store__name", "id")
+    return precios_por_gtin(gtin, solo_disponibles)
 
 
 def _parametro_de_consulta(request, *nombres: str) -> str | None:
@@ -521,7 +493,7 @@ def _serializar_precio(precio: Prices) -> dict:
 
 @require_GET
 def comparar_precios(request):
-    """Busca variantes y devuelve sus precios ordenados por ranking.
+    """Busca variantes y devuelve las opciones de cada GTIN por ranking.
 
     Parámetros GET opcionales:
 

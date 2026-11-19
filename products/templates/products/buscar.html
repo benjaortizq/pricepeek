@@ -38,7 +38,7 @@
     </h1>
     <div class="flex flex-wrap items-center gap-3 mt-0.5">
       <p class="text-body-md font-body-md text-secondary">
-        {{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }}
+        {{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }} distinto{{ pagina.paginator.count|pluralize:"s" }} por GTIN
       </p>
       {% if categoria_seleccionada or marca_seleccionada %}
         <a class="text-body-md font-semibold text-on-surface hover:underline" href="?q={{ palabra|urlencode }}">Limpiar filtros</a>
@@ -46,10 +46,10 @@
     </div>
   </div>
 
-  {% if productos %}
+  {% if variantes %}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-      {% for producto in productos %}
-        {% include "products/tarjeta_producto.html" %}
+      {% for variante in variantes %}
+        {% include "products/tarjeta_variante.html" %}
       {% endfor %}
     </div>
     {% if pagina.has_other_pages %}

@@ -57,6 +57,17 @@
           </div>
         </div>
         <h1 class="font-headline-lg text-headline-lg text-on-surface font-extrabold tracking-tight mb-3">{{ producto.name }}</h1>
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4" aria-label="Calificación promedio del producto">
+          {% if calificacion_promedio is not None %}
+            <span class="inline-flex items-center text-primary-container" aria-hidden="true">
+              {% for estrella in "12345" %}<span class="material-symbols-outlined material-symbols-fill text-[18px]">star</span>{% endfor %}
+            </span>
+            <strong class="text-body-sm font-body-sm text-on-surface">{{ calificacion_promedio|floatformat:1 }}</strong>
+            <span class="text-body-sm font-body-sm text-secondary">({{ resenas|length }} reseñas)</span>
+          {% else %}
+            <span class="text-body-sm font-body-sm text-secondary">Aún sin calificaciones</span>
+          {% endif %}
+        </div>
         <div class="flex items-center gap-3 pb-4 border-b border-outline-variant/40">
           {% if producto.brand.logo_url %}
             <img src="{{ producto.brand.logo_url }}" alt="" class="w-8 h-8 rounded-full object-contain border border-outline-variant/50 bg-surface-container-lowest">

@@ -33,6 +33,11 @@ class RasgosTests(SimpleTestCase):
     def test_normalizar(self):
         self.assertEqual(normalizar("Línea Blanca: Árbol—Ñandú 2.5 L."), "linea blanca arbol nandu 2.5 l")
 
+    def test_el_apostrofo_no_separa(self):
+        for marca in ("Kellogg's", "Kellogg´s", "Kellogg’s", "KELLOGGS"):
+            with self.subTest(marca=marca):
+                self.assertEqual(normalizar(marca), "kelloggs")
+
 
 class CompararTests(SimpleTestCase):
     def comparar(self, nombre_catalogo, marca_catalogo="Apple", tienda=MONGE_IPHONE, marca_tienda="Apple"):
@@ -72,6 +77,15 @@ class CompararTests(SimpleTestCase):
 
     def test_otra_marca(self):
         self.assertEqual(self.comparar("Galaxy 17 Negro", marca_catalogo="Samsung"), (0, "otra marca (Apple / Samsung)"))
+
+    def test_la_marca_sin_importar_apostrofos_ni_espacios(self):
+        # Automercado escribe las marcas en mayúscula y sin signos.
+        zucaritas = rasgos("CEREAL ENDULZADO ZUCARITAS KELLOGGS caja 490 g")
+        puntaje, _ = comparar(zucaritas, rasgos("Zucaritas Kellogg's 490g"), "KELLOGGS", "Kellogg's")
+        self.assertGreaterEqual(puntaje, PUNTAJE_PARA_SUGERIR)
+        licuadora = rasgos("Licuadora BLACK+DECKER BL1840MS")
+        puntaje, _ = comparar(licuadora, rasgos("Licuadora Black + Decker BL1840MS"), "BLACKDECKER", "Black + Decker")
+        self.assertEqual(puntaje, 100)
 
     def test_la_marca_puede_venir_en_el_nombre(self):
         # En el catálogo Gatorade está con la marca PepsiCo, pero el nombre dice Gatorade.

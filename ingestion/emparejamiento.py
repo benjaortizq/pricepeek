@@ -41,7 +41,9 @@ _CAPACIDAD = re.compile(r"(?<![a-z0-9.])(\d+(?:\.\d+)?)\s?(" + "|".join(sorted(U
 
 def normalizar(texto):
     """Minúsculas, sin tildes y solo letras, números y puntos decimales."""
-    texto = unicodedata.normalize("NFKD", str(texto or ""))
+    # El apóstrofo no separa: "Kellogg's", "Kellogg´s" y "KELLOGGS" son la misma marca.
+    texto = re.sub(r"(?<=\w)['’´`](?=\w)", "", str(texto or ""))
+    texto = unicodedata.normalize("NFKD", texto)
     texto = "".join(c for c in texto if not unicodedata.combining(c)).lower()  # quita tildes: í -> i, ñ -> n
     texto = re.sub(r"(\d),(\d)", r"\1.\2", texto)
     texto = re.sub(r"[^a-z0-9.]+", " ", texto)
@@ -90,7 +92,10 @@ def _almacenamiento(capacidades):
 def comparar(tienda, catalogo, marca_tienda="", marca_catalogo=""):
     """(puntaje de 0 a 100, motivo) de que el producto de la tienda sea esa variante del catálogo."""
     marca_t, marca_c = normalizar(marca_tienda), normalizar(marca_catalogo)
-    misma_marca = bool(marca_t) and (marca_t == marca_c or marca_t in catalogo.palabras)
+    misma_marca = bool(marca_t) and (
+        marca_t.replace(" ", "") == marca_c.replace(" ", "")  # "BLACK+DECKER" y "Black + Decker"
+        or marca_t in catalogo.palabras
+    )
     if marca_t and marca_c and not misma_marca:
         return 0, f"otra marca ({marca_tienda} / {marca_catalogo})"
     codigos = tienda.codigos & catalogo.codigos

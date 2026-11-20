@@ -36,9 +36,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--categoria",
             nargs="+",
-            help="Walmart y Maxipali: en vez de leer toda su lista, solo los productos de estas categorías, con la "
-            "ruta que sale en la URL de la tienda (por ejemplo: --categoria electronica articulos-para-el-hogar/"
-            "colchones-y-blancos). Es mucho más rápido: trae 50 productos completos por petición.",
+            help="Walmart, Maxipali y Automercado: solo los productos de estas categorías, con la ruta que sale en "
+            "la URL de la tienda (por ejemplo: --categoria electronica articulos-para-el-hogar/colchones-y-blancos). "
+            "Es mucho más rápido que leer toda la lista: la búsqueda trae los productos completos.",
         )
         parser.add_argument("--limite", type=int, help="Revisar como máximo esta cantidad de páginas.")
         parser.add_argument(
@@ -68,12 +68,15 @@ class Command(BaseCommand):
         def avisar(texto):
             self.stdout.write(f"  {texto}")
 
-        # Por categoría, la búsqueda ya trae cada producto completo: no se vuelven a pedir.
+        # Por categoría, la búsqueda ya trae cada producto completo: no se vuelven a pedir. Las
+        # tiendas sin lista de páginas (Automercado) siempre se leen así.
         de_la_busqueda = {}
+        por_busqueda = bool(categorias) or not hasattr(tienda, "listar_urls")
         try:
-            if categorias:
-                self.stdout.write(f"Buscando los productos de {tienda.NOMBRE} en: {', '.join(categorias)}...")
-                de_la_busqueda = tienda.productos_de_categorias(http, categorias, avisar=avisar)
+            if por_busqueda:
+                donde = ", ".join(categorias) if categorias else "todas sus categorías"
+                self.stdout.write(f"Buscando los productos de {tienda.NOMBRE} en: {donde}...")
+                de_la_busqueda = tienda.productos_de_categorias(http, categorias or [], avisar=avisar)
                 urls = list(de_la_busqueda)
             else:
                 self.stdout.write(f"Leyendo la lista de productos de {tienda.NOMBRE}...")
@@ -90,7 +93,7 @@ class Command(BaseCommand):
         if opciones["limite"]:
             urls = urls[: opciones["limite"]]
 
-        origen = "productos en esas categorías" if categorias else "páginas en su lista"
+        origen = "productos en esas categorías" if categorias else "productos" if por_busqueda else "páginas en su lista"
         self.stdout.write(f"{tienda.NOMBRE}: {total_tienda} {origen}; se van a revisar {len(urls)}.")
         if not urls:
             self.stdout.write("No hay páginas nuevas. Use --todos para revisar otra vez las que ya se obtuvieron.")

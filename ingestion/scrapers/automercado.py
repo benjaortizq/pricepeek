@@ -68,6 +68,11 @@ def extraer(url, http):
 
     id_url = _id_de_la_url(url)
     producto = next((r for r in resultados if str(r.get("productID", "")).lower() == id_url), resultados[0])
+    return [oferta_del_producto(producto)]
+
+
+def oferta_del_producto(producto):
+    """La Oferta de un producto de Algolia (el de la página o el de la búsqueda): el precio de la mayoría."""
     sucursales = (producto.get("storeDetail") or {}).values()
     precios = Counter(
         (a_colones(s.get("basePrice")), a_colones(s.get("amount")))
@@ -76,7 +81,7 @@ def extraer(url, http):
     )
     if not precios:
         if producto.get("productAvailable") is False or sucursales:
-            return [Oferta(None, None, False)]
+            return Oferta(None, None, False)
         raise PrecioNoEncontrado("El producto no trae precios por sucursal.")
     (lista, final), _ = precios.most_common(1)[0]
-    return [Oferta(lista or final, final, True)]
+    return Oferta(lista or final, final, True)

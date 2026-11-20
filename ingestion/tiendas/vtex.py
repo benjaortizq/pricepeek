@@ -16,13 +16,11 @@
 from dataclasses import replace
 from urllib.parse import urlsplit
 
-from django.utils.text import slugify
-
 from products.barcodes import validar_codigo_barras
 
 from ..scrapers import PrecioNoEncontrado, ProductoNoEncontrado
 from ..scrapers import vtex as api
-from .base import Ficha, urls_del_sitemap
+from .base import Ficha, ruta_de_busqueda, urls_del_sitemap
 
 
 def _primero(valor):
@@ -71,11 +69,6 @@ def ficha_del_producto(url, producto):
         imagen_url=str(imagenes[0].get("imageUrl") or "") if imagenes else "",
         codigos_invalidos=codigos_invalidos,
     )
-
-
-def ruta_de_busqueda(texto):
-    """"Electrónica/Línea Blanca" o "/electronica/linea-blanca/" -> "electronica/linea-blanca"."""
-    return "/".join(slugify(parte) for parte in str(texto).split("/") if slugify(parte))
 
 
 def subcategorias(arbol, ruta):

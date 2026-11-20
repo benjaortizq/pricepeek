@@ -7,15 +7,19 @@ Cada tienda es un módulo (o un objeto, como las de VTEX) con:
     obtener_ficha(url, http) la Ficha del producto, o None si la página no es de un producto
     PAUSA                   (opcional) segundos entre peticiones, si la tienda necesita que se vaya más despacio
 
-Las de VTEX tienen además productos_de_categorias(http, categorias, avisar=None) y
-ficha_de_la_busqueda(url, producto), para --categoria de obtener_productos.
+Las de VTEX y Automercado tienen además productos_de_categorias(http, categorias, avisar=None)
+y ficha_de_la_busqueda(url, producto), para --categoria de obtener_productos: la búsqueda ya
+trae cada producto completo. Automercado no tiene listar_urls (su sitemap no trae productos):
+siempre se lee así, por todas sus categorías o por las de --categoria.
 """
 
 from . import gollo, monge
+from .automercado import automercado
 from .base import Ficha
 from .vtex import maxipali, walmart
 
 TIENDAS = {
+    "automercado": automercado,
     "gollo": gollo,
     "maxipali": maxipali,
     "monge": monge,

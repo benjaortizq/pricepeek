@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
 from curl_cffi import requests
+from curl_cffi.requests.exceptions import RequestException
+
 USER_AGENT = "Mozilla/5.0 (compatible; PricePeek/1.0; comparador de precios de Costa Rica)"
 
 
@@ -111,7 +113,7 @@ class ClienteHttp:
             self._esperar_turno()
             try:
                 respuesta = self.sesion.get(url, timeout=self.timeout)
-            except requests.RequestException as error:
+            except RequestException as error:
                 fallo = ErrorDescarga(f"No se pudo conectar con la tienda ({error.__class__.__name__}).")
                 continue
             if respuesta.status_code in (404, 410):

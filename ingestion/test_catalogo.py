@@ -393,3 +393,41 @@ class ConfirmarPorNombreTests(PasarAlCatalogoTestCase):
         self.assertEqual(precio.product_web_url, por_codigo.url)
         por_nombre.refresh_from_db()
         self.assertEqual(por_nombre.status, Status.SUGGESTED)
+
+
+class MinTiendasTests(PasarAlCatalogoTestCase):
+    def correr(self, *argumentos):
+        salida = StringIO()
+        call_command("crear_productos", "-v", "2", *argumentos, stdout=salida)
+        return salida.getvalue()
+
+    def test_solo_crea_los_que_estan_en_varias_tiendas(self):
+        self.de_gollo()
+        self.de_gollo(url="https://www.gollo.com/licuadora/p", name="Licuadora Oster", category="Licuadora", brand="Oster", barcodes=["7410063035124"])
+        # El mismo adaptador en Walmart, con el código escrito con 14 dígitos.
+        self.de_gollo(store_name="Walmart", url="https://www.walmart.co.cr/adaptador/p", barcodes=["0" + GTIN_ADAPTADOR])
+
+        salida = self.correr("--min-tiendas", "2")
+
+        self.assertIn("1 creados en el catálogo", salida)
+        self.assertIn("1 vinculados a variantes que ya existían", salida)
+        self.assertIn("omitido: Licuadora Oster: solo está en 1 tienda(s) (Gollo): se piden 2", salida)
+        self.assertIn("en pocas tiendas (1)", salida)
+        self.assertTrue(ProductVariants.objects.filter(gtin=GTIN_ADAPTADOR).exists())
+        self.assertFalse(ProductVariants.objects.filter(gtin="7410063035124").exists())
+
+    def test_cuenta_las_otras_tiendas_aunque_se_filtre_por_una(self):
+        self.de_gollo()
+        self.de_gollo(store_name="Walmart", url="https://www.walmart.co.cr/adaptador/p")
+        self.assertIn("1 revisados · 0 creados", self.correr("--tienda", "gollo", "--min-tiendas", "3"))
+        self.assertIn("1 revisados · 1 creados", self.correr("--tienda", "gollo", "--min-tiendas", "2"))
+
+    def test_los_que_ya_estan_en_el_catalogo_se_vinculan_igual(self):
+        producto = self.de_gollo(barcodes=[GTIN_IPHONE_CATALOGO])
+        self.assertIn("1 vinculados", self.correr("--min-tiendas", "5"))
+        producto.refresh_from_db()
+        self.assertEqual(producto.status, Status.CONFIRMED)
+
+    def test_min_tiendas_invalido(self):
+        with self.assertRaises(CommandError):
+            self.correr("--min-tiendas", "0")

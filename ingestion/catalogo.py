@@ -15,6 +15,8 @@ Si el código ya está en el catálogo, no se crea nada: solo se vincula el prec
 Con --confirmar-desde, también se vinculan los sugeridos por el nombre con ese puntaje o más,
 salvo que la tienda publique otro código de barras (es otra versión del producto) o que dos
 páginas de la misma tienda se parezcan igual a la misma variante (no se sabe cuál es).
+Con --min-tiendas N, solo se crean los que tienen ese código de barras en al menos N tiendas
+distintas (los que ya están en el catálogo se vinculan igual). Monge no trae código, así que no cuenta.
 La categoría sale de ingestion/categorias.py; si no hay regla para el tipo de producto, el
 producto no se crea y aparece en el resumen.
 """
@@ -47,6 +49,7 @@ MARCAS_SIN_NOMBRE = {"", "commodity", "generico", "generica", "sinmarca", "vario
 OTRO_CODIGO = "sugerido por nombre, pero con otro código de barras"
 EMPATE = "sugerido por nombre, empatado con otra página de la tienda"
 OTRA_SE_PARECE_MAS = "sugerido por nombre, pero otra página de la tienda se parece más"
+EN_POCAS_TIENDAS = "en pocas tiendas"
 
 CREADO = "creado"
 VINCULADO = "vinculado"
@@ -91,6 +94,22 @@ class Catalogo:
             self.anotar_codigo(gtin)
         self.paginas = {}  # (tienda, gtin) -> la página de esa tienda que ya se vinculó en esta corrida
         self.por_nombre = {}  # (tienda, gtin) -> la página que más se le parece, o None si hay empate
+        self.tiendas = None  # cada forma del código (14 dígitos) -> las tiendas que lo publican
+
+    def contar_tiendas(self):
+        """Anota en qué tiendas aparece cada código de barras (en cualquier estado), para --min-tiendas."""
+        self.tiendas = {}
+        for tienda, codigos in StoreProduct.objects.values_list("store_name", "barcodes"):
+            for codigo in codigos or ():
+                if validar_codigo_barras(codigo):
+                    for forma in formas_del_codigo(codigo):
+                        self.tiendas.setdefault(forma, set()).add(tienda)
+
+    def tiendas_con_codigo(self, codigos):
+        """Las tiendas que publican alguno de esos códigos (hay que llamar antes a contar_tiendas)."""
+        if self.tiendas is None:
+            self.contar_tiendas()
+        return set().union(*(self.tiendas.get(forma, set()) for c in codigos for forma in formas_del_codigo(c)))
 
     def anotar_marca(self, marca):
         self.marcas.setdefault(_clave(marca.name), marca)
@@ -193,11 +212,12 @@ def _codigos_validos(producto):
     return [c for c in producto.barcodes if validar_codigo_barras(c)]
 
 
-def crear_en_catalogo(producto, catalogo, guardar=True, confirmar_desde=None):
+def crear_en_catalogo(producto, catalogo, guardar=True, confirmar_desde=None, min_tiendas=1):
     """Pasa un producto de tienda al catálogo (o lo vincula, si su código ya está) y dice qué pasó.
 
     Con confirmar_desde, también vincula los sugeridos por nombre con al menos ese puntaje (para
-    los empates, antes hay que llamar a catalogo.anotar_sugerencias).
+    los empates, antes hay que llamar a catalogo.anotar_sugerencias). Con min_tiendas, solo crea
+    los que tienen el código de barras en al menos esa cantidad de tiendas distintas.
     """
     por_nombre = confirmar_desde is not None and sugerido_por_nombre(producto, confirmar_desde)
     if producto.status not in CREABLES and not sugerido_por_codigo(producto) and not por_nombre:
@@ -231,6 +251,11 @@ def crear_en_catalogo(producto, catalogo, guardar=True, confirmar_desde=None):
         return Resultado(OMITIDO, f"no existe la categoría «{nombre_categoria}» en el catálogo", "sin categoría")
     if _clave(producto.brand) in MARCAS_SIN_NOMBRE:
         return Resultado(OMITIDO, f"no tiene marca («{producto.brand}»)", "sin marca")
+    if min_tiendas > 1:
+        tiendas = catalogo.tiendas_con_codigo(codigos)
+        if len(tiendas) < min_tiendas:
+            donde = ", ".join(sorted(tiendas))
+            return Resultado(OMITIDO, f"solo está en {len(tiendas)} tienda(s) ({donde}): se piden {min_tiendas}", EN_POCAS_TIENDAS)
 
     marca, marca_nueva = catalogo.marca(producto.brand)
     gtin = gtin_del_catalogo(codigos[0])

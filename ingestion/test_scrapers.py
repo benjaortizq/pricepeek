@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import requests
+from curl_cffi.requests.exceptions import Timeout as CurlTimeout
 from django.test import SimpleTestCase
 
 from .scrapers import (
@@ -240,7 +241,7 @@ class ClienteHttpTests(SimpleTestCase):
         self.assertEqual(self.get.call_count, 2)
 
     def test_se_rinde_despues_de_los_reintentos(self):
-        self.get.side_effect = requests.Timeout()
+        self.get.side_effect = CurlTimeout("timeout")
         with self.assertRaisesMessage(ErrorDescarga, "Timeout"):
             self.http.texto("https://tienda.test/p")
         self.assertEqual(self.get.call_count, 3)

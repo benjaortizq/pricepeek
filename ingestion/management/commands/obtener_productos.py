@@ -87,8 +87,8 @@ class Command(BaseCommand):
         if opciones["filtro"]:
             filtros = [f.lower() for f in opciones["filtro"]]
             urls = [u for u in urls if any(f in u.lower() for f in filtros)]
+        ya_obtenidas = set(StoreProduct.objects.filter(url__in=urls).values_list("url", flat=True))
         if not opciones["todos"]:
-            ya_obtenidas = set(StoreProduct.objects.filter(url__in=urls).values_list("url", flat=True))
             urls = [u for u in urls if u not in ya_obtenidas]
         if opciones["limite"]:
             urls = urls[: opciones["limite"]]
@@ -138,6 +138,12 @@ class Command(BaseCommand):
                 if opciones["verbosity"] > 1:
                     self.stdout.write(f"{prefijo} {url}: no es una página de producto.")
                 continue
+            if not ficha.oferta.precio_final and url not in ya_obtenidas:
+                # Sin precio no se puede comparar: no se guarda (los ya guardados sí se actualizan).
+                conteo["sin precio"] += 1
+                if opciones["verbosity"] > 1:
+                    self.stdout.write(f"{prefijo} {ficha.nombre}: la tienda no muestra precio, no se guarda.")
+                continue
             producto = guardar_ficha(ficha, tienda.NOMBRE, candidatas, guardar=guardar)
             conteo["productos"] += 1
             conteo[producto.status] += 1
@@ -153,6 +159,8 @@ class Command(BaseCommand):
             f"{conteo[Status.SUGGESTED]} con coincidencia sugerida · "
             f"{conteo['no son productos']} no eran productos · {conteo['fallos']} fallos"
         )
+        if conteo["sin precio"]:
+            resumen += f" · {conteo['sin precio']} sin precio (no se guardaron)"
         if conteo["códigos inválidos"]:
             resumen += f" · {conteo['códigos inválidos']} códigos de barras inválidos (quedan como incidencia)"
         self.stdout.write(self.style.SUCCESS(resumen))

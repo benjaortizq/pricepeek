@@ -28,7 +28,12 @@ def respuesta_api(nombre):
 
 
 LECHE = respuesta_api("vtex_walmart_leche_api.json")
-IPHONE = respuesta_api("vtex_walmart_iphone17_api.json")
+IPHONE = respuesta_api("vtex_walmart_iphone17_api.json")  # agotado: la tienda no muestra precio
+# El mismo iPhone, disponible y con la oferta (precio) de la leche.
+IPHONE_CON_PRECIO = copy.deepcopy(IPHONE)
+IPHONE_CON_PRECIO[0]["items"][0]["sellers"][0]["commertialOffer"] = copy.deepcopy(
+    LECHE[0]["items"][0]["sellers"][0]["commertialOffer"]
+)
 
 
 class VtexListarUrlsTests(SimpleTestCase):
@@ -108,7 +113,7 @@ class ObtenerProductosDeWalmartTests(ProductosDeTiendaTestCase):
             PRODUCTOS_1: muestra("vtex_walmart_sitemap_productos_1.xml"),
             api.url_api(URL_LECHE): LECHE,
             api.url_api(URL_GRANOLA): [],  # desactivado
-            api.url_api(URL_IPHONE): IPHONE,
+            api.url_api(URL_IPHONE): IPHONE_CON_PRECIO,
         }
         salida = StringIO()
         with mock.patch("ingestion.management.commands.obtener_productos.ClienteHttp", return_value=HttpFalso(respuestas)):
@@ -222,7 +227,7 @@ class ObtenerPorCategoriaTests(ProductosDeTiendaTestCase):
     def test_no_vuelve_a_pedir_cada_producto(self):
         http = HttpFalso({
             busqueda("electronica/celulares", 2500, por_pagina=50): [],
-            busqueda("electronica/celulares", 0, por_pagina=50): [LECHE[0], IPHONE[0]],
+            busqueda("electronica/celulares", 0, por_pagina=50): [LECHE[0], IPHONE_CON_PRECIO[0]],
         })
         salida = StringIO()
         with mock.patch("ingestion.management.commands.obtener_productos.ClienteHttp", return_value=http):
@@ -237,3 +242,28 @@ class ObtenerPorCategoriaTests(ProductosDeTiendaTestCase):
     def test_solo_para_las_tiendas_que_tienen_categorias(self):
         with self.assertRaisesMessage(CommandError, "--categoria solo sirve para automercado, maxipali, walmart."):
             call_command("obtener_productos", "--tienda", "gollo", "--categoria", "celulares", stdout=StringIO())
+
+
+class SinPrecioTests(ProductosDeTiendaTestCase):
+    def correr(self, *argumentos):
+        http = HttpFalso({
+            busqueda("electronica/celulares", 2500, por_pagina=50): [],
+            busqueda("electronica/celulares", 0, por_pagina=50): [LECHE[0], IPHONE[0]],
+        })
+        salida = StringIO()
+        with mock.patch("ingestion.management.commands.obtener_productos.ClienteHttp", return_value=http):
+            call_command("obtener_productos", "--tienda", "walmart", "--categoria", "electronica/celulares", *argumentos, stdout=salida)
+        return salida.getvalue()
+
+    def test_no_guarda_los_que_vienen_sin_precio(self):
+        salida = self.correr()
+        self.assertIn("2 páginas · 1 productos", salida)
+        self.assertIn("1 sin precio (no se guardaron)", salida)
+        self.assertTrue(StoreProduct.objects.filter(url=URL_LECHE).exists())
+        self.assertFalse(StoreProduct.objects.filter(url=URL_IPHONE).exists())
+
+    def test_los_ya_guardados_se_actualizan_aunque_se_queden_sin_precio(self):
+        StoreProduct.objects.create(store_name="Walmart", url=URL_IPHONE, name="iPhone 17", final_price=900000)
+        self.correr("--todos")
+        iphone = StoreProduct.objects.get(url=URL_IPHONE)
+        self.assertEqual((iphone.final_price, iphone.is_available), (None, False))

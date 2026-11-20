@@ -44,6 +44,14 @@ class Command(BaseCommand):
             "en 70). No vincula los que traen otro código de barras que la variante sugerida, ni dos páginas de "
             "la misma tienda que se parecen igual a la misma variante: esos se revisan en el admin.",
         )
+        parser.add_argument(
+            "--min-tiendas",
+            type=int,
+            default=1,
+            metavar="N",
+            help="Solo crear los productos nuevos cuyo código de barras está en al menos N tiendas distintas "
+            "(por ejemplo, --min-tiendas 2). Los que ya están en el catálogo se vinculan igual.",
+        )
         parser.add_argument("--limite", type=int, help="Revisar como máximo esta cantidad de productos.")
         parser.add_argument("--dry-run", action="store_true", help="Mostrar lo que haría sin guardar nada.")
         parser.add_argument(
@@ -59,6 +67,9 @@ class Command(BaseCommand):
             salida.reconfigure(encoding="utf-8", errors="replace")  # la consola de Windows no siempre acepta ₡
 
         guardar = not opciones["dry_run"]
+        min_tiendas = opciones["min_tiendas"]
+        if min_tiendas < 1:
+            raise CommandError("--min-tiendas tiene que ser 1 o más.")
         desde = opciones["confirmar_desde"]
         sugeridos = Q(status=StoreProduct.Status.SUGGESTED, match_reason=MOTIVO_MISMO_CODIGO)
         if desde is not None:
@@ -89,6 +100,8 @@ class Command(BaseCommand):
         catalogo = Catalogo()
         if desde is not None:
             catalogo.anotar_sugerencias(productos, desde)
+        if min_tiendas > 1:
+            catalogo.contar_tiendas()
         conteo = Counter()
         omitidos = Counter()
         sin_categoria = Counter()
@@ -96,7 +109,9 @@ class Command(BaseCommand):
         for numero, producto in enumerate(productos, 1):
             prefijo = f"[{numero:>{ancho}}/{len(productos)}]"
             try:
-                resultado = crear_en_catalogo(producto, catalogo, guardar=guardar, confirmar_desde=desde)
+                resultado = crear_en_catalogo(
+                    producto, catalogo, guardar=guardar, confirmar_desde=desde, min_tiendas=min_tiendas
+                )
             except DatabaseError as error:
                 # Un error de la base casi siempre se repite con los siguientes: mejor detenerse.
                 raise CommandError(

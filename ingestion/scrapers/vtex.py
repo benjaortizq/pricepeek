@@ -21,26 +21,34 @@ def url_api(url_producto):
     return f"{partes.scheme}://{partes.netloc}/api/catalog_system/pub/products/search/{slug}/p"
 
 
-def extraer(url, http):
+def producto_de_la_api(url, http):
+    """El producto (el primer resultado de la API) de esa URL."""
     productos = http.json(url_api(url))
     if not isinstance(productos, list):
         raise PrecioNoEncontrado("La API de VTEX devolvió algo que no es una lista de productos.")
     if not productos:
         raise ProductoNoEncontrado("La tienda ya no tiene este producto en su catálogo.")
+    return productos[0]
 
-    ofertas = []
-    for item in productos[0].get("items") or []:
-        vendedores = item.get("sellers") or []
-        vendedor = next((v for v in vendedores if v.get("sellerDefault")), vendedores[0] if vendedores else None)
-        if vendedor is None:
-            continue
-        detalle = vendedor.get("commertialOffer") or {}
-        disponible = bool(detalle.get("IsAvailable"))
-        # Cuando el producto está agotado, VTEX pone los precios en 0: se dejan como "sin precio".
-        final = a_colones(detalle.get("Price")) if disponible else None
-        lista = a_colones(detalle.get("ListPrice")) if disponible else None
-        ean = str(item.get("ean") or "").strip()
-        ofertas.append(Oferta(lista or final, final, disponible, (ean,) if ean else ()))
+
+def oferta_del_item(item):
+    """La Oferta del vendedor principal de una presentación, o None si no tiene vendedor."""
+    vendedores = item.get("sellers") or []
+    vendedor = next((v for v in vendedores if v.get("sellerDefault")), vendedores[0] if vendedores else None)
+    if vendedor is None:
+        return None
+    detalle = vendedor.get("commertialOffer") or {}
+    disponible = bool(detalle.get("IsAvailable"))
+    # Cuando el producto está agotado, VTEX pone los precios en 0: se dejan como "sin precio".
+    final = a_colones(detalle.get("Price")) if disponible else None
+    lista = a_colones(detalle.get("ListPrice")) if disponible else None
+    ean = str(item.get("ean") or "").strip()
+    return Oferta(lista or final, final, disponible, (ean,) if ean else ())
+
+
+def extraer(url, http):
+    producto = producto_de_la_api(url, http)
+    ofertas = [oferta for oferta in map(oferta_del_item, producto.get("items") or []) if oferta is not None]
     if not ofertas:
         raise PrecioNoEncontrado("La API de VTEX no trae precios para este producto.")
     return ofertas

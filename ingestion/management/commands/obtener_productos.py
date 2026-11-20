@@ -28,7 +28,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--tienda", required=True, choices=sorted(TIENDAS), help="La tienda a revisar.")
-        parser.add_argument("--filtro", help="Solo las URLs que contienen este texto (por ejemplo: iphone, celular).")
+        parser.add_argument(
+            "--filtro",
+            nargs="+",
+            help="Solo las URLs que contienen alguno de estos textos (por ejemplo: --filtro iphone galaxy xiaomi).",
+        )
+        parser.add_argument(
+            "--categoria",
+            nargs="+",
+            help="Walmart y Maxipali: en vez de leer toda su lista, solo los productos de estas categorías, con la "
+            "ruta que sale en la URL de la tienda (por ejemplo: --categoria electronica articulos-para-el-hogar/"
+            "colchones-y-blancos). Es mucho más rápido: trae 50 productos completos por petición.",
+        )
         parser.add_argument("--limite", type=int, help="Revisar como máximo esta cantidad de páginas.")
         parser.add_argument(
             "--todos", action="store_true", help="Volver a revisar también los productos que ya se habían obtenido."
@@ -49,20 +60,38 @@ class Command(BaseCommand):
         guardar = not opciones["dry_run"]
         pausa = opciones["pausa"] if opciones["pausa"] is not None else getattr(tienda, "PAUSA", PAUSA_POR_DEFECTO)
         http = ClienteHttp(pausa=pausa)
+        categorias = opciones["categoria"]
+        if categorias and not hasattr(tienda, "productos_de_categorias"):
+            con_categorias = ", ".join(sorted(n for n, t in TIENDAS.items() if hasattr(t, "productos_de_categorias")))
+            raise CommandError(f"--categoria solo sirve para {con_categorias}.")
+
+        def avisar(texto):
+            self.stdout.write(f"  {texto}")
+
+        # Por categoría, la búsqueda ya trae cada producto completo: no se vuelven a pedir.
+        de_la_busqueda = {}
         try:
-            urls = tienda.listar_urls(http)
+            if categorias:
+                self.stdout.write(f"Buscando los productos de {tienda.NOMBRE} en: {', '.join(categorias)}...")
+                de_la_busqueda = tienda.productos_de_categorias(http, categorias, avisar=avisar)
+                urls = list(de_la_busqueda)
+            else:
+                self.stdout.write(f"Leyendo la lista de productos de {tienda.NOMBRE}...")
+                urls = tienda.listar_urls(http, avisar=avisar)
         except ErrorExtraccion as error:
             raise CommandError(f"No se pudo leer la lista de productos de {tienda.NOMBRE}: {error}") from error
         total_tienda = len(urls)
         if opciones["filtro"]:
-            urls = [u for u in urls if opciones["filtro"].lower() in u.lower()]
+            filtros = [f.lower() for f in opciones["filtro"]]
+            urls = [u for u in urls if any(f in u.lower() for f in filtros)]
         if not opciones["todos"]:
             ya_obtenidas = set(StoreProduct.objects.filter(url__in=urls).values_list("url", flat=True))
             urls = [u for u in urls if u not in ya_obtenidas]
         if opciones["limite"]:
             urls = urls[: opciones["limite"]]
 
-        self.stdout.write(f"{tienda.NOMBRE}: {total_tienda} páginas en su lista; se van a revisar {len(urls)}.")
+        origen = "productos en esas categorías" if categorias else "páginas en su lista"
+        self.stdout.write(f"{tienda.NOMBRE}: {total_tienda} {origen}; se van a revisar {len(urls)}.")
         if not urls:
             self.stdout.write("No hay páginas nuevas. Use --todos para revisar otra vez las que ya se obtuvieron.")
             return
@@ -78,7 +107,10 @@ class Command(BaseCommand):
             prefijo = f"[{numero:>{ancho}}/{len(urls)}]"
             revisadas = numero
             try:
-                ficha = tienda.obtener_ficha(url, http)
+                if url in de_la_busqueda:
+                    ficha = tienda.ficha_de_la_busqueda(url, de_la_busqueda[url])
+                else:
+                    ficha = tienda.obtener_ficha(url, http)
             except Exception as error:  # una página rara no debe detener la revisión de las demás
                 conteo["fallos"] += 1
                 motivo = error if isinstance(error, ErrorExtraccion) else f"error inesperado ({error.__class__.__name__}: {error})"

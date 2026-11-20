@@ -4,8 +4,7 @@ import time
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
-import requests
-
+from curl_cffi import requests
 USER_AGENT = "Mozilla/5.0 (compatible; PricePeek/1.0; comparador de precios de Costa Rica)"
 
 
@@ -82,8 +81,18 @@ class ClienteHttp:
         self.reintentos = reintentos
         self.espera_reintento = espera_reintento
         self.sesion = requests.Session()
-        self.sesion.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "es-CR,es;q=0.9"})
+        self.sesion.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "es-CR,es-419;q=0.9,es;q=0.8,en;q=0.7",
+            "Referer": "https://google.com",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+        })
         self._ultima_peticion = 0.0
+
 
     def texto(self, url):
         return self._obtener(url).text

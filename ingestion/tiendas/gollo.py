@@ -31,7 +31,7 @@ def es_url_de_producto(url):
     return partes.netloc == DOMINIO and not partes.query and ruta.endswith("/p") and ruta.count("/") == 2
 
 
-def listar_urls(http):
+def listar_urls(http, avisar=None):
     """Las URLs de producto del sitemap, en su orden y sin repetir."""
     return list(dict.fromkeys(u for u in urls_del_sitemap(http.texto(SITEMAP)) if es_url_de_producto(u)))
 

@@ -28,7 +28,7 @@ def es_url_de_producto(url):
     return partes.netloc == DOMINIO and not partes.query and ruta != "" and "/" not in ruta
 
 
-def listar_urls(http):
+def listar_urls(http, avisar=None):
     """Las URLs que pueden ser de un producto, en el orden del sitemap y sin repetir."""
     urls = []
     for submapa in urls_del_sitemap(http.texto(SITEMAP)):

@@ -6,8 +6,12 @@ from django.utils.html import format_html
 from products.models import ProductVariants
 from products.templatetags.precios import miles
 
+from .catalogo import CREADO, OMITIDO, VINCULADO, Catalogo, crear_en_catalogo
 from .models import Incident, StoreProduct
 from .productos_tienda import NoSePuedeVincular, candidatas_del_catalogo, confirmar, rechazar, sugerir
+
+# Si se eligen muchos, no se muestra un aviso por cada omitido.
+AVISOS_A_MOSTRAR = 10
 
 
 @admin.register(Incident)
@@ -47,7 +51,7 @@ class StoreProductAdmin(admin.ModelAdmin):
     list_display = ("name", "store_name", "precio", "is_available", "status", "variante_sugerida", "score")
     list_filter = ("store_name", "status", "is_available")
     search_fields = ("name", "sku", "product_model", "brand", "suggested_gtin")
-    actions = ["confirmar_seleccionados", "rechazar_seleccionados", "volver_a_sugerir"]
+    actions = ["confirmar_seleccionados", "crear_en_el_catalogo", "rechazar_seleccionados", "volver_a_sugerir"]
     readonly_fields = (
         "enlace", "store_name", "sku", "name", "brand", "product_model", "color", "category", "imagen",
         "list_price", "final_price", "is_available", "barcodes", "status", "suggested_gtin", "score",
@@ -113,6 +117,27 @@ class StoreProductAdmin(admin.ModelAdmin):
                 self.message_user(request, f"{producto.name}: {error}", messages.WARNING)
         if confirmados:
             self.message_user(request, f"{confirmados} productos vinculados al catálogo.", messages.SUCCESS)
+
+    @admin.action(description="Crear en el catálogo (si no coincide con nada y trae código de barras)")
+    def crear_en_el_catalogo(self, request, queryset):
+        catalogo = Catalogo()
+        conteo = {CREADO: 0, VINCULADO: 0, OMITIDO: 0}
+        avisos = []
+        for producto in queryset:
+            resultado = crear_en_catalogo(producto, catalogo)
+            conteo[resultado.tipo] += 1
+            if resultado.tipo == OMITIDO:
+                avisos.append(f"{producto.name}: {resultado.motivo}")
+        for aviso in avisos[:AVISOS_A_MOSTRAR]:
+            self.message_user(request, aviso, messages.WARNING)
+        if len(avisos) > AVISOS_A_MOSTRAR:
+            self.message_user(request, f"Y {len(avisos) - AVISOS_A_MOSTRAR} omitidos más.", messages.WARNING)
+        if conteo[CREADO] or conteo[VINCULADO]:
+            self.message_user(
+                request,
+                f"{conteo[CREADO]} productos creados en el catálogo y {conteo[VINCULADO]} vinculados a variantes que ya existían.",
+                messages.SUCCESS,
+            )
 
     @admin.action(description="Rechazar la coincidencia")
     def rechazar_seleccionados(self, request, queryset):

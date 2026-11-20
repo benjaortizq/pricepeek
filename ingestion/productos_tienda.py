@@ -15,6 +15,8 @@ from .scrapers import Oferta
 Status = StoreProduct.Status
 # Solo se vuelve a buscar coincidencia en lo que nadie ha revisado todavía.
 REVISABLES = (Status.NO_MATCH, Status.SUGGESTED)
+# Una coincidencia por código de barras es exacta: crear_productos la vincula sin revisión.
+MOTIVO_MISMO_CODIGO = "mismo código de barras"
 # Se resta cuando el nombre coincide pero la tienda publica otro código de barras.
 CASTIGO_CODIGO_DISTINTO = 20
 
@@ -38,7 +40,7 @@ def sugerir(producto, candidatas_):
     """Deja como sugerencia la variante del catálogo que mejor coincide (o ninguna)."""
     por_codigo = _por_codigo_de_barras(producto.barcodes, candidatas_)
     if por_codigo is not None:
-        mejor = (por_codigo, 100, "mismo código de barras")
+        mejor = (por_codigo, 100, MOTIVO_MISMO_CODIGO)
     else:
         rasgos_tienda = rasgos(producto.name, producto.product_model, producto.color)
         mejor = mejor_coincidencia(rasgos_tienda, producto.brand, candidatas_)

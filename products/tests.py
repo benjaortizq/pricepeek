@@ -9,6 +9,7 @@ from accounts.models import User
 from reviews.models import Reviews
 
 from .busqueda import buscar_productos, con_imagen
+from .correccion import olvidar_vocabulario
 from .models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
 
 # Los modelos son managed = False (las tablas viven en Supabase),
@@ -29,6 +30,10 @@ class CatalogoTestCase(TestCase):
             for modelo in MODELOS:
                 editor.create_model(modelo)
         super().setUpClass()
+
+    def setUp(self):
+        super().setUp()
+        olvidar_vocabulario()  # el «¿quiso decir…?» se arma con los productos de cada prueba
 
     @classmethod
     def tearDownClass(cls):

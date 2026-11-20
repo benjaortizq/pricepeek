@@ -6,6 +6,7 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .busqueda import buscar_productos, con_imagen
+from .correccion import corregir_busqueda
 from .models import Prices, ProductImages, ProductVariants, Products
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, Reviews
@@ -116,8 +117,14 @@ PRODUCTOS_POR_PAGINA = 24
 def buscar(request):
     palabra = request.GET.get("q", "").strip()
     pagina = Paginator(buscar_productos(palabra), PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    corregida = None
+    if palabra and not pagina.paginator.count:
+        # «¿Quiso decir…?»: si no hay nada, se busca con las palabras del catálogo más parecidas.
+        corregida = corregir_busqueda(palabra)
+        if corregida:
+            pagina = Paginator(buscar_productos(corregida), PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
     return render(
         request,
         "products/buscar.html",
-        {"palabra": palabra, "pagina": pagina, "productos": con_imagen(pagina)},
+        {"palabra": palabra, "corregida": corregida, "pagina": pagina, "productos": con_imagen(pagina)},
     )

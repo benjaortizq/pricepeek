@@ -25,6 +25,11 @@ def _sin_tildes(texto):
     return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
 
 
+def palabra_normalizada(palabra):
+    """"Café" -> "cafe", "M&M's" -> "mms": en minúscula, sin tildes y solo con letras y números."""
+    return re.sub(r"[^a-z0-9]", "", _sin_tildes(palabra.lower()))
+
+
 def _patron_de_letra(letra):
     if letra.isdigit():
         return letra  # los números, tal cual: 100 no es 10
@@ -39,8 +44,7 @@ def patron_de_busqueda(palabra):
     venir repetida ("Tutto"). Lo que se escribe repetido sí se exige: "mm" son dos emes, para que
     "m&m" no encuentre cualquier cosa con una m.
     """
-    letras = re.sub(r"[^a-z0-9]", "", _sin_tildes(palabra.lower()))
-    return _SIGNO.join(map(_patron_de_letra, letras))
+    return _SIGNO.join(map(_patron_de_letra, palabra_normalizada(palabra)))
 
 
 def buscar_productos(palabra):

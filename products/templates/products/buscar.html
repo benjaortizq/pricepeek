@@ -12,8 +12,11 @@
 
   <div class="mt-space-lg mb-space-md">
     <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">
-      {% if palabra %}Resultados para «{{ palabra }}»{% else %}Todos los productos{% endif %}
+      {% if corregida and productos %}Mostrando resultados para «{{ corregida }}»{% elif palabra %}Resultados para «{{ palabra }}»{% else %}Todos los productos{% endif %}
     </h1>
+    {% if corregida and productos %}
+      <p class="text-body-md font-body-md text-secondary mt-0.5">Usted escribió «{{ palabra }}».</p>
+    {% endif %}
     <p class="text-body-md font-body-md text-secondary mt-0.5">
       {{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }}
     </p>

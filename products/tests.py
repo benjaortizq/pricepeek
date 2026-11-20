@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import User
 from reviews.models import Reviews
 
-from .busqueda import buscar_productos
+from .busqueda import buscar_productos, con_imagen
 from .models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
 
 # Los modelos son managed = False (las tablas viven en Supabase),
@@ -176,6 +176,18 @@ class BuscarProductosTests(CatalogoTestCase):
 
     def test_sin_coincidencias_devuelve_lista_vacia(self):
         self.assertEqual(self.buscar("televisor"), [])
+
+    def test_imagen_de_cada_producto_en_una_sola_consulta(self):
+        self.imagen(self.variante_leche, "https://img.test/secundaria.png")
+        self.imagen(self.variante_leche, "https://img.test/principal.png", principal=True)
+        self.imagen(self.variante_ketchup, "https://img.test/ketchup.png")
+        self.producto("Yogur natural", self.dos_pinos, self.lacteos)  # sin imagen
+        with self.assertNumQueries(2):  # los productos y las imágenes de todos
+            productos = con_imagen(buscar_productos(""))
+        self.assertEqual(
+            [p.imagen_url for p in productos],
+            ["https://img.test/principal.png", "https://img.test/ketchup.png", None],
+        )
 
 
 class PaginaBusquedaTests(CatalogoTestCase):

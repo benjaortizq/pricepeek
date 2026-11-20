@@ -15,12 +15,20 @@ def buscar_productos(palabra):
 
 
 def con_imagen(productos):
-    """Devuelve los productos con .imagen_url (la principal, o None).
+    """Devuelve los productos con .imagen_url (la principal; si no hay, la primera; o None).
 
-    Hace una consulta por producto, así que pase solo los que se van a mostrar (ya paginados).
+    Trae las imágenes de todos en una sola consulta (con la base en Supabase, cada consulta
+    tarda ~80 ms). Pase solo los que se van a mostrar (ya paginados).
     """
     productos = list(productos)
+    imagenes = (
+        ProductImages.objects.filter(variant__product_id__in=[producto.pk for producto in productos])
+        .order_by("variant__product_id", "-is_main", "id")
+        .values_list("variant__product_id", "image_url")
+    )
+    primera = {}
+    for producto_id, url in imagenes:
+        primera.setdefault(producto_id, url)
     for producto in productos:
-        imagen = ProductImages.objects.filter(variant__product_id=producto.pk).order_by("-is_main", "id").first()
-        producto.imagen_url = imagen.image_url if imagen else None
+        producto.imagen_url = primera.get(producto.pk)
     return productos

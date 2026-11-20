@@ -47,6 +47,15 @@ class ErrorExtraccion(Exception):
 class ErrorDescarga(ErrorExtraccion):
     """La página no se pudo descargar (sin conexión, timeout, error del servidor...)."""
 
+    def __init__(self, mensaje, codigo=None):
+        super().__init__(mensaje)
+        self.codigo = codigo  # el código HTTP, si la tienda respondió
+
+    @property
+    def es_rechazo(self):
+        """403 o 429: la tienda no quiere atender más peticiones (por ahora)."""
+        return self.codigo in (403, 429)
+
 
 class ProductoNoEncontrado(ErrorExtraccion):
     """La tienda respondió que el producto ya no existe (404 o búsqueda vacía)."""
@@ -102,7 +111,7 @@ class ClienteHttp:
                 )
             if respuesta.status_code < 400:
                 return respuesta
-            fallo = ErrorDescarga(f"La tienda respondió con el código {respuesta.status_code}.")
+            fallo = ErrorDescarga(f"La tienda respondió con el código {respuesta.status_code}.", respuesta.status_code)
             if respuesta.status_code < 500 and respuesta.status_code != 429:
                 raise fallo  # 401, 403...: reintentar no lo arregla
         raise fallo

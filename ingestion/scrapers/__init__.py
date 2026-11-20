@@ -7,7 +7,7 @@ Para agregar una tienda que usa una plataforma conocida basta con agregar su dom
 
 from urllib.parse import urlsplit
 
-from . import automercado, ld_json, vtex
+from . import automercado, gollo, ld_json, vtex
 from .base import (
     ClienteHttp,
     CodigoDistinto,
@@ -24,6 +24,8 @@ EXTRACTORES = {
     "automercado.cr": automercado.extraer,
     "peridomicilio.com": ld_json.extraer,
     "megasuper.com": ld_json.extraer,
+    "tiendamonge.com": ld_json.extraer,
+    "gollo.com": gollo.extraer,
 }
 
 

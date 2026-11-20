@@ -13,7 +13,7 @@ from django.utils import timezone
 from products.barcodes import calcular_digito_verificador
 from products.models import Prices
 
-from .models import Incident
+from .models import Incident, StoreProduct
 from .scrapers import (
     CodigoDistinto,
     ErrorDescarga,
@@ -80,13 +80,14 @@ def formas_del_codigo(codigo):
     return formas
 
 
-def elegir_oferta(ofertas, gtin):
+def elegir_oferta(ofertas, gtin, aceptados=()):
     """La oferta de la presentación guardada.
 
-    Si la tienda reporta códigos de barras, uno tiene que coincidir con el guardado.
+    Si la tienda reporta códigos de barras, uno tiene que coincidir con el guardado (o con
+    alguno de `aceptados`: los que una persona confirmó para esta página en el admin).
     Si no reporta ninguno (Automercado) y la página tiene una sola oferta, se confía en la URL.
     """
-    buscado = formas_del_codigo(gtin)
+    buscado = formas_del_codigo(gtin).union(*(formas_del_codigo(c) for c in aceptados))
     for oferta in ofertas:
         if any(buscado & formas_del_codigo(codigo) for codigo in oferta.gtins):
             return oferta
@@ -98,6 +99,17 @@ def elegir_oferta(ofertas, gtin):
     if len(ofertas) == 1:
         return ofertas[0]
     raise PrecioNoEncontrado("La página tiene varias presentaciones sin código de barras y no se sabe cuál es.")
+
+
+def codigos_confirmados(url):
+    """Los códigos que publica la tienda en esa página, si una persona confirmó en el admin que
+    es la variante guardada aunque el código sea otro (Ingestion › Productos de tiendas)."""
+    return (
+        StoreProduct.objects.filter(url=url, status=StoreProduct.Status.CONFIRMED)
+        .values_list("barcodes", flat=True)
+        .first()
+        or []
+    )
 
 
 def precio_final_guardado(precio):
@@ -132,8 +144,9 @@ def revisar(precio, http, guardar=True):
     if extractor is None:
         return Revision(precio, NO_SOPORTADA)
 
+    aceptados = codigos_confirmados(precio.product_web_url)
     try:
-        oferta = elegir_oferta(extractor(precio.product_web_url, http), precio.gtin_id)
+        oferta = elegir_oferta(extractor(precio.product_web_url, http), precio.gtin_id, aceptados)
     except ProductoNoEncontrado as error:
         # La tienda ya no lo vende: queda como no disponible, con su último precio.
         revision = _aplicar(precio, Oferta(None, None, False), guardar)

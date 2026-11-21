@@ -135,6 +135,31 @@ STATICFILES_DIRS = [BASE_DIR / "frontend"]  # css/ y js/ del diseño
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Use Supabase Storage through its S3-compatible API when credentials are set.
+# Without these settings, Django keeps using local MEDIA_ROOT storage.
+SUPABASE_S3_SETTINGS = {
+    "endpoint_url": os.environ.get("SUPABASE_S3_ENDPOINT"),
+    "region_name": os.environ.get("SUPABASE_S3_REGION"),
+    "access_key": os.environ.get("SUPABASE_S3_ACCESS_KEY"),
+    "secret_key": os.environ.get("SUPABASE_S3_SECRET_KEY"),
+    "bucket_name": os.environ.get("SUPABASE_STORAGE_BUCKET"),
+}
+if all(SUPABASE_S3_SETTINGS.values()):
+    INSTALLED_APPS.append("storages")
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                **SUPABASE_S3_SETTINGS,
+                "addressing_style": "path",
+                "default_acl": None,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration

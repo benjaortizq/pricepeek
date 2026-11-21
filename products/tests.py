@@ -13,7 +13,7 @@ from reviews.models import Reviews
 from .correccion import olvidar_vocabulario
 from .models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
 
-from .busqueda import buscar_productos, con_imagen
+from .busqueda import buscar_productos, con_imagen, con_imagen_variante
 from .views import _serializar_precio, buscar_variantes_por_nombre, obtener_precios_por_gtin
 
 # Los modelos son managed = False (las tablas viven en Supabase),
@@ -333,6 +333,19 @@ class BuscarProductosTests(CatalogoTestCase):
             ["https://img.test/principal.png", "https://img.test/ketchup.png", None],
         )
 
+    def test_imagen_de_cada_variante_en_una_sola_consulta(self):
+        otra_leche = self.variante(self.leche, "7441001234598")  # misma familia, sin imagen propia
+        self.imagen(self.variante_leche, "https://img.test/secundaria.png")
+        self.imagen(self.variante_leche, "https://img.test/principal.png", principal=True)
+        self.imagen(self.variante_ketchup, "https://img.test/ketchup.png")
+        variantes = [self.variante_leche, otra_leche, self.variante_ketchup]
+        with self.assertNumQueries(1):  # las imágenes de todas
+            variantes = con_imagen_variante(variantes)
+        self.assertEqual(
+            [v.imagen_url for v in variantes],
+            ["https://img.test/principal.png", None, "https://img.test/ketchup.png"],
+        )
+
 
 class PaginaBusquedaTests(CatalogoTestCase):
     def test_muestra_los_resultados(self):
@@ -353,12 +366,33 @@ class PaginaBusquedaTests(CatalogoTestCase):
 
     def test_los_resultados_se_paginan_de_24_en_24(self):
         for i in range(25):
-            self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+            yogur = self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
+            self.variante(yogur, f"7441000{i:06d}")  # la búsqueda muestra variantes
         primera = self.client.get(reverse("buscar_productos"), {"q": "yogur"})
-        self.assertEqual(len(primera.context["productos"]), 24)
+        self.assertEqual(len(primera.context["variantes"]), 24)
         self.assertContains(primera, "Página 1 de 2")
         segunda = self.client.get(reverse("buscar_productos"), {"q": "yogur", "pagina": 2})
-        self.assertEqual(len(segunda.context["productos"]), 1)
+        self.assertEqual(len(segunda.context["variantes"]), 1)
+
+    def test_la_pagina_busca_sin_tildes_ni_signos_ni_letras_repetidas(self):
+        mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
+        cafe = self.variante(self.producto("Café molido", self.dos_pinos, self.lacteos), "7441000999901")
+        tutto = self.variante(self.producto("Bombón TUTTO", self.dos_pinos, self.salsas), "7441000999902")
+        mms = self.variante(self.producto("Chocolate con maní", mars, self.salsas), "7441000999903")
+        for palabra, esperada in (("cafe", cafe), ("tuto", tutto), ("mms", mms), ("pinos leche", self.variante_leche)):
+            with self.subTest(palabra=palabra):
+                respuesta = self.client.get(reverse("buscar_productos"), {"q": palabra})
+                self.assertEqual(list(respuesta.context["variantes"]), [esperada])
+
+    def test_la_correccion_respeta_los_filtros(self):
+        sin_filtro = self.client.get(reverse("buscar_productos"), {"q": "lece"})
+        self.assertContains(sin_filtro, "Mostrando resultados para «leche»")
+        respuesta = self.client.get(
+            reverse("buscar_productos"), {"q": "lece", "categoria": self.salsas.pk}
+        )  # «leche» existe, pero no en Salsas
+        self.assertEqual(list(respuesta.context["variantes"]), [])
+        self.assertNotContains(respuesta, "Mostrando resultados")
+        self.assertContains(respuesta, "No encontramos productos con «lece» en la categoría o marca seleccionada")
 
     def test_la_pantalla_principal_muestra_los_productos(self):
         cliente = User.objects.create_user(email="ana@correo.com", password="Clave2026segura")

@@ -5,6 +5,7 @@ from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.db.models import (
+    Avg,
     BooleanField,
     Case,
     CharField,
@@ -33,7 +34,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from reviews.forms import ReviewForm
-from reviews.models import ReviewPhoto, Reviews
+from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
 from .busqueda import (
     buscar_productos,
@@ -42,6 +43,7 @@ from .busqueda import (
     con_imagen_variante,
 )
 
+from .correccion import corregir_busqueda
 from .models import (
     Brands,
     Categories,
@@ -169,65 +171,8 @@ def detalle_producto(request, pk):
         .filter(variant__product_id=producto.pk)
         .order_by("-created_at")
     )
-    ya_reseño = (
-        request.user.is_authenticated
-        and request.user.role == "client"
-        and Reviews.objects.filter(
-            user_id=request.user.pk,
-            variant__product_id=producto.pk,
-        ).exists()
-    )
-    review_form = ReviewForm()
-
-    if request.method == "POST":
-        if not request.user.is_authenticated or request.user.role != "client":
-            raise PermissionDenied
-
-        review_form = ReviewForm(request.POST, request.FILES)
-        if review_form.is_valid() and variantes.exists():
-            stored_photo_name = None
-            try:
-                with transaction.atomic():
-                    # Lock the product so concurrent submissions cannot pass the duplicate check.
-                    Products.objects.select_for_update().get(pk=producto.pk)
-                    ya_reseño = Reviews.objects.filter(
-                        user_id=request.user.pk,
-                        variant__product_id=producto.pk,
-                    ).exists()
-                    if not ya_reseño:
-                        variante = variantes.first()
-                        resena = Reviews.objects.create(
-                            user_id=request.user.pk,
-                            variant=variante,
-                            content=review_form.cleaned_data["content"],
-                            score=review_form.cleaned_data["rating"],
-                            created_at=timezone.now(),
-                            updated_at=timezone.now(),
-                        )
-                        photo = review_form.cleaned_data["photo"]
-                        if photo:
-                            review_photo = ReviewPhoto(review_id=resena)
-                            review_photo.image.save(photo.name, photo, save=False)
-                            stored_photo_name = review_photo.image.name
-                            review_photo.save()
-            except DatabaseError:
-                if stored_photo_name:
-                    default_storage.delete(stored_photo_name)
-                raise
-
-            if not ya_reseño:
-                return redirect("detalle_producto", pk=producto.pk)
-
-    resenas = list(resenas)
-    fotos = {
-        photo.review_id: photo
-        for photo in ReviewPhoto.objects.filter(
-            review_id__in=[resena.pk for resena in resenas]
-        )
-    }
-    for resena in resenas:
-        resena.review_photo = fotos.get(resena.pk)
-
+    calificacion_promedio = resenas.aggregate(promedio=Avg("score"))["promedio"]
+    estrellas_promedio = int(calificacion_promedio + 0.5) if calificacion_promedio is not None else 0
     ya_reseño = (
         request.user.is_authenticated
         and request.user.role == "client"
@@ -287,6 +232,17 @@ def detalle_producto(request, pk):
     for resena in resenas:
         resena.review_photo = fotos.get(resena.pk)
 
+    # Solo el cliente que reportó ve que ya reportó; nadie más ve quién reporta (RNF-32).
+    reportadas = set()
+    if request.user.is_authenticated and request.user.role == "client":
+        reportadas = set(
+            ReviewReport.objects.filter(
+                reporter=request.user, review_id__in=[resena.pk for resena in resenas]
+            ).values_list("review_id", flat=True)
+        )
+    for resena in resenas:
+        resena.ya_reportada = resena.pk in reportadas
+
     return render(
         request,
         "products/detalle_producto.html",
@@ -297,6 +253,8 @@ def detalle_producto(request, pk):
             "grupos_precios": grupos_precios,
             "precios": precios,
             "resenas": resenas,
+            "calificacion_promedio": calificacion_promedio,
+            "estrellas_promedio": estrellas_promedio,
             "review_form": review_form,
             "ya_reseño": ya_reseño,
         },
@@ -316,16 +274,20 @@ def buscar(request):
     )
     categoria_actual = _categoria_por_filtro(categoria)
     marca_actual = _marca_por_filtro(marca)
-    variantes = buscar_variantes_por_nombre(palabra, categoria, marca)
-    pagina = Paginator(variantes, PRODUCTOS_POR_PAGINA).get_page(
-        request.GET.get("pagina")
-    )
+    pagina = _pagina_de_variantes(request, palabra, categoria, marca)
+    corregida = None
+    if palabra and not pagina.paginator.count:
+        # «¿Quiso decir…?»: si no hay nada, se busca con las palabras del catálogo más parecidas.
+        corregida = corregir_busqueda(palabra)
+        if corregida:
+            pagina = _pagina_de_variantes(request, corregida, categoria, marca)
     variantes_pagina = con_imagen_variante(con_precio_minimo(pagina))
     return render(
         request,
         "products/buscar.html",
         {
             "palabra": palabra,
+            "corregida": corregida,
             "categoria_seleccionada": (
                 str(categoria_actual.pk) if categoria_actual is not None else ""
             ),
@@ -338,6 +300,12 @@ def buscar(request):
             "variantes": variantes_pagina,
         },
     )
+
+
+def _pagina_de_variantes(request, palabra, categoria, marca):
+    """La página pedida (de PRODUCTOS_POR_PAGINA en PRODUCTOS_POR_PAGINA) de la búsqueda."""
+    variantes = buscar_variantes_por_nombre(palabra, categoria, marca)
+    return Paginator(variantes, PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
 
 
 def _prefijo_de_filtro(queryset: QuerySet) -> str:

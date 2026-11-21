@@ -65,55 +65,67 @@ def buscar_productos(palabra):
     return productos.annotate(parecido=orden).order_by("parecido", "name")
 
 def buscar_variantes(palabra):
-    """Variantes cuya presentación, producto o marca coincide con la palabra.
+    """Variantes que tienen cada palabra (escrita parecido) en la presentación, el producto o la marca.
 
-    Cada variante tiene su propio GTIN, por lo que dos presentaciones de una
-    misma familia de producto quedan como resultados independientes.
+    Acepta lo mismo que ``buscar_productos``: sin importar mayúsculas, tildes, letras repetidas
+    ni signos. Cada variante tiene su propio GTIN, por lo que dos presentaciones de una misma
+    familia de producto quedan como resultados independientes. Primero las que tienen el texto
+    tal cual y después las parecidas; dentro de cada grupo, por producto y presentación.
     """
     variantes = ProductVariants.objects.select_related(
         "product", "product__brand", "product__category"
     )
     palabra = (palabra or "").strip()
-    if palabra:
+    patrones = [patron for patron in map(patron_de_busqueda, palabra.split()) if patron]
+    if not patrones:
+        return variantes.order_by("product__name", "name", "gtin")
+    for patron in patrones:
         variantes = variantes.filter(
-            Q(name__icontains=palabra)
-            | Q(product__name__icontains=palabra)
-            | Q(product__brand__name__icontains=palabra)
+            Q(name__iregex=patron)
+            | Q(product__name__iregex=patron)
+            | Q(product__brand__name__iregex=patron)
         )
-    return variantes.order_by("product__name", "name", "gtin")
+    tal_cual = (
+        Q(name__icontains=palabra)
+        | Q(product__name__icontains=palabra)
+        | Q(product__brand__name__icontains=palabra)
+    )
+    orden = Case(When(tal_cual, then=Value(0)), default=Value(1), output_field=IntegerField())
+    return variantes.annotate(parecido=orden).order_by("parecido", "product__name", "name", "gtin")
+
+
+def _con_imagen(objetos, campo):
+    """Les pone .imagen_url a los objetos (la principal; si no hay, la primera; o None).
+
+    Trae las imágenes de todos en una sola consulta (con la base en Supabase, cada consulta
+    tarda ~80 ms). ``campo`` es por dónde se juntan las imágenes con los objetos.
+    """
+    objetos = list(objetos)
+    imagenes = (
+        ProductImages.objects.filter(**{f"{campo}__in": [objeto.pk for objeto in objetos]})
+        .order_by(campo, "-is_main", "id")
+        .values_list(campo, "image_url")
+    )
+    primera = {}
+    for objeto_id, url in imagenes:
+        primera.setdefault(objeto_id, url)
+    for objeto in objetos:
+        objeto.imagen_url = primera.get(objeto.pk)
+    return objetos
 
 
 def con_imagen(productos):
-    """Devuelve los productos con .imagen_url (la principal; si no hay, la primera; o None).
+    """Devuelve los productos con .imagen_url, en una sola consulta.
 
-    Trae las imágenes de todos en una sola consulta (con la base en Supabase, cada consulta
-    tarda ~80 ms). Pase solo los que se van a mostrar (ya paginados).
+    Pase solo los que se van a mostrar (ya paginados).
     """
-    productos = list(productos)
-    imagenes = (
-        ProductImages.objects.filter(variant__product_id__in=[producto.pk for producto in productos])
-        .order_by("variant__product_id", "-is_main", "id")
-        .values_list("variant__product_id", "image_url")
-    )
-    primera = {}
-    for producto_id, url in imagenes:
-        primera.setdefault(producto_id, url)
-    for producto in productos:
-        producto.imagen_url = primera.get(producto.pk)
-    return productos
+    return _con_imagen(productos, "variant__product_id")
+
 
 def con_imagen_variante(variantes):
-    """Devuelve las variantes con .imagen_url (la principal, o None).
+    """Devuelve las variantes con .imagen_url, en una sola consulta.
 
     La imagen pertenece a la variante, no a las demás presentaciones de la
-    misma familia de producto.
+    misma familia de producto. Pase solo las que se van a mostrar (ya paginadas).
     """
-    variantes = list(variantes)
-    for variante in variantes:
-        imagen = (
-            ProductImages.objects.filter(variant_id=variante.pk)
-            .order_by("-is_main", "id")
-            .first()
-        )
-        variante.imagen_url = imagen.image_url if imagen else None
-    return variantes
+    return _con_imagen(variantes, "variant_id")

@@ -118,6 +118,7 @@ class CorreccionEnLaBusquedaTests(CatalogoTestCase):
         olvidar_vocabulario()
         samsung = Brands.objects.create(name="Samsung", slug="samsung", **fechas())
         self.celular = self.producto("Celular Galaxy A57", samsung, self.lacteos)
+        self.variante_celular = self.variante(self.celular, "8806094000017")  # la búsqueda muestra variantes
 
     def buscar(self, palabra):
         return self.client.get(reverse("buscar_productos"), {"q": palabra})
@@ -129,7 +130,7 @@ class CorreccionEnLaBusquedaTests(CatalogoTestCase):
         respuesta = self.buscar("sansun")
         self.assertContains(respuesta, "Mostrando resultados para «samsung»")
         self.assertContains(respuesta, "Usted escribió «sansun»")
-        self.assertEqual(list(respuesta.context["productos"]), [self.celular])
+        self.assertEqual(list(respuesta.context["variantes"]), [self.variante_celular])
 
     def test_si_encuentra_algo_no_corrige(self):
         respuesta = self.buscar("samsung")

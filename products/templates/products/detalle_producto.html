@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load precios %}
+{% load precios %}
 
 {% block title %}{{ producto.name }}{% endblock %}
 
@@ -78,66 +79,222 @@
     </div>
   </section>
 
-  <section aria-labelledby="precios-heading" class="mb-12">
-    <div class="mb-4">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
-        <h2 class="font-headline-md text-headline-md font-extrabold text-on-surface" id="precios-heading">Precios en tiendas de Costa Rica</h2>
-      </div>
-      <p class="text-body-sm font-body-sm text-secondary">Precio que reporta cada tienda para este producto.</p>
-    </div>
-
-    {% if precios %}
-      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 overflow-hidden">
-        <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-surface-container-low border-b border-outline-variant/50 text-xs font-bold text-secondary uppercase tracking-wider">
-          <div class="col-span-3">Tienda</div>
-          <div class="col-span-3">Presentación</div>
-          <div class="col-span-2">Disponibilidad</div>
-          <div class="col-span-2 text-right">Precio</div>
-          <div class="col-span-2 text-right">Enlace</div>
+  <div class="mb-12 scroll-mt-20">
+    {% if grupos_precios %}
+      <div id="comparativa-gtin">
+        <div role="tablist" aria-label="Variantes del producto" class="flex flex-wrap gap-2 mb-6">
+          {% for grupo in grupos_precios %}
+            <button
+              type="button"
+              role="tab"
+              id="tab-precio-{{ grupo.gtin }}"
+              aria-controls="precio-{{ grupo.gtin }}"
+              aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+              data-gtin-tab="{{ grupo.gtin }}"
+              class="flex flex-col items-start px-4 py-3 rounded-2xl border text-left transition-colors {% if forloop.first %}bg-primary-container border-primary text-on-surface{% else %}bg-surface-container-lowest border-outline-variant text-secondary hover:border-on-surface{% endif %}"
+            >
+              <span class="text-body-md font-body-md font-bold">{{ grupo.variante.name }}</span>
+              <span class="text-[11px] font-price-row tracking-wider">GTIN {{ grupo.gtin }}</span>
+            </button>
+          {% endfor %}
         </div>
-        {% for precio in precios %}
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-6 py-4 items-center border-b border-outline-variant/40 last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
-            <div class="md:col-span-3 flex items-center gap-3">
-              <span class="w-10 h-10 rounded-full bg-surface-container-low border border-outline-variant/60 flex items-center justify-center font-bold text-xs text-on-surface uppercase shrink-0">{{ precio.tienda|slice:":2" }}</span>
-              <span class="font-bold text-on-surface text-body-lg">{{ precio.tienda }}</span>
+
+        {% for grupo in grupos_precios %}
+          <section
+            role="tabpanel"
+            id="precio-{{ grupo.gtin }}"
+            aria-labelledby="precio-heading-{{ grupo.gtin }}"
+            data-gtin-panel="{{ grupo.gtin }}"
+            class="{% if not forloop.first %}hidden {% endif %}"
+          >
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 id="precio-heading-{{ grupo.gtin }}" class="font-headline-md text-headline-md font-extrabold text-on-surface">{{ grupo.variante.name }}</h3>
+                <p class="text-body-sm font-body-sm text-secondary">Variante independiente · GTIN {{ grupo.gtin }}</p>
+              </div>
             </div>
-            <div class="md:col-span-3 text-body-md font-body-md text-on-surface">
-              {{ precio.gtin.name }}
-              <span class="block text-xs text-secondary font-price-row tracking-wider">{{ precio.gtin.gtin }}</span>
-            </div>
-            <div class="md:col-span-2">
-              {% if precio.is_available %}
-                <span class="inline-flex items-center gap-1.5 text-xs text-tertiary font-bold"><span class="w-2 h-2 rounded-full bg-tertiary"></span>Disponible</span>
-              {% else %}
-                <span class="inline-flex items-center gap-1.5 text-xs text-secondary font-bold"><span class="w-2 h-2 rounded-full bg-outline"></span>No disponible</span>
-              {% endif %}
-            </div>
-            <div class="md:col-span-2 md:text-right">
-              {% if precio.price is not None %}
-                <span class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
-                {% if precio.discount %}
-                  <span class="ml-1 md:ml-0 md:block text-[11px] font-label-badge text-tertiary font-bold">Descuento de {% widthratio precio.discount 1 100 %} %</span>
-                {% endif %}
-              {% else %}
-                <span class="text-body-md font-body-md text-secondary">Sin precio</span>
-              {% endif %}
-            </div>
-            <div class="md:col-span-2 md:text-right">
-              <a class="inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-full border border-outline-variant hover:border-on-surface bg-surface-container-lowest text-on-surface font-body-md text-body-md font-semibold transition-colors" href="{{ precio.product_web_url }}" rel="noopener noreferrer" target="_blank">
-                <span>Ir a tienda</span>
-                <span class="material-symbols-outlined text-xs">open_in_new</span>
-              </a>
-            </div>
-          </div>
+
+            {% if grupo.mejor %}
+              <article class="bg-primary-container text-on-surface rounded-2xl p-6 shadow-sm border border-primary/20" data-best-price-card="{{ grupo.gtin }}">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="material-symbols-outlined text-lg font-bold">check_circle</span>
+                      <span class="font-label-badge text-label-badge tracking-wider font-extrabold uppercase text-on-primary-container" data-best-price-badge="{{ grupo.gtin }}">
+                        Mejor precio disponible
+                      </span>
+                    </div>
+                    <div class="font-price-hero text-price-hero text-on-surface font-bold tracking-tight">
+                      {{ grupo.mejor.currency.symbol }}{{ grupo.mejor.final|miles }}
+                    </div>
+                    <div class="mt-1 text-body-sm font-body-sm font-medium text-on-surface/90">
+                      {{ grupo.variante.name }}
+                      <span class="font-price-row tracking-wider">· {{ grupo.gtin }}</span>
+                    </div>
+                    {% if grupo.mejor.discount %}
+                      <span class="inline-flex items-center px-2 py-0.5 mt-2 rounded-full bg-surface-container-lowest/80 text-tertiary font-bold text-xs font-label-badge">
+                        {% widthratio grupo.mejor.discount 1 100 %} % de descuento
+                      </span>
+                    {% endif %}
+                  </div>
+                  <div class="flex flex-col items-start md:items-end gap-2">
+                    <span class="text-xs font-semibold text-on-primary-container uppercase tracking-wider">Disponible al precio final en:</span>
+                    <span class="font-headline-md text-headline-md font-bold text-on-surface">{{ grupo.mejor.tienda }}</span>
+                    {% if grupo.mejor.product_web_url %}
+                      <a class="inline-flex items-center gap-1 text-xs font-bold underline hover:text-on-primary-container transition-colors" href="{{ grupo.mejor.product_web_url }}" rel="noopener noreferrer" target="_blank">
+                        Ir a tienda <span class="material-symbols-outlined text-xs">open_in_new</span>
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-on-surface/15 flex flex-wrap items-center justify-between gap-2 text-xs text-on-surface/80">
+                  <span>Precio final con descuento reportado por la tienda</span>
+                  <span class="font-semibold">Actualizado {{ grupo.mejor.updated_at|date:"d/m/Y H:i" }}</span>
+                </div>
+              </article>
+            {% else %}
+              <article class="bg-surface-container-lowest text-on-surface rounded-2xl p-6 shadow-sm border border-outline-variant/60">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="material-symbols-outlined text-lg font-bold text-secondary">remove_shopping_cart</span>
+                  <span class="font-label-badge text-label-badge tracking-wider font-extrabold uppercase text-secondary">
+                    Precio no disponible
+                  </span>
+                </div>
+                <div class="mt-1 text-body-sm font-body-sm font-medium text-on-surface/90">
+                  {{ grupo.variante.name }}
+                  <span class="font-price-row tracking-wider">· {{ grupo.gtin }}</span>
+                </div>
+              </article>
+            {% endif %}
+
+            {% if grupo.opciones %}
+              <div class="mt-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/60 overflow-hidden shadow-sm">
+                <div class="px-6 py-3.5 bg-surface-container-low border-b border-outline-variant/50">
+                  <h4 class="text-body-md font-body-md font-bold text-on-surface">Otras opciones para este GTIN</h4>
+                  {% if grupo.mejor %}
+                    <p class="text-xs text-secondary mt-0.5">El porcentaje se calcula sobre el mejor precio de este GTIN.</p>
+                  {% else %}
+                    <p class="text-xs text-secondary mt-0.5">No hay un precio disponible con el cual comparar estas ofertas.</p>
+                  {% endif %}
+                </div>
+                <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3.5 bg-surface-container-low border-b border-outline-variant/50 text-xs font-bold text-secondary uppercase tracking-wider">
+                  <div class="col-span-3">Comercio verificado</div>
+                  <div class="col-span-3">Disponibilidad</div>
+                  <div class="col-span-2">Diferencia vs mínimo</div>
+                  <div class="col-span-2 text-right">Precio final</div>
+                  <div class="col-span-2 text-right">Acción</div>
+                </div>
+                {% for precio in grupo.opciones %}
+                  <div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 items-center border-b border-outline-variant/40 last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
+                    <div class="md:col-span-3 flex items-center gap-3">
+                      <span class="w-10 h-10 rounded-full bg-surface-container-lowest border border-outline-variant/60 flex items-center justify-center font-bold text-xs text-on-surface uppercase shrink-0">{{ precio.tienda|slice:":2" }}</span>
+                      <div>
+                        <span class="font-bold text-on-surface text-body-lg">{{ precio.tienda }}</span>
+                        <span class="block text-xs text-secondary">{{ grupo.variante.name }}</span>
+                        <span class="block text-[11px] text-secondary font-price-row tracking-wider">{{ grupo.gtin }}</span>
+                      </div>
+                    </div>
+                    <div class="md:col-span-3 flex flex-col">
+                      {% if precio.is_available %}
+                        <span class="inline-flex items-center gap-1.5 text-xs text-tertiary font-bold"><span class="w-2 h-2 rounded-full bg-tertiary"></span>Disponible</span>
+                      {% else %}
+                        <span class="inline-flex items-center gap-1.5 text-xs text-secondary font-bold"><span class="w-2 h-2 rounded-full bg-outline"></span>No disponible</span>
+                      {% endif %}
+                      <span class="text-xs text-secondary mt-0.5">Actualizado {{ precio.updated_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="md:col-span-2">
+                      {% if precio.is_available and precio.final_price is not None %}
+                        {% if precio.diferencia_vs_minimo == 0 %}
+                          <span class="text-xs font-semibold text-secondary font-label-badge">Empate con el mínimo</span>
+                        {% else %}
+                          <span class="text-xs font-semibold text-secondary font-label-badge">
+                            +{{ precio.currency.symbol }}{{ precio.diferencia_vs_minimo|miles }} (+{{ precio.diferencia_porcentaje|floatformat:0 }}%)
+                          </span>
+                        {% endif %}
+                      {% else %}
+                        <span class="text-secondary">—</span>
+                      {% endif %}
+                    </div>
+                    <div class="md:col-span-2 md:text-right">
+                      {% if precio.final_price is not None %}
+                        <span class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
+                        {% if precio.discount %}
+                          <span class="block text-[11px] text-secondary font-label-badge">Descuento de {% widthratio precio.discount 1 100 %} %</span>
+                        {% endif %}
+                      {% else %}
+                        <span class="text-body-md font-body-md text-secondary">Sin precio</span>
+                      {% endif %}
+                    </div>
+                    <div class="md:col-span-2 md:text-right">
+                      {% if precio.product_web_url %}
+                        <a class="inline-flex items-center justify-center gap-1.5 w-full md:w-auto px-5 py-2 rounded-full border border-outline-variant hover:border-on-surface bg-surface-container-lowest font-semibold text-on-surface font-body-md transition-colors" href="{{ precio.product_web_url }}" rel="noopener noreferrer" target="_blank">
+                          <span>Ir a tienda</span>
+                          <span class="material-symbols-outlined text-xs">open_in_new</span>
+                        </a>
+                      {% else %}
+                        <span class="text-body-sm font-body-sm text-secondary">Enlace no disponible</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </section>
         {% endfor %}
       </div>
+      <p class="mt-3 text-center text-xs text-secondary flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-sm">info</span>
+        PricePeek no vende productos de forma directa ni procesa cobros. Las compras se efectúan exclusivamente en el portal seguro de cada comercio.
+      </p>
     {% else %}
       <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 p-6 text-body-md font-body-md text-secondary">
         Todavía no hay precios registrados para este producto.
       </div>
     {% endif %}
-  </section>
+  </div>
+
+  {% if grupos_precios %}
+    <script>
+      (() => {
+        const comparativa = document.getElementById("comparativa-gtin");
+        if (!comparativa) return;
+
+        const tabs = Array.from(comparativa.querySelectorAll("[data-gtin-tab]"));
+        const panels = Array.from(comparativa.querySelectorAll("[data-gtin-panel]"));
+
+        const activar = (gtin) => {
+          const panel = panels.find((item) => item.dataset.gtinPanel === gtin);
+          if (!panel) return;
+
+          tabs.forEach((tab) => {
+            const activo = tab.dataset.gtinTab === gtin;
+            tab.setAttribute("aria-selected", String(activo));
+            tab.classList.toggle("bg-primary-container", activo);
+            tab.classList.toggle("border-primary", activo);
+            tab.classList.toggle("text-on-surface", activo);
+            tab.classList.toggle("bg-surface-container-lowest", !activo);
+            tab.classList.toggle("border-outline-variant", !activo);
+            tab.classList.toggle("text-secondary", !activo);
+          });
+          panels.forEach((item) => {
+            const activo = item === panel;
+            item.classList.toggle("hidden", !activo);
+            item.setAttribute("aria-hidden", String(!activo));
+          });
+        };
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            activar(tab.dataset.gtinTab);
+            history.replaceState(null, "", `#precio-${tab.dataset.gtinTab}`);
+          });
+        });
+
+        const gtinDesdeHash = window.location.hash.replace(/^#precio-/, "");
+        activar(gtinDesdeHash || tabs[0]?.dataset.gtinTab);
+      })();
+    </script>
+  {% endif %}
 
   <section aria-labelledby="descripcion-heading" class="mb-12">
     <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/60">

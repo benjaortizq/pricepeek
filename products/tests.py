@@ -8,7 +8,8 @@ from django.utils import timezone
 from accounts.models import User
 from reviews.models import Reviews
 
-from .busqueda import buscar_productos
+from .busqueda import buscar_productos, con_imagen
+from .correccion import olvidar_vocabulario
 from .models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
 
 # Los modelos son managed = False (las tablas viven en Supabase),
@@ -29,6 +30,10 @@ class CatalogoTestCase(TestCase):
             for modelo in MODELOS:
                 editor.create_model(modelo)
         super().setUpClass()
+
+    def setUp(self):
+        super().setUp()
+        olvidar_vocabulario()  # el «¿quiso decir…?» se arma con los productos de cada prueba
 
     @classmethod
     def tearDownClass(cls):
@@ -176,6 +181,75 @@ class BuscarProductosTests(CatalogoTestCase):
 
     def test_sin_coincidencias_devuelve_lista_vacia(self):
         self.assertEqual(self.buscar("televisor"), [])
+
+    def test_letras_repetidas_de_mas_o_de_menos(self):
+        tutto = Brands.objects.create(name="Tutto", slug="tutto", **fechas())
+        bombon = self.producto("Bombón TUTTO de chocolate", tutto, self.salsas)
+        galleta = self.producto("Galleta de vainilla", tutto, self.salsas)
+        for palabra in ("tuto", "Tutto", "TUTTO", "tUtTo"):
+            with self.subTest(palabra=palabra):
+                self.assertEqual(self.buscar(palabra), [bombon, galleta])  # por el nombre o por la marca
+        self.assertEqual(self.buscar("galeta"), [galleta])
+
+    def test_sin_importar_tildes(self):
+        cafe = self.producto("Café molido", self.dos_pinos, self.lacteos)
+        pina = self.producto("Jugo de piña", self.dos_pinos, self.lacteos)
+        self.assertEqual(self.buscar("cafe"), [cafe])
+        self.assertEqual(self.buscar("CAFÉ"), [cafe])
+        self.assertEqual(self.buscar("pina"), [pina])
+        self.assertEqual(self.buscar("bombón"), [])
+
+    def test_sin_signos(self):
+        mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
+        chocolate = self.producto("Chocolate con maní", mars, self.salsas)
+        refresco = self.producto("Refresco Coca-Cola 600 ml", self.heinz, self.salsas)
+        self.assertEqual(self.buscar("mms"), [chocolate])
+        self.assertEqual(self.buscar("m&m"), [chocolate])
+        self.assertEqual(self.buscar("cocacola"), [refresco])
+        self.assertEqual(self.buscar("coca-cola"), [refresco])
+
+    def test_cada_palabra_en_el_nombre_o_la_marca_en_cualquier_orden(self):
+        self.assertEqual(self.buscar("leche dos pinos"), [self.leche])
+        self.assertEqual(self.buscar("pinos leche"), [self.leche])
+        self.assertEqual(self.buscar("leche heinz"), [])
+
+    def test_m_y_m_no_es_cualquier_cosa_con_m(self):
+        mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
+        chocolate = self.producto("Chocolate con maní", mars, self.salsas)
+        self.assertEqual(self.buscar("m&m"), [chocolate])  # no "Salsa de tomate"
+        self.assertEqual(self.buscar("mms"), [chocolate])
+
+    def test_primero_lo_que_tiene_el_texto_tal_cual(self):
+        mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
+        chocolate = self.producto("Chocolate con maní", mars, self.salsas)
+        boquita = self.producto("Boquita Yummies", self.dos_pinos, self.salsas)  # "mm" se parece a "m&m"
+        self.assertEqual(self.buscar("m&m"), [chocolate, boquita])
+
+    def test_un_espacio_no_cuenta_como_signo(self):
+        crema = self.producto("Galletas a la crema", self.dos_pinos, self.lacteos)
+        sal = self.producto("Sal de mesa", self.dos_pinos, self.lacteos)
+        self.assertEqual(self.buscar("sal"), [sal, self.ketchup])  # "Salsa", pero no "galleta[s a l]a"
+        self.assertEqual(self.buscar("galletas"), [crema])
+
+    def test_los_numeros_no_se_estiran(self):
+        agua = self.producto("Agua 100 ml", self.dos_pinos, self.lacteos)
+        self.assertEqual(self.buscar("100"), [agua])
+        self.assertEqual(self.buscar("1000"), [])
+
+    def test_solo_signos_es_como_no_buscar_nada(self):
+        self.assertEqual(self.buscar(" - & "), [self.leche, self.ketchup])
+
+    def test_imagen_de_cada_producto_en_una_sola_consulta(self):
+        self.imagen(self.variante_leche, "https://img.test/secundaria.png")
+        self.imagen(self.variante_leche, "https://img.test/principal.png", principal=True)
+        self.imagen(self.variante_ketchup, "https://img.test/ketchup.png")
+        self.producto("Yogur natural", self.dos_pinos, self.lacteos)  # sin imagen
+        with self.assertNumQueries(2):  # los productos y las imágenes de todos
+            productos = con_imagen(buscar_productos(""))
+        self.assertEqual(
+            [p.imagen_url for p in productos],
+            ["https://img.test/principal.png", "https://img.test/ketchup.png", None],
+        )
 
 
 class PaginaBusquedaTests(CatalogoTestCase):

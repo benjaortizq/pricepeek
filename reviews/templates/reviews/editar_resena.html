@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Editar reseña de {{ producto.name }}{% endblock %}
+
+{% block content %}
+<main class="max-w-3xl mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-8">
+  <a class="text-body-sm text-secondary hover:underline" href="{% url 'detalle_producto' producto.pk %}">← Volver al producto</a>
+  <section class="mt-4 bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/60">
+    <h1 class="font-headline-md text-headline-md font-bold text-on-surface mb-1">Editar tu reseña</h1>
+    <p class="text-body-sm text-secondary mb-5">{{ producto.name }}</p>
+    <form class="space-y-4" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% if foto %}
+        <img src="{{ foto.image.url }}" alt="Foto actual de la reseña" class="mb-3 rounded-xl max-h-64 object-cover">
+        <label class="mb-4 inline-flex items-center gap-2 text-body-sm text-secondary">
+          <input type="checkbox" name="remove_photo" class="rounded border-outline-variant">
+          Eliminar la foto actual
+        </label>
+      {% endif %}
+      <fieldset>
+        <legend class="block text-body-sm font-semibold text-on-surface mb-1.5">{{ form.rating.label }}</legend>
+        <div class="flex flex-wrap gap-2">{% for opcion in form.rating %}<label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-outline-variant/60 text-body-sm">{{ opcion.tag }} {{ opcion.choice_label }}</label>{% endfor %}</div>
+        {% for error in form.rating.errors %}<p class="mt-1 text-body-sm text-error">{{ error }}</p>{% endfor %}
+      </fieldset>
+      <div><label class="block text-body-sm font-semibold mb-1.5" for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>{{ form.content }}{% for error in form.content.errors %}<p class="mt-1 text-body-sm text-error">{{ error }}</p>{% endfor %}</div>
+      <div><label class="block text-body-sm font-semibold mb-1.5" for="{{ form.photo.id_for_label }}">Cambiar foto (opcional)</label>{{ form.photo }}{% for error in form.photo.errors %}<p class="mt-1 text-body-sm text-error">{{ error }}</p>{% endfor %}</div>
+      <button class="px-6 py-2.5 rounded-full bg-primary-container text-[#111111] font-bold" type="submit">Guardar cambios</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

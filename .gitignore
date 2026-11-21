@@ -9,3 +9,13 @@ __pycache__/
 .cache/
 .env.example
 .vscode/settings.json
+
+# Archivos locales para configuración de Graft y herramientas de IA
+.ignore
+.mcp.json
+AGENTS.md
+opencode.json
+.claude
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

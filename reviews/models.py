@@ -16,13 +16,14 @@ class Reviews(models.Model):
         managed = False
         db_table = 'reviews'
         unique_together = (('user', 'variant'),)
-    review_photo = None
 
 
 class ReviewPhoto(models.Model):
-    review_id = models.PositiveBigIntegerField(unique=True)
+    id = models.BigAutoField(primary_key=True)
+    review_id = models.ForeignKey(Reviews, models.DO_NOTHING, db_column='review_id')
     image = models.ImageField(upload_to="reviews/")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
 
     class Meta:
         db_table = "review_photos"

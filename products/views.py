@@ -36,6 +36,7 @@ def detalle_producto(request, pk):
         .order_by("-created_at")
     )
     calificacion_promedio = resenas.aggregate(promedio=Avg("score"))["promedio"]
+    estrellas_promedio = int(calificacion_promedio + 0.5) if calificacion_promedio is not None else 0
     ya_reseño = (
         request.user.is_authenticated
         and request.user.role == "client"
@@ -116,6 +117,7 @@ def detalle_producto(request, pk):
             "precios": precios,
             "resenas": resenas,
             "calificacion_promedio": calificacion_promedio,
+            "estrellas_promedio": estrellas_promedio,
             "review_form": review_form,
             "ya_reseño": ya_reseño,
         },

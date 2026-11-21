@@ -14,7 +14,16 @@ from PIL import Image
 
 from .forms import ReviewForm
 from .models import ReviewPhoto, Reviews
-from products.models import Brands, Categories, ProductImages, ProductVariants, Products
+from products.models import (
+    Brands,
+    Categories,
+    Currencies,
+    Prices,
+    ProductImages,
+    ProductVariants,
+    Products,
+    Stores,
+)
 
 
 class ReviewFormTests(TestCase):
@@ -48,9 +57,12 @@ class ReviewSubmissionTests(TestCase):
     modelos_sin_migracion = [
         Brands,
         Categories,
+        Currencies,
+        Stores,
         Products,
         ProductVariants,
         ProductImages,
+        Prices,  # la página del producto también muestra los precios
         Reviews,
     ]
 

@@ -38,8 +38,10 @@ from reviews.models import ReviewPhoto, Reviews
 from .busqueda import (
     buscar_productos,
     buscar_variantes,
+    con_imagen,
     con_imagen_variante,
 )
+
 from .models import (
     Brands,
     Categories,

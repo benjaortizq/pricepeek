@@ -9,7 +9,7 @@ from .busqueda import buscar_productos, con_imagen
 from .correccion import corregir_busqueda
 from .models import Prices, ProductImages, ProductVariants, Products
 from reviews.forms import ReviewForm
-from reviews.models import ReviewPhoto, Reviews
+from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
 
 def detalle_producto(request, pk):
@@ -95,6 +95,17 @@ def detalle_producto(request, pk):
     }
     for resena in resenas:
         resena.review_photo = fotos.get(resena.pk)
+
+    # Solo el cliente que reportó ve que ya reportó; nadie más ve quién reporta (RNF-32).
+    reportadas = set()
+    if request.user.is_authenticated and request.user.role == "client":
+        reportadas = set(
+            ReviewReport.objects.filter(
+                reporter=request.user, review_id__in=[resena.pk for resena in resenas]
+            ).values_list("review_id", flat=True)
+        )
+    for resena in resenas:
+        resena.ya_reportada = resena.pk in reportadas
 
     return render(
         request,

@@ -25,7 +25,7 @@
   <section class="mt-space-xl">
     <div class="flex items-end justify-between gap-4 mb-space-md">
       <div>
-        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">Productos</h2>
+        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% if hay_populares %}Populares esta semana{% else %}Productos{% endif %}</h2>
       </div>
       <a class="hidden sm:inline-flex items-center gap-1 text-body-md font-semibold text-on-surface hover:underline" href="{% url 'buscar_productos' %}">
         Ver todos <span class="material-symbols-outlined text-[18px]">arrow_forward</span>

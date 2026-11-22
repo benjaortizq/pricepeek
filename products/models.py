@@ -1,4 +1,5 @@
 # This is an auto-generated Django model module.
+from django.conf import settings
 from django.db import models
 
 
@@ -110,3 +111,33 @@ class Stores(models.Model):
     class Meta:
         managed = False
         db_table = 'stores'
+
+
+class ProductView(models.Model):
+    """Una visita al detalle de un producto, para saber cuáles son populares (products/popularidad.py).
+
+    Se guarda una sola fila por visitante, producto y hora: recargar la página no suma.
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    # Products es una tabla de Supabase (managed = False), por eso no es una llave foránea.
+    product_id = models.PositiveBigIntegerField()
+    # «u<id>» si es un cliente con sesión iniciada o «s<clave de la sesión>» si es anónimo.
+    visitor = models.CharField(max_length=64)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,  # si el cliente borra su cuenta, se borra lo que vio
+        null=True,
+        blank=True,
+        related_name="product_views",
+    )
+    hour = models.DateTimeField()  # la hora de la visita, sin minutos ni segundos
+
+    class Meta:
+        db_table = "product_views"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product_id", "visitor", "hour"], name="una_visita_por_visitante_y_hora"
+            ),
+        ]
+        indexes = [models.Index(fields=["product_id", "hour"], name="product_views_por_producto")]

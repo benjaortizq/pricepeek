@@ -53,6 +53,7 @@ from .models import (
     ProductVariants,
     Products,
 )
+from .popularidad import registrar_visita
 from .precios import (
     anotar_precio_final as _anotar_precio_final,
     agrupar_precios_por_gtin,
@@ -157,6 +158,8 @@ def _consulta_precios_detalle(producto_id) -> QuerySet:
 
 def detalle_producto(request, pk):
     producto = get_object_or_404(Products.objects.select_related("brand", "category"), pk=pk)
+    if request.method == "GET":  # publicar una reseña (POST) no es otra visita
+        registrar_visita(request, producto.pk)
     imagen = (
         ProductImages.objects.filter(variant__product_id=producto.pk, is_main=True)
         .order_by("id")

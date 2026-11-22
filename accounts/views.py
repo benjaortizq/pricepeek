@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from products.busqueda import buscar_productos, con_imagen
+from products.popularidad import mas_populares
 
 from .decorators import role_required
 from .forms import (
@@ -55,8 +56,14 @@ PRODUCTOS_EN_INICIO = 12
 
 
 def mostrar_inicio(request, titulo):
-    productos = con_imagen(buscar_productos("")[:PRODUCTOS_EN_INICIO])
-    return render(request, "accounts/mainpage.html", {"titulo": titulo, "productos": productos})
+    # Los más vistos de la semana primero; si nadie ha visto nada todavía, quedan por nombre.
+    productos = con_imagen(mas_populares(buscar_productos(""))[:PRODUCTOS_EN_INICIO])
+    hay_populares = bool(productos) and productos[0].popularidad > 0
+    return render(
+        request,
+        "accounts/mainpage.html",
+        {"titulo": titulo, "productos": productos, "hay_populares": hay_populares},
+    )
 
 
 @role_required(User.Role.CLIENT)

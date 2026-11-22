@@ -1,6 +1,9 @@
 """Visitas al detalle de los productos, para saber cuáles son populares (ver products/popularidad.py).
 
 Solo crea la tabla product_views; no toca las tablas de Supabase (products, prices…).
+
+Depende de las dos 0002 (se hicieron en ramas distintas) para que el grafo de migraciones
+vuelva a tener una sola punta; si no, Django no deja correr migrate.
 """
 
 import django.db.models.deletion
@@ -11,6 +14,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ("products", "0002_extensiones_busqueda"),
+        ("products", "0002_currency_store_state"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

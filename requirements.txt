@@ -7,3 +7,5 @@ python-dotenv==1.2.4
 django-storages[s3]==1.14.6
 sqlparse==0.6.0
 tzdata==2026.5
+boto3==1.44.6
+django-storages[s3]==1.14.6

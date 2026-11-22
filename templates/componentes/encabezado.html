@@ -39,6 +39,12 @@
             {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" activo=True %}
           {% else %}
             {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" %}
+        {% if user.role == "admin" %}
+          {% url 'resenas_reportadas' as url_reportadas %}
+          {% if actual == "resenas_reportadas" %}
+            {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" activo=True %}
+          {% else %}
+            {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" %}
           {% endif %}
         {% endif %}
       </nav>

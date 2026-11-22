@@ -76,3 +76,14 @@ def agregar_a_lista_deseos(request, pk):
     if not url_has_allowed_host_and_scheme(siguiente, allowed_hosts={request.get_host()}):
         siguiente = "buscar_productos"
     return redirect(siguiente)
+
+
+@role_required("client")
+def eliminar_de_lista_deseos(request, pk):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    item = get_object_or_404(WishlistItem, pk=pk, user=request.user)
+    item.delete()
+    messages.success(request, "Producto eliminado de tu lista de deseos.")
+    return redirect("wishlist:lista")

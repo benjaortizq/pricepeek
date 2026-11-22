@@ -40,7 +40,7 @@
           {% else %}
             {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" %}
           {% endif %}
-        {% endif %}        
+        {% endif %}
         {% if user.role == "admin" %}
           {% url 'resenas_reportadas' as url_reportadas %}
           {% if actual == "resenas_reportadas" %}

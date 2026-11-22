@@ -38,6 +38,12 @@
                 <p class="mt-1 text-body-md font-body-md text-secondary">No hay precios disponibles actualmente.</p>
               {% endif %}
             </div>
+            <form method="post" action="{% url 'wishlist:eliminar' item.pk %}" class="mt-5 pt-4 border-t border-outline-variant/40">
+              {% csrf_token %}
+              <button class="inline-flex items-center gap-1.5 text-body-sm font-semibold text-error hover:underline" type="submit">
+                <span class="material-symbols-outlined text-[18px]">delete</span>Eliminar de mi lista
+              </button>
+            </form>
           </div>
         </article>
       {% endfor %}

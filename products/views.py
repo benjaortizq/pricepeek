@@ -36,6 +36,7 @@ from django.views.decorators.http import require_GET
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
+from .barcodes import validar_codigo_barras
 from .busqueda import (
     buscar_productos,
     buscar_variantes,
@@ -266,6 +267,19 @@ PRODUCTOS_POR_PAGINA = 24
 
 def buscar(request):
     palabra = request.GET.get("q", "").strip()
+    codigo_barras = None
+    error_codigo = ""
+    if palabra and palabra.isascii() and palabra.isdigit():
+        codigo_barras = validar_codigo_barras(palabra)
+        if codigo_barras:
+            variante = ProductVariants.objects.filter(
+                Q(gtin=codigo_barras.normalizado) | Q(gtin=codigo_barras.codigo)
+            ).only("product_id").first()
+            if variante:
+                return redirect("detalle_producto", pk=variante.product_id)
+            error_codigo = "No encontramos ningún producto registrado con ese código de barras."
+        else:
+            error_codigo = codigo_barras.motivo
     categoria = _parametro_de_consulta(
         request, "categoria", "category", "categoria_id", "category_id"
     )
@@ -274,9 +288,9 @@ def buscar(request):
     )
     categoria_actual = _categoria_por_filtro(categoria)
     marca_actual = _marca_por_filtro(marca)
-    pagina = _pagina_de_variantes(request, palabra, categoria, marca)
+    pagina = _pagina_de_variantes(request, "" if error_codigo else palabra, categoria, marca)
     corregida = None
-    if palabra and not pagina.paginator.count:
+    if palabra and not error_codigo and not pagina.paginator.count:
         # «¿Quiso decir…?»: si no hay nada, se busca con las palabras del catálogo más parecidas.
         corregida = corregir_busqueda(palabra)
         if corregida:
@@ -287,6 +301,7 @@ def buscar(request):
         "products/buscar.html",
         {
             "palabra": palabra,
+            "error_codigo": error_codigo,
             "corregida": corregida,
             "categoria_seleccionada": (
                 str(categoria_actual.pk) if categoria_actual is not None else ""

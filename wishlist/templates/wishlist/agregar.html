@@ -1,0 +1,11 @@
+{% if user.is_authenticated and user.role == "client" %}
+  <form method="post" action="{% url 'wishlist:agregar' producto.pk %}" class="{{ clase_formulario }}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="inline-flex items-center justify-center gap-2 rounded-full border border-outline-variant hover:border-on-surface text-on-surface font-semibold transition-colors {{ clase_boton }}" type="submit">
+      <span class="material-symbols-outlined text-[18px]">favorite</span>{{ texto }}
+    </button>
+  </form>
+{% elif not user.is_authenticated %}
+  <a class="inline-flex justify-center rounded-full border border-outline-variant text-on-surface font-semibold hover:border-on-surface {{ clase_formulario }} {{ clase_boton }}" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Inicia sesión para guardar</a>
+{% endif %}

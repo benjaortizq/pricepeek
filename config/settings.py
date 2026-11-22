@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "accounts",
     "products",
+    "wishlist",
     "reviews",
     "ingestion",
 ]
@@ -86,6 +87,8 @@ DATABASES = {
         "PASSWORD": os.environ["DB_PASSWORD"],
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
+        "CONN_MAX_AGE": 60,
+        "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
             "sslmode": os.environ.get("DB_SSLMODE", "require"),
         },
@@ -134,6 +137,31 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "frontend"]  # css/ y js/ del diseño
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Use Supabase Storage through its S3-compatible API when credentials are set.
+# Without these settings, Django keeps using local MEDIA_ROOT storage.
+SUPABASE_S3_SETTINGS = {
+    "endpoint_url": os.environ.get("SUPABASE_S3_ENDPOINT"),
+    "region_name": os.environ.get("SUPABASE_S3_REGION"),
+    "access_key": os.environ.get("SUPABASE_S3_ACCESS_KEY"),
+    "secret_key": os.environ.get("SUPABASE_S3_SECRET_KEY"),
+    "bucket_name": os.environ.get("SUPABASE_STORAGE_BUCKET"),
+}
+if all(SUPABASE_S3_SETTINGS.values()):
+    INSTALLED_APPS.append("storages")
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                **SUPABASE_S3_SETTINGS,
+                "addressing_style": "path",
+                "default_acl": None,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 
 # Email

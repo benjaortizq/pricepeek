@@ -33,6 +33,22 @@
         {% else %}
           {% include "componentes/enlace_nav.html" with url=url_perfil texto="Perfil" %}
         {% endif %}
+        {% if user.role == "client" %}
+          {% url 'wishlist:lista' as url_lista_deseos %}
+          {% if actual == "lista" %}
+            {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" activo=True %}
+          {% else %}
+            {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" %}
+          {% endif %}
+        {% endif %}
+        {% if user.role == "admin" %}
+          {% url 'resenas_reportadas' as url_reportadas %}
+          {% if actual == "resenas_reportadas" %}
+            {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" activo=True %}
+          {% else %}
+            {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" %}
+          {% endif %}
+        {% endif %}
       </nav>
       {% endwith %}
       <div class="flex items-center gap-space-sm">

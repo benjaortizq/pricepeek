@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load precios %}
+
+{% block title %}Mi lista de deseos{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
+  <div class="mb-space-lg">
+    <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Mi lista de deseos</h1>
+    <p class="mt-1 text-body-md font-body-md text-secondary">Productos que guardaste y sus mejores precios disponibles.</p>
+  </div>
+
+  {% if items %}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">
+      {% for item in items %}
+        <article class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl overflow-hidden flex flex-col">
+          <a class="h-52 bg-surface-container-low flex items-center justify-center p-6 border-b border-outline-variant/40" href="{% url 'detalle_producto' item.variant.product_id %}">
+            {% if item.imagen_url %}
+              <img src="{{ item.imagen_url }}" alt="{{ item.variant.product.name }}" class="max-h-full max-w-full object-contain" loading="lazy">
+            {% else %}
+              <span class="material-symbols-outlined text-[48px] text-secondary">image_not_supported</span>
+            {% endif %}
+          </a>
+          <div class="p-5 flex flex-col flex-grow">
+            <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">{{ item.variant.product.brand.name }}</p>
+            <a class="mt-1 text-body-lg font-body-lg font-bold text-on-surface hover:underline" href="{% url 'detalle_producto' item.variant.product_id %}">{{ item.variant.product.name }}</a>
+            <p class="mt-1 text-body-sm font-body-sm text-secondary">Presentación: {{ item.variant.name }}</p>
+
+            <div class="mt-5 pt-4 border-t border-outline-variant/40">
+              <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">Precio actual más bajo</p>
+              {% if item.mejor_precio %}
+                <p class="mt-1 font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ item.mejor_precio.currency.symbol }}{{ item.mejor_precio.final|miles }}</p>
+                <p class="mt-1 text-body-sm font-body-sm text-secondary">En <strong class="text-on-surface">{{ item.mejor_precio.tienda }}</strong></p>
+                <a class="mt-3 inline-flex items-center gap-1 text-body-sm font-semibold text-on-surface hover:underline" href="{{ item.mejor_precio.product_web_url }}" rel="noopener noreferrer" target="_blank">
+                  Ver en la tienda <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                </a>
+              {% else %}
+                <p class="mt-1 text-body-md font-body-md text-secondary">No hay precios disponibles actualmente.</p>
+              {% endif %}
+            </div>
+            <form method="post" action="{% url 'wishlist:eliminar' item.pk %}" class="mt-5 pt-4 border-t border-outline-variant/40">
+              {% csrf_token %}
+              <button class="inline-flex items-center gap-1.5 text-body-sm font-semibold text-error hover:underline" type="submit">
+                <span class="material-symbols-outlined text-[18px]">delete</span>Eliminar de mi lista
+              </button>
+            </form>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-10 text-center">
+      <span class="material-symbols-outlined text-[40px] text-secondary">favorite_border</span>
+      <p class="mt-2 text-body-lg font-body-lg text-on-surface font-semibold">Tu lista de deseos está vacía.</p>
+      <p class="mt-1 text-body-md font-body-md text-secondary">Añade productos desde la búsqueda o desde sus páginas de detalle.</p>
+      <a class="boton-secundario mt-5" href="{% url 'buscar_productos' %}">Buscar productos</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

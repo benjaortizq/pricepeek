@@ -1,0 +1,779 @@
+[
+ {
+  "productId": "4017386",
+  "productName": "Leche Semidescremada Dos Pinos -1 L",
+  "brand": "DOS PINOS",
+  "brandId": 1870,
+  "brandImageUrl": null,
+  "linkText": "leche-dos-pinos-semidescremada-1-l-4",
+  "productReference": "000000000070568251-UN",
+  "productReferenceCode": "000000000070568251-UN",
+  "categoryId": "468",
+  "productTitle": "Leche Dos Pinos Semidescremada -1 L",
+  "metaTagDescription": "Compra en línea | Leche Dos Pinos Semidescremada -1 L |  Contamos con gran cantidad de artículos de Lácteos | Variedad de Leche Semi y Descremada | Llevamos todos los productos que necesitas para tu familia hasta la puerta de tu casa",
+  "releaseDate": "2025-10-31T00:00:00Z",
+  "clusterHighlights": {
+   "334": "Dos Pinos",
+   "446": "Facebook (No tocar)",
+   "663": "spcrdos-facebook",
+   "855": "Productos top venta 2026 BO",
+   "1042": "XML Madre WM Catálogo Completo CR",
+   "1342": "XML Madre SP Catálogo Completo CR",
+   "1504": "Coleccion Cero Residuos",
+   "1505": "Coleccion Comunidad",
+   "1506": "Coleccion Recursos Naturales",
+   "1518": "Coleccion Cero Residuos SP",
+   "1519": "Coleccion Comunidad SP",
+   "1520": "Coleccion Recursos Naturales SP",
+   "1792": "Colección Mundo Desayuno Cat 1",
+   "1794": "Colección Mundo Desayuno Cat 3",
+   "2259": "Sitio Escolar WM Categoria 6",
+   "2302": "Back to school BO Carrusel 3",
+   "2456": "Esfera 6 Cyber Verano BO",
+   "2457": "XML Madre Maxi Catálogo Completo CR",
+   "2479": "URL Top Items de primera Compra ABCO WM",
+   "2513": "WM Cyber Verano Esfera 6",
+   "2519": "SP Cyber Verano Esfera 6",
+   "2548": "Aquí sí te alcanza",
+   "2554": "Sitio Perecederos Categoria WM 1",
+   "2892": "Aquí si te alcanza",
+   "3113": "Catalogo express",
+   "4602": "Sitio Escolar WM APP Colección Total",
+   "4708": "Aquí sí te alcanza",
+   "4709": "Variedad Calidad y Frescura",
+   "4881": "Lácteos",
+   "5779": "Merienda",
+   "5817": "Cyber Escolar Merienda BO",
+   "5819": "Cyber Escolar Ver Todo BO",
+   "5822": "Cyber Escolar Carrusel 3 BO"
+  },
+  "productClusters": {
+   "334": "Dos Pinos",
+   "446": "Facebook (No tocar)",
+   "663": "spcrdos-facebook",
+   "855": "Productos top venta 2026 BO",
+   "1042": "XML Madre WM Catálogo Completo CR",
+   "1342": "XML Madre SP Catálogo Completo CR",
+   "1504": "Coleccion Cero Residuos",
+   "1505": "Coleccion Comunidad",
+   "1506": "Coleccion Recursos Naturales",
+   "1518": "Coleccion Cero Residuos SP",
+   "1519": "Coleccion Comunidad SP",
+   "1520": "Coleccion Recursos Naturales SP",
+   "1792": "Colección Mundo Desayuno Cat 1",
+   "1794": "Colección Mundo Desayuno Cat 3",
+   "2259": "Sitio Escolar WM Categoria 6",
+   "2302": "Back to school BO Carrusel 3",
+   "2456": "Esfera 6 Cyber Verano BO",
+   "2457": "XML Madre Maxi Catálogo Completo CR",
+   "2479": "URL Top Items de primera Compra ABCO WM",
+   "2513": "WM Cyber Verano Esfera 6",
+   "2519": "SP Cyber Verano Esfera 6",
+   "2548": "Aquí sí te alcanza",
+   "2554": "Sitio Perecederos Categoria WM 1",
+   "2892": "Aquí si te alcanza",
+   "3113": "Catalogo express",
+   "4360": "Frescos general BO APP",
+   "4456": "Cero Residuos",
+   "4457": "comunidad",
+   "4458": "Capital Natural",
+   "4602": "Sitio Escolar WM APP Colección Total",
+   "4677": "URL Top venta- solicitud SP",
+   "4708": "Aquí sí te alcanza",
+   "4709": "Variedad Calidad y Frescura",
+   "4881": "Lácteos",
+   "5416": "Envío Express Frescos",
+   "5422": "Envío Express Todo los Productos",
+   "5610": "Top 100 item Sales SP con PE",
+   "5763": "Back to School BO 4",
+   "5766": "Back to School BO 7",
+   "5768": "Back to School Desayuno SP",
+   "5770": "Back to School Ver Todo SP",
+   "5779": "Merienda",
+   "5806": "Cyber Escolar WM Carrusel 3",
+   "5810": "Cyber Escolar WM Merienda",
+   "5812": "Cyber Escolar WM Ver todo",
+   "5817": "Cyber Escolar Merienda BO",
+   "5819": "Cyber Escolar Ver Todo BO",
+   "5822": "Cyber Escolar Carrusel 3 BO",
+   "5829": "Desayuno y Merienda sp",
+   "5830": "Lonchera ABCOPE sp"
+  },
+  "searchableClusters": {
+   "334": "Dos Pinos",
+   "446": "Facebook (No tocar)",
+   "663": "spcrdos-facebook",
+   "855": "Productos top venta 2026 BO",
+   "1042": "XML Madre WM Catálogo Completo CR",
+   "1342": "XML Madre SP Catálogo Completo CR",
+   "1504": "Coleccion Cero Residuos",
+   "1505": "Coleccion Comunidad",
+   "1506": "Coleccion Recursos Naturales",
+   "1518": "Coleccion Cero Residuos SP",
+   "1519": "Coleccion Comunidad SP",
+   "1520": "Coleccion Recursos Naturales SP",
+   "1792": "Colección Mundo Desayuno Cat 1",
+   "1794": "Colección Mundo Desayuno Cat 3",
+   "2259": "Sitio Escolar WM Categoria 6",
+   "2302": "Back to school BO Carrusel 3",
+   "2456": "Esfera 6 Cyber Verano BO",
+   "2457": "XML Madre Maxi Catálogo Completo CR",
+   "2479": "URL Top Items de primera Compra ABCO WM",
+   "2513": "WM Cyber Verano Esfera 6",
+   "2519": "SP Cyber Verano Esfera 6",
+   "2548": "Aquí sí te alcanza",
+   "2554": "Sitio Perecederos Categoria WM 1",
+   "2892": "Aquí si te alcanza",
+   "3113": "Catalogo express",
+   "4602": "Sitio Escolar WM APP Colección Total",
+   "4708": "Aquí sí te alcanza",
+   "4709": "Variedad Calidad y Frescura",
+   "4881": "Lácteos",
+   "5779": "Merienda",
+   "5817": "Cyber Escolar Merienda BO",
+   "5819": "Cyber Escolar Ver Todo BO",
+   "5822": "Cyber Escolar Carrusel 3 BO"
+  },
+  "categories": [
+   "/Lácteos/Leche/Leche Semi y Descremada/",
+   "/Lácteos/Leche/",
+   "/Lácteos/"
+  ],
+  "categoriesIds": [
+   "/10/85/468/",
+   "/10/85/",
+   "/10/"
+  ],
+  "link": "https://www.walmart.co.cr/leche-dos-pinos-semidescremada-1-l-4/p",
+  "Contiene Alérgenos": [
+   "SI"
+  ],
+  "Consistencia de alimento (Líquido, polvo, granulado, etc)": [
+   "Líquido"
+  ],
+  "Es comida ya preparada lista para consumir?": [
+   "Sí"
+  ],
+  "Es producto sensible a la temperatura?": [
+   "Si"
+  ],
+  "Fabricante": [
+   "Cooperativa Productores De Leche Dos Pinos R.L."
+  ],
+  "Marca": [
+   "Dos Pinos"
+  ],
+  "Medida de altura": [
+   "208,03  mm"
+  ],
+  "Medida de peso": [
+   "1000ml"
+  ],
+  "Medida de profundidad": [
+   "75,67  mm"
+  ],
+  "País de Origen - Ensamblaje": [
+   "Costa Rica"
+  ],
+  "Productos alérgenos": [
+   "Si"
+  ],
+  "Sabor": [
+   "Leche"
+  ],
+  "Lácteos": [
+   "Contiene Alérgenos",
+   "Consistencia de alimento (Líquido, polvo, granulado, etc)",
+   "Es comida ya preparada lista para consumir?",
+   "Es producto sensible a la temperatura?",
+   "Fabricante",
+   "Marca",
+   "Medida de altura",
+   "Medida de peso",
+   "Medida de profundidad",
+   "País de Origen - Ensamblaje",
+   "Productos alérgenos",
+   "Sabor"
+  ],
+  "Rebaja Exclusiva en línea": [
+   "Rebaja Exclusiva en línea"
+  ],
+  "Exclusivo en línea": [
+   "Rebaja Exclusiva en línea"
+  ],
+  "_allowlist": [
+   "walmartcrbo1008;walmartcrbo1021;walmartcrbo1148;walmartcrbo1148;walmartcrbo3119;walmartcrbo3900;walmartcrbo3901;walmartcrbo3903;walmartcrbo3904;walmartcrbo3905;walmartcrbo4004;walmartcrbo4029;walmartcrbo4030;walmartcrbo4031;walmartcrbo4075;walmartcrbo4099;walmartcrbo4109;walmartcrbo4136;walmartcrbo4194;walmartcrbo4195;walmartcrbo4214;walmartcrbo4215;walmartcrbo4258;walmartcrbo4283;walmartcrbo4284;walmartcrbo4304;walmartcrbo4318;walmartcrbo4339;walmartcrbo4340;walmartcrbo4341;walmartcrbo4369;walmartcrbo4383;walmartcrbo4390;walmartcrbo4402;walmartcrbo4432;walmartcrbo4461;walmartcrbo4469;walmartcrbo4486;walmartcrbo717;walmartcrbo718;walmartcrbo733;walmartcrbo769;walmartcrbo806;walmartcrbo827;walmartcrbo828;walmartcrbo965;walmartcrbo966;walmartcrsp1089;walmartcrsp3024;walmartcrsp3028;walmartcrsp3029;walmartcrsp3030;walmartcrsp3031;walmartcrsp3032;walmartcrsp3033;walmartcrsp3038;walmartcrsp3039;walmartcrsp3040;walmartcrsp3043;walmartcrsp4005;walmartcrsp4076;walmartcrsp4216;walmartcrsp4330;walmartcrsp4404;walmartcrsp4429;walmartcrsp4431;walmartcrsp736;walmartcrsp777;walmartcrwm1046;walmartcrwm3700;walmartcrwm3701;walmartcrwm3702;walmartcrwm3705;walmartcrwm4006;walmartcrwm4032;walmartcrwm4253;walmartcrwm4315;walmartcrwm4413;walmartcrwm4449;walmartcrwm700;walmartcrwm768;walmartcrwm829;walmartcrwm831;walmartcrwm99993"
+  ],
+  "ACL´s": [
+   "_allowlist"
+  ],
+  "allSpecifications": [
+   "Contiene Alérgenos",
+   "Consistencia de alimento (Líquido, polvo, granulado, etc)",
+   "Es comida ya preparada lista para consumir?",
+   "Es producto sensible a la temperatura?",
+   "Fabricante",
+   "Marca",
+   "Medida de altura",
+   "Medida de peso",
+   "Medida de profundidad",
+   "País de Origen - Ensamblaje",
+   "Productos alérgenos",
+   "Sabor",
+   "Rebaja Exclusiva en línea",
+   "_allowlist"
+  ],
+  "allSpecificationsGroups": [
+   "Lácteos",
+   "Exclusivo en línea",
+   "ACL´s"
+  ],
+  "description": "Leche Semidescremada Dos Pinos es una opción diseñada para el consumo diario que combina practicidad, versatilidad y un formato pensado para adaptarse a distintas rutinas dentro del hogar. Su presentación permite integrarla fácilmente en bebidas como café, cereales o batidos, así como en preparaciones culinarias tanto dulces como saladas según el tipo de producto. En sus versiones líquidas, facilita el consumo directo sin preparación adicional, mientras que en formatos múltiples o promocionales permite optimizar el abastecimiento y organización del consumo diario. Gracias a sus características, se adapta a diferentes momentos del día, desde desayunos hasta meriendas o recetas específicas. Su envase permite un almacenamiento adecuado en refrigeración o despensa según corresponda, manteniéndola siempre disponible. Compra en línea y recíbela directamente en tu hogar para facilitar tu rutina diaria con una opción práctica y funcional.",
+  "items": [
+   {
+    "itemId": "8969",
+    "name": "Leche Semidescremada Dos Pinos -1 L",
+    "nameComplete": "Leche Semidescremada Dos Pinos -1 L",
+    "complementName": "Leche Dos Pinos Semidescremada -1 L",
+    "ean": "7441001601064",
+    "referenceId": [
+     {
+      "Key": "RefId",
+      "Value": "000000000070568251-UN"
+     }
+    ],
+    "measurementUnit": "un",
+    "unitMultiplier": 1.0,
+    "modalType": "GLASS",
+    "isKit": false,
+    "images": [
+     {
+      "imageId": "752338",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752338-#width#-#height#/8969_01.jpg?v=638654984467830000\" width=\"#width#\" height=\"#height#\" alt=\"8969_01.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752338/8969_01.jpg?v=638654984467830000",
+      "imageText": "8969_01.jpg",
+      "imageLastModified": "2024-10-26T00:14:06.7830000Z"
+     },
+     {
+      "imageId": "752342",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752342-#width#-#height#/8969_02.jpg?v=638654984489570000\" width=\"#width#\" height=\"#height#\" alt=\"8969_02.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752342/8969_02.jpg?v=638654984489570000",
+      "imageText": "8969_02.jpg",
+      "imageLastModified": "2024-10-26T00:14:08.9570000Z"
+     },
+     {
+      "imageId": "752345",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752345-#width#-#height#/8969_03.jpg?v=638654984512670000\" width=\"#width#\" height=\"#height#\" alt=\"8969_03.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752345/8969_03.jpg?v=638654984512670000",
+      "imageText": "8969_03.jpg",
+      "imageLastModified": "2024-10-26T00:14:11.2670000Z"
+     },
+     {
+      "imageId": "752347",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752347-#width#-#height#/8969_04.jpg?v=638654984527700000\" width=\"#width#\" height=\"#height#\" alt=\"8969_04.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752347/8969_04.jpg?v=638654984527700000",
+      "imageText": "8969_04.jpg",
+      "imageLastModified": "2024-10-26T00:14:12.7700000Z"
+     },
+     {
+      "imageId": "752350",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752350-#width#-#height#/8969_05.jpg?v=638654984548500000\" width=\"#width#\" height=\"#height#\" alt=\"8969_05.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752350/8969_05.jpg?v=638654984548500000",
+      "imageText": "8969_05.jpg",
+      "imageLastModified": "2024-10-26T00:14:14.8500000Z"
+     },
+     {
+      "imageId": "752351",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752351-#width#-#height#/8969_06.jpg?v=638654984552430000\" width=\"#width#\" height=\"#height#\" alt=\"8969_06.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752351/8969_06.jpg?v=638654984552430000",
+      "imageText": "8969_06.jpg",
+      "imageLastModified": "2024-10-26T00:14:15.2430000Z"
+     },
+     {
+      "imageId": "752352",
+      "imageLabel": "8969",
+      "imageTag": "<img src=\"~/arquivos/ids/752352-#width#-#height#/8969_07.jpg?v=638654984557800000\" width=\"#width#\" height=\"#height#\" alt=\"8969_07.jpg\" id=\"\" />",
+      "imageUrl": "https://walmartcr.vteximg.com.br/arquivos/ids/752352/8969_07.jpg?v=638654984557800000",
+      "imageText": "8969_07.jpg",
+      "imageLastModified": "2024-10-26T00:14:15.7800000Z"
+     }
+    ],
+    "sellers": [
+     {
+      "sellerId": "1",
+      "sellerName": "Walmart Cr",
+      "addToCartLink": "https://www.walmart.co.cr/checkout/cart/add?sku=8969&qty=1&seller=1&sc=1&price=105000&cv=_&sc=1",
+      "sellerDefault": true,
+      "commertialOffer": {
+       "DeliverySlaSamplesPerRegion": {
+        "0": {
+         "DeliverySlaPerTypes": [],
+         "Region": null
+        }
+       },
+       "Installments": [
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "American Express",
+         "PaymentSystemGroupName": "creditCardPaymentGroup",
+         "Name": "American Express à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Visa",
+         "PaymentSystemGroupName": "creditCardPaymentGroup",
+         "Name": "Visa à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Mastercard",
+         "PaymentSystemGroupName": "creditCardPaymentGroup",
+         "Name": "Mastercard à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Visa Electron",
+         "PaymentSystemGroupName": "debitCardPaymentGroup",
+         "Name": "Visa Electron à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Mastercard Debit",
+         "PaymentSystemGroupName": "debitCardPaymentGroup",
+         "Name": "Mastercard Debit à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Pago en Efectivo",
+         "PaymentSystemGroupName": "custom201PaymentGroupPaymentGroup",
+         "Name": "Pago en Efectivo à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Pago con tarjeta (Contra Entrega)",
+         "PaymentSystemGroupName": "custom202PaymentGroupPaymentGroup",
+         "Name": "Pago con tarjeta (Contra Entrega) à vista"
+        },
+        {
+         "Value": 1050.0,
+         "InterestRate": 0.0,
+         "TotalValuePlusInterestRate": 1050.0,
+         "NumberOfInstallments": 1,
+         "PaymentSystemName": "Pago en Línea (Compra Click)",
+         "PaymentSystemGroupName": "custom204PaymentGroupPaymentGroup",
+         "Name": "Pago en Línea (Compra Click) à vista"
+        }
+       ],
+       "DiscountHighLight": [],
+       "GiftSkuIds": [],
+       "Teasers": [],
+       "PromotionTeasers": [],
+       "BuyTogether": [],
+       "ItemMetadataAttachment": [],
+       "Price": 1050.0,
+       "ListPrice": 1050.0,
+       "PriceWithoutDiscount": 1050.0,
+       "FullSellingPrice": 1050.0,
+       "PriceToken": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImY0NTY0YjdhLTUyN2YtNGVkMC04NTdiLWVhMTgxMmQ1NDRhNSIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InByaWNlIjoxMDUwMDAsInByaWNlV2l0aG91dERpc2NvdW50IjoxMDUwMDAsInNlbGxlciI6IjEiLCJpZCI6Ijg5NjkiLCJhY2NvdW50TmFtZSI6IndhbG1hcnRjciIsInNhbGVzQ2hhbm5lbCI6IjEifSwiZXhwIjoxNzk1MTQ2MTk0LCJpYXQiOjE3OTUxNDQzOTQsImp0aSI6ImI5OTU1YTRmLWIzMjUtNGQwNS04ZWFlLTRmNmRjYmIyZmY0ZSIsImlzcyI6InNlc3Npb24vZGF0YS1zaWduZXIifQ.ZhWDOadN1rc8ehOWY7RF1usf1i1wXuMz7kOUt42Q3hlRMsS7iUDpdcma_-eh3ZbLIJHscLN-ZBYmbbeHFhRYbw",
+       "RewardValue": 0.0,
+       "PriceValidUntil": "2027-11-19T00:00:00Z",
+       "AvailableQuantity": 99999,
+       "IsAvailable": true,
+       "Tax": 0.0,
+       "DeliverySlaSamples": [
+        {
+         "DeliverySlaPerTypes": [],
+         "Region": null
+        }
+       ],
+       "GetInfoErrorMessage": null,
+       "CacheVersionUsedToCallCheckout": "_",
+       "PaymentOptions": {
+        "installmentOptions": [
+         {
+          "paymentSystem": "1",
+          "bin": null,
+          "paymentName": "American Express",
+          "paymentGroupName": "creditCardPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "2",
+          "bin": null,
+          "paymentName": "Visa",
+          "paymentGroupName": "creditCardPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "4",
+          "bin": null,
+          "paymentName": "Mastercard",
+          "paymentGroupName": "creditCardPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "10",
+          "bin": null,
+          "paymentName": "Visa Electron",
+          "paymentGroupName": "debitCardPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "65",
+          "bin": null,
+          "paymentName": "Mastercard Debit",
+          "paymentGroupName": "debitCardPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "201",
+          "bin": null,
+          "paymentName": "Pago en Efectivo",
+          "paymentGroupName": "custom201PaymentGroupPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "202",
+          "bin": null,
+          "paymentName": "Pago con tarjeta (Contra Entrega)",
+          "paymentGroupName": "custom202PaymentGroupPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "204",
+          "bin": null,
+          "paymentName": "Pago en Línea (Compra Click)",
+          "paymentGroupName": "custom204PaymentGroupPaymentGroup",
+          "value": 105000,
+          "installments": [
+           {
+            "count": 1,
+            "hasInterestRate": false,
+            "interestRate": 0,
+            "value": 105000,
+            "total": 105000,
+            "sellerMerchantInstallments": [
+             {
+              "id": "WALMARTCR",
+              "count": 1,
+              "hasInterestRate": false,
+              "interestRate": 0,
+              "value": 105000,
+              "total": 105000
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "paymentSystem": "203",
+          "bin": null,
+          "paymentName": "Meses Sin Intereses - Banco Nacional (12 MSI - contra entrega)",
+          "paymentGroupName": "custom203PaymentGroupPaymentGroup",
+          "value": 105000,
+          "installments": []
+         }
+        ],
+        "paymentSystems": [
+         {
+          "id": 201,
+          "name": "Pago en Efectivo",
+          "groupName": "custom201PaymentGroupPaymentGroup",
+          "validator": null,
+          "stringId": "201",
+          "template": "custom201PaymentGroupPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": true,
+          "description": "",
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-29T00:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 202,
+          "name": "Pago con tarjeta (Contra Entrega)",
+          "groupName": "custom202PaymentGroupPaymentGroup",
+          "validator": null,
+          "stringId": "202",
+          "template": "custom202PaymentGroupPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": true,
+          "description": "",
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-29T00:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 204,
+          "name": "Pago en Línea (Compra Click)",
+          "groupName": "custom204PaymentGroupPaymentGroup",
+          "validator": null,
+          "stringId": "204",
+          "template": "custom204PaymentGroupPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": true,
+          "description": "",
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-29T00:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 203,
+          "name": "Meses Sin Intereses - Banco Nacional (12 MSI - contra entrega)",
+          "groupName": "custom203PaymentGroupPaymentGroup",
+          "validator": null,
+          "stringId": "203",
+          "template": "custom203PaymentGroupPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": true,
+          "description": "Meses Sin Intereses - Banco Nacional (12 MSI contra entrega)",
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-29T00:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 10,
+          "name": "Visa Electron",
+          "groupName": "debitCardPaymentGroup",
+          "validator": null,
+          "stringId": "10",
+          "template": "debitCardPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": false,
+          "description": null,
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-26T21:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 65,
+          "name": "Mastercard Debit",
+          "groupName": "debitCardPaymentGroup",
+          "validator": null,
+          "stringId": "65",
+          "template": "debitCardPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": false,
+          "description": null,
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-26T21:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 1,
+          "name": "American Express",
+          "groupName": "creditCardPaymentGroup",
+          "validator": null,
+          "stringId": "1",
+          "template": "creditCardPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": false,
+          "description": null,
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-26T21:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 2,
+          "name": "Visa",
+          "groupName": "creditCardPaymentGroup",
+          "validator": null,
+          "stringId": "2",
+          "template": "creditCardPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": false,
+          "description": null,
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-26T21:00:00Z",
+          "availablePayments": null
+         },
+         {
+          "id": 4,
+          "name": "Mastercard",
+          "groupName": "creditCardPaymentGroup",
+          "validator": null,
+          "stringId": "4",
+          "template": "creditCardPaymentGroup-template",
+          "requiresDocument": false,
+          "isCustom": false,
+          "description": null,
+          "requiresAuthentication": false,
+          "dueDate": "2026-11-26T21:00:00Z",
+          "availablePayments": null
+         }
+        ],
+        "payments": [],
+        "giftCards": [],
+        "giftCardMessages": [],
+        "availableAccounts": [],
+        "availableTokens": []
+       }
+      }
+     }
+    ],
+    "Videos": [],
+    "estimatedDateArrival": null
+   }
+  ]
+ }
+]

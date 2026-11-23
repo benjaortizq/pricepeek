@@ -1,0 +1,25 @@
+[
+  {
+    "productName": "Celular Apple Iphone 17 8GB RAM  256GB de almacenamiento color negro",
+    "items": [
+      {
+        "ean": "0195950643411",
+        "name": "Celular Apple Iphone 17 8GB RAM  256GB de almacenamiento color negro",
+        "sellers": [
+          {
+            "sellerId": "1",
+            "sellerName": "Walmart Cr",
+            "sellerDefault": true,
+            "commertialOffer": {
+              "Price": 472131.0,
+              "ListPrice": 619900.0,
+              "PriceWithoutDiscount": 472131.0,
+              "IsAvailable": true,
+              "AvailableQuantity": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

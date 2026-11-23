@@ -1,0 +1,77 @@
+# Actualiza los precios de las tiendas cada hora: python manage.py actualizar_precios (SCRUM-56).
+#
+# Van primero los productos más vistos de la semana y después los precios que llevan más tiempo sin
+# revisarse, hasta que se acaban los minutos de la corrida; lo que no alcanza queda para la siguiente.
+#
+# Configuración, en GitHub: Settings › Secrets and variables › Actions
+#   Secrets (los mismos valores del .env):
+#     SECRET_KEY, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+#     DB_HOST tiene que ser el pooler de Supabase (…pooler.supabase.com): las máquinas de GitHub no
+#     tienen IPv6, y la conexión directa (db.….supabase.co) solo funciona por IPv6.
+#   Variables (opcionales):
+#     PRECIOS_MINUTOS           minutos de cada corrida (por defecto 20)
+#     PRECIOS_FRECUENCIA_HORAS  horas mínimas entre dos revisiones del mismo precio (por defecto 1)
+#
+# Para probarlo a mano: pestaña Actions › Actualizar precios › Run workflow (con "Modo de prueba"
+# no guarda nada).
+
+name: Actualizar precios
+
+on:
+  schedule:
+    - cron: "23 * * * *" # cada hora, al minuto 23 (hora UTC); en punto GitHub suele atrasarse más
+  workflow_dispatch:
+    inputs:
+      minutos:
+        description: Minutos de revisión (vacío = la variable PRECIOS_MINUTOS, o 20)
+        required: false
+      tienda:
+        description: Solo las tiendas cuyo nombre contiene este texto (por ejemplo walmart)
+        required: false
+      dry_run:
+        description: Modo de prueba (no guarda nada)
+        type: boolean
+        default: false
+
+# Si la corrida anterior todavía no termina, la nueva espera en vez de revisar los mismos precios a la vez.
+concurrency:
+  group: actualizar-precios
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  actualizar-precios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      PRECIOS_FRECUENCIA_HORAS: ${{ vars.PRECIOS_FRECUENCIA_HORAS || '1' }}
+      # settings.py los exige, pero actualizar_precios no manda correos ni guarda archivos.
+      EMAIL_HOST_USER: no-se-usa
+      SUPABASE_STORAGE_BUCKET: no-se-usa
+      PYTHONUNBUFFERED: "1" # que el avance se vea mientras corre
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Actualizar precios
+        env:
+          MINUTOS: ${{ inputs.minutos || vars.PRECIOS_MINUTOS || '20' }}
+          TIENDA: ${{ inputs.tienda }}
+          MODO_DE_PRUEBA: ${{ inputs.dry_run && '--dry-run' || '' }}
+        # Las entradas van por variables de entorno (no dentro del script) para que no se puedan inyectar comandos.
+        run: python manage.py actualizar_precios --minutos "$MINUTOS" ${TIENDA:+--tienda "$TIENDA"} $MODO_DE_PRUEBA

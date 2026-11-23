@@ -195,6 +195,10 @@ PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 
 PASSWORD_CHANGE_CODE_TIMEOUT = 60 * 10  # el código para confirmar el cambio vale 10 minutos
 PASSWORD_CHANGE_CODE_MAX_ATTEMPTS = 5
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PricePeek <no-reply@pricepeek.local>")
+
+# SCRUM-56: cada cuántas horas se vuelve a revisar un precio en la página de su tienda
+# (python manage.py actualizar_precios se salta los que se revisaron hace menos tiempo).
+PRECIOS_FRECUENCIA_HORAS = int(os.environ.get("PRECIOS_FRECUENCIA_HORAS", "24"))
 import sys
  
 if "test" in sys.argv:

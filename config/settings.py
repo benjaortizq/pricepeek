@@ -87,6 +87,8 @@ DATABASES = {
         "PASSWORD": os.environ["DB_PASSWORD"],
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
+        # Django configura esta zona en cada conexión PostgreSQL.
+        "TIME_ZONE": "America/Costa_Rica",
         "CONN_MAX_AGE": 60,
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": {
@@ -123,7 +125,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'es'  # RNF-22 / RNF-23
 
-TIME_ZONE = 'UTC'
+# Costa Rica es UTC-6 todo el año (no aplica horario de verano).
+TIME_ZONE = "America/Costa_Rica"
 
 USE_I18N = True
 

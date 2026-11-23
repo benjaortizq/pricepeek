@@ -268,6 +268,30 @@ def detalle_producto(request, pk):
 PRODUCTOS_POR_PAGINA = 24
 
 
+def detalle_marca(request, slug):
+    """Muestra la información de una marca y el catálogo de sus productos."""
+    marca = get_object_or_404(Brands, slug=slug)
+    productos = (
+        Products.objects.filter(brand_id=marca.pk)
+        .select_related("brand", "category")
+        .order_by("name")
+    )
+    pagina = Paginator(productos, PRODUCTOS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
+    productos_pagina = con_imagen(pagina.object_list)
+
+    return render(
+        request,
+        "products/detalle_marca.html",
+        {
+            "marca": marca,
+            "productos": productos_pagina,
+            "pagina": pagina,
+        },
+    )
+
+
 def buscar(request):
     palabra = request.GET.get("q", "").strip()
     codigo_barras = None

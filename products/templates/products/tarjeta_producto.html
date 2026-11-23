@@ -8,11 +8,10 @@
     {% endif %}
   </a>
   <div class="p-4 flex flex-col gap-1 flex-grow">
-    <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">{{ producto.brand.name }}</p>
+    <a class="text-label-badge font-label-badge uppercase tracking-wider text-secondary hover:text-on-surface hover:underline" href="{% url 'detalle_marca' producto.brand.slug %}">{{ producto.brand.name }}</a>
     <a class="text-body-lg font-body-lg font-bold text-on-surface leading-snug hover:underline" href="{% url 'detalle_producto' producto.pk %}">{{ producto.name }}</a>
     <div class="mt-auto pt-3">
-      {# TODO: mostrar el precio más bajo y su tienda. #}
-      <p class="text-body-sm font-body-sm text-secondary">ola juan </p>
+      <p class="text-body-sm font-body-sm text-secondary">{{ producto.category.name }}</p>
     </div>
     {% include "wishlist/agregar.html" with producto=producto clase_formulario="mt-3" clase_boton="w-full px-4 py-2 text-body-sm" texto="Añadir a deseos" %}
   </div>

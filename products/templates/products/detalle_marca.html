@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ marca.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl w-full mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-6">
+  <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-body-sm font-body-sm text-secondary mb-6">
+    <a class="hover:text-on-surface transition-colors" href="{% url 'panel' %}">Inicio</a>
+    <span class="material-symbols-outlined text-xs text-secondary-fixed-dim">chevron_right</span>
+    <span>Marcas</span>
+    <span class="material-symbols-outlined text-xs text-secondary-fixed-dim">chevron_right</span>
+    <span class="text-on-surface font-semibold truncate max-w-xs md:max-w-md">{{ marca.name }}</span>
+  </nav>
+
+  <section class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 md:p-8 mb-12">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+      <div class="w-20 h-20 rounded-2xl border border-outline-variant/50 bg-surface-container-low flex items-center justify-center overflow-hidden shrink-0">
+        {% if marca.logo_url %}
+          <img src="{{ marca.logo_url }}" alt="Logotipo de {{ marca.name }}" class="max-h-full max-w-full object-contain p-2">
+        {% else %}
+          <span class="text-headline-lg font-headline-lg font-extrabold text-on-surface" aria-hidden="true">{{ marca.name|slice:":1" }}</span>
+        {% endif %}
+      </div>
+
+      <div class="min-w-0">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-secondary text-label-badge font-label-badge uppercase tracking-wider">
+          <span class="material-symbols-outlined text-xs text-tertiary">verified</span>
+          Marca del catálogo
+        </span>
+        <h1 class="mt-3 font-headline-lg text-headline-lg text-on-surface font-extrabold tracking-tight">{{ marca.name }}</h1>
+        {% if marca.website_url %}
+          <a class="mt-2 inline-flex items-center gap-1 text-body-sm font-body-sm font-semibold text-on-surface hover:underline" href="{{ marca.website_url }}" target="_blank" rel="noopener noreferrer">
+            Visitar sitio oficial
+            <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if marca.description %}
+      <div class="mt-6 pt-6 border-t border-outline-variant/40">
+        <h2 class="font-headline-md text-headline-md font-bold text-on-surface mb-3">Sobre la marca</h2>
+        <p class="font-body-lg text-body-lg text-secondary leading-relaxed whitespace-pre-line">{{ marca.description }}</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section aria-labelledby="catalogo-marca-heading" class="mb-12">
+    <div class="flex flex-wrap items-end justify-between gap-3 mb-space-md">
+      <div>
+        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight" id="catalogo-marca-heading">Productos de {{ marca.name }}</h2>
+        <p class="text-body-md font-body-md text-secondary mt-1">
+          {{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }} en el catálogo de esta marca
+        </p>
+      </div>
+      <a class="inline-flex items-center gap-1 text-body-md font-semibold text-on-surface hover:underline" href="{% url 'buscar_productos' %}?marca={{ marca.pk }}">
+        Buscar por marca
+        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+      </a>
+    </div>
+
+    {% if productos %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+        {% for producto in productos %}
+          {% include "products/tarjeta_producto.html" %}
+        {% endfor %}
+      </div>
+
+      {% if pagina.has_other_pages %}
+        <nav class="mt-space-lg flex items-center justify-center gap-3" aria-label="Páginas del catálogo de la marca">
+          {% if pagina.has_previous %}
+            <a class="boton-secundario" href="?pagina={{ pagina.previous_page_number }}">
+              <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+              Anterior
+            </a>
+          {% endif %}
+          <span class="text-body-md font-body-md text-secondary">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+          {% if pagina.has_next %}
+            <a class="boton-secundario" href="?pagina={{ pagina.next_page_number }}">
+              Siguiente
+              <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-10 text-center">
+        <span class="material-symbols-outlined text-[40px] text-secondary">inventory_2</span>
+        <p class="mt-2 text-body-lg font-body-lg text-on-surface font-semibold">Esta marca todavía no tiene productos en el catálogo.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

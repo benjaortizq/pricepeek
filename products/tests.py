@@ -245,6 +245,53 @@ class DetalleProductoTests(CatalogoTestCase):
         self.assertLess(descripcion, resenas)
 
 
+class DetalleMarcaTests(CatalogoTestCase):
+    def url(self, slug="dos-pinos"):
+        return reverse("detalle_marca", kwargs={"slug": slug})
+
+    def test_muestra_el_nombre_y_la_descripcion_de_la_marca(self):
+        Brands.objects.filter(pk=self.dos_pinos.pk).update(
+            description="Productos lácteos de la familia Dos Pinos."
+        )
+
+        respuesta = self.client.get(self.url())
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Dos Pinos")
+        self.assertContains(respuesta, "Productos lácteos de la familia Dos Pinos.")
+        self.assertContains(respuesta, "Sobre la marca")
+
+    def test_muestra_solo_los_productos_de_la_marca(self):
+        yogurt = self.producto("Yogur natural", self.dos_pinos, self.lacteos)
+
+        respuesta = self.client.get(self.url())
+
+        self.assertContains(respuesta, "Leche entera 1L")
+        self.assertContains(respuesta, "Yogur natural")
+        self.assertNotContains(respuesta, "Salsa de tomate")
+        self.assertEqual(
+            [producto.pk for producto in respuesta.context["productos"]],
+            [self.leche.pk, yogurt.pk],
+        )
+
+    def test_el_nombre_de_la_marca_en_el_detalle_es_un_enlace(self):
+        respuesta = self.client.get(
+            reverse("detalle_producto", args=[self.leche.pk])
+        )
+
+        self.assertContains(respuesta, f'href="{self.url()}"')
+
+    def test_omite_la_descripcion_cuando_la_marca_no_tiene_una(self):
+        respuesta = self.client.get(self.url())
+
+        self.assertNotContains(respuesta, "Sobre la marca")
+
+    def test_una_marca_inexistente_responde_404(self):
+        respuesta = self.client.get(self.url("marca-inexistente"))
+
+        self.assertEqual(respuesta.status_code, 404)
+
+
 class BuscarProductosTests(CatalogoTestCase):
     def buscar(self, palabra):
         return list(buscar_productos(palabra))

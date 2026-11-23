@@ -73,7 +73,7 @@
           {% if producto.brand.logo_url %}
             <img src="{{ producto.brand.logo_url }}" alt="" class="w-8 h-8 rounded-full object-contain border border-outline-variant/50 bg-surface-container-lowest">
           {% endif %}
-          <span class="text-body-md font-body-md text-secondary">Marca: <strong class="text-on-surface">{{ producto.brand.name }}</strong></span>
+          <span class="text-body-md font-body-md text-secondary">Marca: <strong class="text-on-surface"><a class="hover:underline" href="{% url 'detalle_marca' producto.brand.slug %}">{{ producto.brand.name }}</a></strong></span>
         </div>
         {% if variantes or not user.is_authenticated %}
           {% include "wishlist/agregar.html" with producto=producto clase_formulario="mt-4" clase_boton="px-5 py-2.5 text-body-md" texto="Añadir a mi lista de deseos" %}

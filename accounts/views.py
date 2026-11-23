@@ -6,16 +6,20 @@ from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
-from django.shortcuts import redirect, render
+from django.core.paginator import Paginator
+from django.db.models import Count, Max, Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from products.busqueda import buscar_productos, con_imagen
 from products.popularidad import mas_populares
+from reviews.models import ReviewReport
 
 from .decorators import role_required
 from .forms import (
+    AlertasPrecioForm,
     CambioContrasenaForm,
     CodigoCambioContrasenaForm,
     ConfirmarCorreoForm,
@@ -23,6 +27,7 @@ from .forms import (
     EliminarCuentaForm,
     NuevoCorreoForm,
     RegistroClienteForm,
+    SuspenderClienteForm,
     correo_en_uso,
 )
 from .models import User
@@ -79,6 +84,107 @@ def inicio_empresa(request):
 @role_required(User.Role.ADMIN)
 def inicio_administrador(request):
     return mostrar_inicio(request, "Panel de administración")
+
+
+# --- Suspensión de cuentas de clientes (RF-42) ---
+
+CLIENTES_POR_PAGINA = 20
+INFRACCIONES_REITERADAS = 2  # desde cuántas reseñas eliminadas se resalta al cliente
+
+
+def clientes_con_infracciones():
+    """Clientes con la cantidad de reseñas suyas que el administrador eliminó por incumplir políticas."""
+    return User.objects.filter(role=User.Role.CLIENT).annotate(
+        infracciones=Count(
+            "reportes_recibidos__review_id",
+            filter=Q(reportes_recibidos__status=ReviewReport.Status.DELETED),
+            distinct=True,
+        )
+    )
+
+
+@role_required(User.Role.ADMIN)
+def clientes(request):
+    busqueda = request.GET.get("q", "").strip()
+    estado = request.GET.get("estado", "")
+    lista = clientes_con_infracciones()
+    if busqueda:
+        lista = lista.filter(
+            Q(email__icontains=busqueda) | Q(first_name__icontains=busqueda) | Q(last_name__icontains=busqueda)
+        )
+    if estado == "activas":
+        lista = lista.filter(is_active=True)
+    elif estado == "suspendidas":
+        lista = lista.filter(is_active=False)
+    else:
+        estado = ""
+    # Los clientes con más infracciones aparecen primero.
+    pagina = Paginator(lista.order_by("-infracciones", "email"), CLIENTES_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
+    return render(
+        request,
+        "accounts/clientes.html",
+        {
+            "pagina": pagina,
+            "busqueda": busqueda,
+            "estado": estado,
+            "reiteradas": INFRACCIONES_REITERADAS,
+        },
+    )
+
+
+def mostrar_detalle_cliente(request, cliente, form=None):
+    infracciones = list(
+        ReviewReport.objects.filter(review_author=cliente, status=ReviewReport.Status.DELETED)
+        .values("review_id")
+        .annotate(reportes=Count("id"), fecha=Max("resolved_at"), motivo=Max("resolution_note"))
+        .order_by("-fecha")
+    )
+    return render(
+        request,
+        "accounts/detalle_cliente.html",
+        {
+            "cliente": cliente,
+            "infracciones": infracciones,
+            "reiteradas": len(infracciones) >= INFRACCIONES_REITERADAS,
+            "form": form or SuspenderClienteForm(),
+        },
+    )
+
+
+def obtener_cliente(pk):
+    return get_object_or_404(User.objects.select_related("suspended_by"), pk=pk, role=User.Role.CLIENT)
+
+
+@role_required(User.Role.ADMIN)
+def detalle_cliente(request, pk):
+    return mostrar_detalle_cliente(request, obtener_cliente(pk))
+
+
+@role_required(User.Role.ADMIN)
+@require_POST
+def suspender_cliente(request, pk):
+    cliente = obtener_cliente(pk)
+    form = SuspenderClienteForm(request.POST)
+    if not form.is_valid():
+        return mostrar_detalle_cliente(request, cliente, form)
+    if User.objects.suspender_cliente(cliente.pk, request.user, form.cleaned_data["motivo"]):
+        messages.success(request, f"La cuenta de {cliente.email} fue suspendida.")
+    else:
+        messages.error(request, "Esa cuenta ya estaba suspendida.")
+    return redirect("detalle_cliente", pk=cliente.pk)
+
+
+@role_required(User.Role.ADMIN)
+@require_POST
+def reactivar_cliente(request, pk):
+    cliente = obtener_cliente(pk)
+    if User.objects.reactivar_cliente(cliente.pk):
+        messages.success(request, f"La cuenta de {cliente.email} fue reactivada.")
+    else:
+        messages.error(request, "Esa cuenta no estaba suspendida.")
+    return redirect("detalle_cliente", pk=cliente.pk)
 
 
 @role_required(User.Role.CLIENT)
@@ -164,7 +270,7 @@ def confirmar_cambio_contrasena(request):
     )
 
 
-def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=None):
+def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=None, form_alertas=None):
     correo_pendiente = request.session.get(CORREO_PENDIENTE)
     if correo_pendiente:
         form_confirmar = form_confirmar or ConfirmarCorreoForm(request.user, prefix="confirmar")
@@ -175,6 +281,7 @@ def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=N
             "form_nombre": form_nombre or EditarNombreForm(instance=request.user, prefix="nombre"),
             "form_correo": form_correo or NuevoCorreoForm(request.user, prefix="correo"),
             "form_confirmar": form_confirmar,
+            "form_alertas": form_alertas or AlertasPrecioForm(instance=request.user, prefix="alertas"),
             "correo_pendiente": correo_pendiente,
         },
     )
@@ -191,6 +298,13 @@ def editar_perfil(request):
                 messages.success(request, "Su nombre fue actualizado.")
                 return redirect("editar_perfil")
             return mostrar_perfil(request, form_nombre=form_nombre)
+        if accion == "alertas" and request.user.role == User.Role.CLIENT:
+            form_alertas = AlertasPrecioForm(request.POST, instance=request.user, prefix="alertas")
+            if form_alertas.is_valid():
+                form_alertas.save()
+                estado = "activadas" if request.user.active_alerts else "desactivadas"
+                messages.success(request, f"Las alertas de baja de precio quedaron {estado}.")
+            return redirect("editar_perfil")
         if accion == "cancelar_correo":
             request.session.pop(CORREO_PENDIENTE, None)
             return redirect("editar_perfil")

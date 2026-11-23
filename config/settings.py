@@ -129,7 +129,8 @@ LANGUAGES = [
     ("en", "English"),
 ]
 
-TIME_ZONE = 'UTC'
+# Con USE_TZ la base guarda todo en UTC; esto solo cambia cómo se muestran las fechas.
+TIME_ZONE = 'America/Costa_Rica'
 
 USE_I18N = True
 
@@ -201,27 +202,15 @@ PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 
 PASSWORD_CHANGE_CODE_TIMEOUT = 60 * 10  # el código para confirmar el cambio vale 10 minutos
 PASSWORD_CHANGE_CODE_MAX_ATTEMPTS = 5
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PricePeek <no-reply@pricepeek.local>")
+
+# SCRUM-56: cada cuántas horas se vuelve a revisar un precio en la página de su tienda
+# (python manage.py actualizar_precios se salta los que se revisaron hace menos tiempo).
+PRECIOS_FRECUENCIA_HORAS = int(os.environ.get("PRECIOS_FRECUENCIA_HORAS", "24"))
 import sys
  
 if "test" in sys.argv:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
 
-# Configuación de almacenamiento en Supabase S3 (para las fotos de reviews)
-if os.environ.get("SUPABASE_S3_ENDPOINT"):
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "bucket_name": os.environ["SUPABASE_STORAGE_BUCKET"],
-                "endpoint_url": os.environ["SUPABASE_S3_ENDPOINT"],
-                "region_name": os.environ["SUPABASE_S3_REGION"],
-                "access_key": os.environ["SUPABASE_S3_ACCESS_KEY"],
-                "secret_key": os.environ["SUPABASE_S3_SECRET_KEY"],
-                "addressing_style": "path",
-                "file_overwrite": False,
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+
+# Dirección pública del sitio, para los enlaces de los correos (alertas de baja de precio).
+SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:8000")

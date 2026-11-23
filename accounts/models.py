@@ -24,6 +24,27 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("role", User.Role.ADMIN)
         return self._create_user(email, password, **extra_fields)
 
+    # Suspensión de cuentas (RF-42). Una cuenta suspendida queda con is_active=False: Django ya no
+    # la deja iniciar sesión, cierra sus sesiones abiertas y no le envía enlaces de recuperación.
+    def suspender_cliente(self, pk, admin, motivo):
+        """Suspende la cuenta activa de un cliente. Devuelve False si no había nada que suspender."""
+        return bool(
+            self.filter(pk=pk, role=self.model.Role.CLIENT, is_active=True).update(
+                is_active=False,
+                suspended_at=timezone.now(),
+                suspended_by=admin,
+                suspension_reason=motivo,
+            )
+        )
+
+    def reactivar_cliente(self, pk):
+        """Levanta la suspensión de un cliente. Devuelve False si la cuenta no estaba suspendida."""
+        return bool(
+            self.filter(pk=pk, role=self.model.Role.CLIENT, is_active=False).update(
+                is_active=True, suspended_at=None, suspended_by=None, suspension_reason=""
+            )
+        )
+
 
 class User(AbstractUser):
     class Role(models.TextChoices):
@@ -36,6 +57,11 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CLIENT)
     active_alerts = models.BooleanField(default=True)  # RF-24
     last_password_change = models.DateTimeField("last password change", default=timezone.now)
+    suspended_at = models.DateTimeField("suspended at", null=True, blank=True)
+    suspended_by = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    suspension_reason = models.TextField("suspension reason", blank=True)
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

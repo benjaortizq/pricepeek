@@ -41,6 +41,15 @@ class ReviewReport(models.Model):
     reporter = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="review_reports"
     )
+    # Autor de la reseña, guardado aparte porque la reseña puede borrarse: así el administrador
+    # sigue viendo cuántas reseñas de un cliente se eliminaron por incumplir las políticas (RF-42).
+    review_author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="reportes_recibidos",
+    )
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)

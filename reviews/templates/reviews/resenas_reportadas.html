@@ -21,6 +21,12 @@
             {% if autor.first_name or autor.last_name %}{{ autor.first_name }} {{ autor.last_name }} ({{ autor.email }}){% else %}{{ autor.email }}{% endif %}
             · {{ resena.created_at|date:"d/m/Y" }}
           </p>
+          {% if autor.role == "client" %}
+            <p class="text-body-sm font-body-sm {% if grupo.infracciones %}text-error font-semibold{% else %}text-secondary{% endif %}">
+              {% if grupo.infracciones %}Le eliminaron {{ grupo.infracciones }} reseña{{ grupo.infracciones|pluralize }} antes{% else %}Sin reseñas eliminadas antes{% endif %}
+              · <a class="font-semibold text-on-surface hover:underline" href="{% url 'detalle_cliente' autor.pk %}">Ver historial del cliente</a>
+            </p>
+          {% endif %}
         </div>
         <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error-container/40 text-on-error-container text-body-sm font-semibold">
           <span class="material-symbols-outlined text-[16px]">flag</span>{{ grupo.reportes|length }} {% if grupo.reportes|length == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}

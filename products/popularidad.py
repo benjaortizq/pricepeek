@@ -61,11 +61,15 @@ def registrar_visita(request, producto_id):
         logger.exception("No se pudo guardar la visita al producto %s", producto_id)
 
 
-def popularidad_reciente():
-    """Cuántos visitantes distintos tuvo el producto (``OuterRef("pk")``) en los últimos días."""
+def popularidad_reciente(producto="pk"):
+    """Cuántos visitantes distintos tuvo el producto en los últimos días.
+
+    ``producto`` es dónde está el id del producto en la consulta de afuera: "pk" en una de
+    productos, "gtin__product_id" en una de precios.
+    """
     desde = timezone.now() - timedelta(days=DIAS_DE_POPULARIDAD)
     visitantes = (
-        ProductView.objects.filter(product_id=OuterRef("pk"), hour__gte=desde)
+        ProductView.objects.filter(product_id=OuterRef(producto), hour__gte=desde)
         .values("product_id")
         .annotate(total=Count("visitor", distinct=True))
         .values("total")

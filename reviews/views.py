@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -109,7 +110,7 @@ def reportar_resena(request, review_id):
     _, creado = ReviewReport.objects.get_or_create(
         review_id=resena.pk,
         reporter=request.user,
-        defaults={"reason": form.cleaned_data["reason"]},
+        defaults={"reason": form.cleaned_data["reason"], "review_author_id": resena.user_id},
     )
     if creado:
         messages.success(request, "Gracias. Su reporte fue enviado y el equipo de PricePeek lo revisará.")
@@ -140,8 +141,19 @@ def resenas_reportadas(request):
         grupo = grupos.setdefault(reporte.review_id, {"resena": resena, "reportes": []})
         grupo["reportes"].append(reporte)
     fotos = {foto.review_id: foto for foto in ReviewPhoto.objects.filter(review_id__in=list(grupos))}
+    # Reseñas de cada autor que ya se eliminaron antes, para saber si incumple de forma reiterada.
+    infracciones = dict(
+        ReviewReport.objects.filter(
+            review_author_id__in={grupo["resena"].user_id for grupo in grupos.values()},
+            status=ReviewReport.Status.DELETED,
+        )
+        .values("review_author_id")
+        .annotate(total=Count("review_id", distinct=True))
+        .values_list("review_author_id", "total")
+    )
     for review_id, grupo in grupos.items():
         grupo["foto"] = fotos.get(review_id)
+        grupo["infracciones"] = infracciones.get(grupo["resena"].user_id, 0)
     return render(request, "reviews/resenas_reportadas.html", {"grupos": list(grupos.values())})
 
 
@@ -169,27 +181,25 @@ def moderar_resena(request, review_id):
     foto_almacenada = None
 
     with transaction.atomic():
-        if eliminar:
-            resena = Reviews.objects.filter(pk=review_id).first()
-            if resena:
-                foto = ReviewPhoto.objects.filter(review_id=review_id).first()
-                if foto:
-                    foto_almacenada = (foto.image.storage, foto.image.name)
-                    foto.delete()
-                if form.cleaned_data["suspend"]:
-                    suspendido = bool(
-                        User.objects.filter(pk=resena.user_id, role=User.Role.CLIENT).update(
-                            is_active=False
-                        )
-                    )
-                resena.delete()
-        estado = ReviewReport.Status.DELETED if eliminar else ReviewReport.Status.KEPT
-        pendientes.update(
-            status=estado,
-            resolved_by_id=request.user.pk,
-            resolved_at=timezone.now(),
-            resolution_note=nota,
-        )
+        resena = Reviews.objects.filter(pk=review_id).first()
+        resolucion = {
+            "status": ReviewReport.Status.DELETED if eliminar else ReviewReport.Status.KEPT,
+            "resolved_by_id": request.user.pk,
+            "resolved_at": timezone.now(),
+            "resolution_note": nota,
+        }
+        if resena:
+            # Por si el reporte se creó antes de guardar el autor: la infracción debe contarle.
+            resolucion["review_author_id"] = resena.user_id
+        if eliminar and resena:
+            foto = ReviewPhoto.objects.filter(review_id=review_id).first()
+            if foto:
+                foto_almacenada = (foto.image.storage, foto.image.name)
+                foto.delete()
+            if form.cleaned_data["suspend"]:
+                suspendido = User.objects.suspender_cliente(resena.user_id, request.user, nota)
+            resena.delete()
+        pendientes.update(**resolucion)
 
     if foto_almacenada:
         almacenamiento, nombre = foto_almacenada

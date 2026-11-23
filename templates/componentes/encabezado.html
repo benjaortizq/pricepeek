@@ -48,6 +48,12 @@
           {% else %}
             {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" %}
           {% endif %}
+          {% url 'clientes' as url_clientes %}
+          {% if actual == "clientes" or actual == "detalle_cliente" %}
+            {% include "componentes/enlace_nav.html" with url=url_clientes texto="Clientes" activo=True %}
+          {% else %}
+            {% include "componentes/enlace_nav.html" with url=url_clientes texto="Clientes" %}
+          {% endif %}
         {% endif %}
       </nav>
       {% endwith %}

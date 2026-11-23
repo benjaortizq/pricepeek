@@ -102,6 +102,7 @@ class ReportarResenaTests(ReportesBase):
         self.assertContains(respuesta, "Su reporte fue enviado")
         reporte = ReviewReport.objects.get()
         self.assertEqual(reporte.review_id, self.resena.pk)
+        self.assertEqual(reporte.review_author, self.autor)
         self.assertEqual(reporte.reporter, self.reportante)
         self.assertEqual(reporte.reason, "Insulta a otros usuarios.")
         self.assertEqual(reporte.status, ReviewReport.Status.PENDING)
@@ -233,6 +234,21 @@ class ListaDeResenasReportadasTests(ReportesBase):
         self.assertNotContains(respuesta, otra.content)
         self.assertContains(respuesta, "No hay reseñas reportadas pendientes")
 
+    def test_muestra_cuantas_resenas_del_autor_ya_se_eliminaron(self):
+        self.crear_reporte()
+        self.client.force_login(self.admin)
+        respuesta = self.client.get(self.url)
+        self.assertContains(respuesta, "Sin reseñas eliminadas antes")
+        url_historial = reverse("detalle_cliente", kwargs={"pk": self.autor.pk})
+        self.assertContains(respuesta, url_historial)
+
+        for review_id in (900, 901):  # reseñas del mismo autor eliminadas en el pasado
+            ReviewReport.objects.create(
+                review_id=review_id, reporter=self.otro_cliente, review_author=self.autor,
+                reason="Spam.", status=ReviewReport.Status.DELETED,
+            )
+        self.assertContains(self.client.get(self.url), "Le eliminaron 2 reseñas antes")
+
     def test_una_resena_que_ya_no_existe_no_rompe_la_lista(self):
         self.crear_reporte()
         Reviews.objects.filter(pk=self.resena.pk).delete()
@@ -282,8 +298,23 @@ class ModerarResenaTests(ReportesBase):
     def test_eliminar_y_suspender_desactiva_la_cuenta_del_autor(self):
         respuesta = self.decidir(action="delete", note="Reiterado.", suspend="on")
         self.assertContains(respuesta, "La cuenta del autor fue suspendida")
-        self.assertFalse(get_user_model().objects.get(pk=self.autor.pk).is_active)
+        autor = get_user_model().objects.get(pk=self.autor.pk)
+        self.assertFalse(autor.is_active)
+        self.assertEqual(autor.suspension_reason, "Reiterado.")
+        self.assertEqual(autor.suspended_by, self.admin)
+        self.assertIsNotNone(autor.suspended_at)
         self.assertFalse(self.client.login(email="autor@example.com", password="Clave2026segura"))
+
+    def test_la_resena_eliminada_cuenta_como_infraccion_del_autor(self):
+        # Reportes creados antes de que se guardara el autor: se completa al resolverlos.
+        ReviewReport.objects.update(review_author=None)
+        self.decidir(action="delete", note="Lenguaje ofensivo.")
+        self.assertEqual(
+            ReviewReport.objects.filter(review_author=self.autor, status=ReviewReport.Status.DELETED).count(), 2
+        )
+        respuesta = self.client.get(reverse("detalle_cliente", kwargs={"pk": self.autor.pk}))
+        self.assertContains(respuesta, "1 reseña de este cliente fue eliminada")
+        self.assertContains(respuesta, "Lenguaje ofensivo.")
 
     def test_suspender_solo_aplica_cuando_se_elimina(self):
         self.decidir(action="keep", suspend="on")

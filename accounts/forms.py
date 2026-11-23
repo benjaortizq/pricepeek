@@ -1,8 +1,50 @@
 from django import forms
-from django.contrib.auth.forms import PasswordChangeForm, SetPasswordForm, UserCreationForm
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordChangeForm,
+    SetPasswordForm,
+    UserCreationForm,
+)
 from django.utils import timezone
 
 from .models import User
+
+
+class IniciarSesionForm(AuthenticationForm):
+    """Inicio de sesión que avisa al cliente cuando su cuenta fue suspendida (RF-42)."""
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "inactive": (
+            "Su cuenta está suspendida por incumplir las políticas de uso de PricePeek. "
+            "Si cree que se trata de un error, comuníquese con el equipo de PricePeek."
+        ),
+    }
+
+    def clean(self):
+        try:
+            return super().clean()
+        except forms.ValidationError as error:
+            # Django rechaza las cuentas inactivas como si la contraseña fuera incorrecta.
+            if error.code == "invalid_login" and self.es_cuenta_suspendida():
+                raise forms.ValidationError(self.error_messages["inactive"], code="inactive") from None
+            raise
+
+    def es_cuenta_suspendida(self):
+        # Solo se revela la suspensión a quien conoce la contraseña de la cuenta.
+        usuario = User.objects.filter(
+            email=self.cleaned_data.get("username"), is_active=False
+        ).first()
+        return usuario is not None and usuario.check_password(self.cleaned_data.get("password"))
+
+
+class SuspenderClienteForm(forms.Form):
+    motivo = forms.CharField(
+        label="Motivo de la suspensión",
+        max_length=500,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        error_messages={"required": "Indique el motivo de la suspensión."},
+    )
 
 
 class RegistroClienteForm(UserCreationForm):

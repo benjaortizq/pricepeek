@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Cliente {{ cliente.email }}{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-3xl mx-auto px-margin md:px-margin-desktop py-space-xl">
+  <a class="inline-flex items-center gap-1 text-body-md font-semibold text-on-surface hover:underline" href="{% url 'clientes' %}">
+    <span class="material-symbols-outlined text-[18px]">arrow_back</span>Clientes
+  </a>
+
+  <section class="tarjeta p-6 mt-space-md">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight break-words">{{ cliente.get_full_name|default:cliente.email }}</h1>
+        <p class="mt-1 text-body-sm font-body-sm text-secondary break-all">{{ cliente.email }}</p>
+        <p class="text-body-sm font-body-sm text-secondary">
+          Cliente desde {{ cliente.date_joined|date:"d/m/Y" }}
+          {% if cliente.last_login %}· Último ingreso {{ cliente.last_login|date:"d/m/Y H:i" }}{% endif %}
+        </p>
+      </div>
+      {% if cliente.is_active %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary/10 text-on-surface text-body-sm font-semibold">
+          <span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>Cuenta activa
+        </span>
+      {% else %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error text-on-error text-body-sm font-semibold">
+          <span class="material-symbols-outlined text-[16px]">block</span>Cuenta suspendida
+        </span>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="tarjeta p-6 mt-space-md">
+    <h2 class="text-body-lg font-body-lg font-bold text-on-surface">Incumplimientos de las políticas</h2>
+    {% if infracciones %}
+      <p class="mt-1 text-body-md font-body-md text-secondary">
+        {{ infracciones|length }} reseña{{ infracciones|length|pluralize }} de este cliente {{ infracciones|length|pluralize:"fue,fueron" }} eliminada{{ infracciones|length|pluralize }} por moderación.
+      </p>
+      <ul class="mt-3 space-y-2">
+        {% for infraccion in infracciones %}
+          <li class="rounded-xl bg-surface-container-low p-3 text-body-sm font-body-sm">
+            <p class="text-secondary">
+              Reseña eliminada{% if infraccion.fecha %} el {{ infraccion.fecha|date:"d/m/Y" }}{% endif %}
+              · {{ infraccion.reportes }} reporte{{ infraccion.reportes|pluralize }}
+            </p>
+            {% if infraccion.motivo %}<p class="mt-1 text-on-surface">{{ infraccion.motivo }}</p>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="mt-1 text-body-md font-body-md text-secondary">Este cliente no tiene reseñas eliminadas por moderación.</p>
+    {% endif %}
+  </section>
+
+  <section class="tarjeta p-6 mt-space-md">
+    {% if cliente.is_active %}
+      <h2 class="text-body-lg font-body-lg font-bold text-on-surface">Suspender cuenta</h2>
+      <p class="mt-1 text-body-md font-body-md text-secondary">
+        El cliente no podrá iniciar sesión, publicar reseñas ni usar su lista de deseos hasta que un administrador reactive la cuenta. Sus sesiones abiertas se cierran de inmediato.
+      </p>
+      {% if reiteradas %}
+        <div class="mt-3 flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
+          <span class="material-symbols-outlined text-[20px] text-error">warning</span>
+          <p>Este cliente ha incumplido las políticas de uso de forma reiterada.</p>
+        </div>
+      {% endif %}
+      <form class="mt-4 space-y-3" method="post" action="{% url 'suspender_cliente' cliente.pk %}">
+        {% csrf_token %}
+        <label class="block text-body-sm font-body-sm font-semibold text-on-surface" for="{{ form.motivo.id_for_label }}">{{ form.motivo.label }}</label>
+        <textarea class="w-full rounded-xl bg-surface-container-low border border-outline-variant/50 px-4 py-3 text-body-md focus:border-on-surface focus:ring-0" id="{{ form.motivo.id_for_label }}" name="{{ form.motivo.html_name }}" rows="3" maxlength="500" required placeholder="Por ejemplo: publicó reseñas ofensivas de forma reiterada.">{{ form.motivo.value|default:"" }}</textarea>
+        {% for error in form.motivo.errors %}
+          <p class="flex items-center gap-1 text-body-sm font-body-sm text-error"><span class="material-symbols-outlined text-[16px]">error</span>{{ error }}</p>
+        {% endfor %}
+        <button class="px-5 py-2.5 rounded-full bg-error hover:bg-[#93000a] text-on-error font-semibold text-body-md transition-colors inline-flex items-center gap-2" type="submit" onclick="return confirm('¿Suspender la cuenta de {{ cliente.email|escapejs }}?')">
+          <span class="material-symbols-outlined text-[18px]">block</span>Suspender cuenta
+        </button>
+      </form>
+    {% else %}
+      <h2 class="text-body-lg font-body-lg font-bold text-on-surface">Suspensión</h2>
+      <dl class="mt-2 space-y-1 text-body-md font-body-md">
+        {% if cliente.suspended_at %}
+          <div><dt class="inline text-secondary">Desde:</dt> <dd class="inline text-on-surface">{{ cliente.suspended_at|date:"d/m/Y H:i" }}</dd></div>
+        {% endif %}
+        {% if cliente.suspended_by %}
+          <div><dt class="inline text-secondary">Suspendida por:</dt> <dd class="inline text-on-surface">{{ cliente.suspended_by.email }}</dd></div>
+        {% endif %}
+        <div><dt class="inline text-secondary">Motivo:</dt> <dd class="inline text-on-surface">{{ cliente.suspension_reason|default:"No se registró un motivo." }}</dd></div>
+      </dl>
+      <form class="mt-4" method="post" action="{% url 'reactivar_cliente' cliente.pk %}">
+        {% csrf_token %}
+        <button class="boton-secundario" type="submit" onclick="return confirm('¿Reactivar la cuenta de {{ cliente.email|escapejs }}?')">
+          <span class="material-symbols-outlined text-[18px]">lock_open</span>Reactivar cuenta
+        </button>
+      </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

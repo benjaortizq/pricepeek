@@ -123,7 +123,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'es'  # RNF-22 / RNF-23
 
-TIME_ZONE = 'UTC'
+# Con USE_TZ la base guarda todo en UTC; esto solo cambia cómo se muestran las fechas.
+TIME_ZONE = 'America/Costa_Rica'
 
 USE_I18N = True
 

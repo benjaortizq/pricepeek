@@ -1,15 +1,61 @@
-{% load static %}<!DOCTYPE html>
-<html class="h-full" lang="es">
+{% load static site_i18n %}<!DOCTYPE html>
+<html class="h-full" lang="{% idioma_actual %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}PricePeek{% endblock %} | PricePeek Costa Rica</title>
+  <script>
+    (function () {
+      var themeKey = 'pricepeek-theme';
+
+      function isTheme(value) {
+        return value === 'dark' || value === 'light';
+      }
+
+      function cookieTheme() {
+        var prefix = themeKey + '=';
+        var cookies = [];
+        try {
+          cookies = document.cookie ? document.cookie.split(';') : [];
+        } catch (error) {
+          return null;
+        }
+        for (var index = 0; index < cookies.length; index += 1) {
+          var cookie = cookies[index].trim();
+          if (cookie.indexOf(prefix) !== 0) continue;
+          try {
+            var value = decodeURIComponent(cookie.slice(prefix.length));
+            if (isTheme(value)) return value;
+          } catch (error) {
+            // Ignora cookies de tema mal formadas.
+          }
+        }
+        return null;
+      }
+
+      var storedTheme = null;
+      try {
+        storedTheme = window.localStorage.getItem(themeKey);
+      } catch (error) {
+        storedTheme = null;
+      }
+      if (!isTheme(storedTheme)) storedTheme = cookieTheme();
+
+      var prefersDark = window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = isTheme(storedTheme)
+        ? storedTheme
+        : (prefersDark ? 'dark' : 'light');
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <script src="{% static 'js/tailwind.config.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <script src="{% static 'js/tailwind.config.js' %}?v=20261122-theme"></script>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}?v=20261122-theme">
   {# Estilo de los campos que Django genera ({{ field }}), igual al de las pantallas de diseño. #}
   <style type="text/tailwindcss">
     .campo input {
@@ -19,7 +65,7 @@
     .campo input.con-ojo { @apply pr-11; }
     .ayuda ul { @apply list-disc pl-4 space-y-0.5; }
     .boton-primario {
-      @apply w-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold font-body-md py-3.5 px-6 rounded-xl transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.99];
+      @apply w-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold font-body-md py-3.5 px-6 rounded-xl transition-all duration-150 flex items-center justify-center gap-2 active:scale-[0.99];
     }
     .boton-secundario {
       @apply px-5 py-2.5 rounded-full border border-outline-variant text-on-surface font-semibold text-body-md font-body-md hover:bg-surface-container-low transition-colors inline-flex items-center justify-center gap-2;
@@ -28,7 +74,7 @@
   </style>
   {% block head %}{% endblock %}
 </head>
-<body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-full flex flex-col selection:bg-primary-container selection:text-on-surface">
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-full flex flex-col transition-colors duration-200 selection:bg-primary-container selection:text-on-primary-container">
   {% include "componentes/encabezado.html" %}
 
   <main class="flex-grow w-full">
@@ -38,12 +84,12 @@
           {% if message.tags == "error" %}
             <div class="flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
               <span class="material-symbols-outlined text-[20px] text-error">error</span>
-              <p>{{ message }}</p>
+              <p>{% t message %}</p>
             </div>
           {% else %}
             <div class="flex items-start gap-3 rounded-xl border border-tertiary/30 bg-tertiary/10 p-3.5 text-body-md text-on-surface">
               <span class="material-symbols-outlined text-[20px] text-tertiary">check_circle</span>
-              <p>{{ message }}</p>
+              <p>{% t message %}</p>
             </div>
           {% endif %}
         {% endfor %}
@@ -55,7 +101,21 @@
 
   {% include "componentes/pie.html" %}
 
-  <script src="{% static 'js/main.js' %}"></script>
+  <button
+    id="theme-toggle"
+    type="button"
+    class="fixed bottom-5 right-5 z-[60] h-12 w-12 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/60 shadow-lg hover:bg-surface-container hover:border-on-surface/40 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors flex items-center justify-center"
+    aria-label="{% t 'Activar modo oscuro' %}"
+    title="{% t 'Activar modo oscuro' %}"
+    aria-pressed="false"
+    data-theme-toggle
+    data-label-dark="{% t 'Activar modo oscuro' %}"
+    data-label-light="{% t 'Activar modo claro' %}"
+  >
+    <span data-theme-icon class="material-symbols-outlined text-[24px]" aria-hidden="true">dark_mode</span>
+  </button>
+
+  <script src="{% static 'js/main.js' %}?v=20261122-theme"></script>
   <script src="{% static 'js/formularios.js' %}"></script>
   {% block scripts %}{% endblock %}
 </body>

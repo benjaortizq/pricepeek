@@ -1,9 +1,10 @@
 {% extends "base_tarjeta.html" %}
+{% load site_i18n %}
 
-{% block title %}Cambiar contraseña{% endblock %}
+{% block title %}{% t 'Cambiar contraseña' %}{% endblock %}
 {% block icono_tarjeta %}{% include "componentes/icono_tarjeta.html" with icono="password" %}{% endblock %}
-{% block titulo_tarjeta %}Cambiar contraseña{% endblock %}
-{% block subtitulo_tarjeta %}Ingrese su contraseña actual y la nueva contraseña. Le enviaremos un código a su correo para confirmar el cambio.{% endblock %}
+{% block titulo_tarjeta %}{% t 'Cambiar contraseña' %}{% endblock %}
+{% block subtitulo_tarjeta %}{% t 'Ingrese su contraseña actual y la nueva contraseña. Le enviaremos un código a su correo para confirmar el cambio.' %}{% endblock %}
 
 {% block tarjeta %}
 <form class="space-y-4" method="post" novalidate>
@@ -14,12 +15,13 @@
   {% include "componentes/campo.html" with field=form.new_password2 icono="lock_reset" %}
   <div class="pt-2">
     <button class="boton-primario" type="submit">
-      <span>Enviar código</span>
+      <span>{% t 'Enviar código' %}</span>
       <span class="material-symbols-outlined text-[18px]">send</span>
     </button>
   </div>
 </form>
 
 {% url 'editar_perfil' as url_perfil %}
-{% include "componentes/volver.html" with url=url_perfil texto="Volver a mi perfil" %}
+{% t 'Volver a mi perfil' as texto_volver_perfil %}
+{% include "componentes/volver.html" with url=url_perfil texto=texto_volver_perfil %}
 {% endblock %}

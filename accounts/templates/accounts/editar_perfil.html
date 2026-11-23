@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% load site_i18n %}
 
-{% block title %}Mi perfil{% endblock %}
+{% block title %}{% t 'Mi perfil' %}{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
   <div class="mb-space-lg">
     <nav class="flex items-center gap-2 text-body-sm font-body-sm text-secondary mb-2">
-      <a class="hover:text-on-surface transition-colors" href="{% url 'panel' %}">Inicio</a>
+      <a class="hover:text-on-surface transition-colors" href="{% url 'panel' %}">{% t 'Inicio' %}</a>
       <span class="text-outline-variant">/</span>
-      <span class="text-on-surface font-semibold">Mi perfil</span>
+      <span class="text-on-surface font-semibold">{% t 'Mi perfil' %}</span>
     </nav>
-    <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Mi cuenta</h1>
-    <p class="text-body-md font-body-md text-secondary mt-0.5">Actualice su nombre, su correo electrónico y su contraseña.</p>
+    <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">{% t 'Mi cuenta' %}</h1>
+    <p class="text-body-md font-body-md text-secondary mt-0.5">{% t 'Actualice su nombre, su correo electrónico y su contraseña.' %}</p>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
@@ -20,31 +21,31 @@
         <div class="w-24 h-24 rounded-full border-2 border-primary-container bg-surface-container-low flex items-center justify-center mb-3 text-display font-display text-on-surface uppercase">
           {{ user.first_name|default:user.email|slice:":1" }}
         </div>
-        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">{{ user.first_name|default:"Sin nombre" }}</h2>
+        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% if user.first_name %}{{ user.first_name }}{% else %}{% t 'Sin nombre' %}{% endif %}</h2>
         <p class="text-body-sm font-body-sm text-secondary mt-0.5">{{ user.email }}</p>
         <div class="mt-3 flex flex-wrap justify-center items-center gap-2">
           <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/10 text-tertiary font-label-badge text-label-badge">
             <span class="material-symbols-outlined text-[13px]">check_circle</span>
-            {{ user.get_role_display }}
+            {% t user.get_role_display %}
           </span>
           <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-low text-secondary font-label-badge text-label-badge border border-outline-variant/40">
-            Miembro desde {{ user.date_joined|date:"Y" }}
+            {% t 'Miembro desde {anio}' anio=user.date_joined|date:"Y" %}
           </span>
         </div>
       </div>
 
       <nav class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-2 flex flex-col gap-1">
         <a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-surface-container-low border-l-4 border-primary-container text-on-surface font-semibold text-body-md font-body-md" href="{% url 'editar_perfil' %}">
-          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-[20px]">badge</span>Mis datos</span>
+          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-[20px]">badge</span>{% t 'Mis datos' %}</span>
           <span class="material-symbols-outlined text-secondary text-[16px]">chevron_right</span>
         </a>
         <a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-low/70 transition-colors text-body-md font-body-md" href="{% url 'password_change' %}">
-          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px]">password</span>Cambiar contraseña</span>
+          <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px]">password</span>{% t 'Cambiar contraseña' %}</span>
           <span class="material-symbols-outlined text-[16px]">chevron_right</span>
         </a>
         {% if user.role == "client" %}
           <a class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-low/70 transition-colors text-body-md font-body-md" href="{% url 'eliminar_cuenta' %}">
-            <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px]">person_remove</span>Eliminar cuenta</span>
+            <span class="flex items-center gap-3"><span class="material-symbols-outlined text-[20px]">person_remove</span>{% t 'Eliminar cuenta' %}</span>
             <span class="material-symbols-outlined text-[16px]">chevron_right</span>
           </a>
         {% endif %}
@@ -53,7 +54,7 @@
           {% csrf_token %}
           <button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-error hover:bg-error-container/30 transition-colors text-left text-body-md font-body-md" type="submit">
             <span class="material-symbols-outlined text-[20px]">logout</span>
-            <span>Cerrar sesión</span>
+            <span>{% t 'Cerrar sesión' %}</span>
           </button>
         </form>
       </nav>
@@ -62,16 +63,16 @@
     <section class="lg:col-span-8 flex flex-col gap-space-lg">
       <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg">
         <div class="border-b border-outline-variant/40 pb-space-md mb-space-lg">
-          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">Nombre</h3>
-          <p class="text-body-md font-body-md text-secondary mt-0.5">Así lo vamos a saludar en PricePeek.</p>
+          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Nombre' %}</h3>
+          <p class="text-body-md font-body-md text-secondary mt-0.5">{% t 'Así lo vamos a saludar en PricePeek.' %}</p>
         </div>
         <form class="space-y-4" method="post" action="{% url 'editar_perfil' %}" novalidate>
           {% csrf_token %}
           <input type="hidden" name="accion" value="nombre">
           {% include "componentes/campo.html" with field=form_nombre.first_name icono="person" %}
           <div class="flex justify-end">
-            <button class="boton-secundario bg-primary-container hover:bg-[#e0a41c] border-transparent font-bold" type="submit">
-              <span class="material-symbols-outlined text-[18px]">check</span>Guardar nombre
+            <button class="boton-secundario bg-primary-container hover:brightness-90 text-on-primary-container border-transparent font-bold" type="submit">
+              <span class="material-symbols-outlined text-[18px]">check</span>{% t 'Guardar nombre' %}
             </button>
           </div>
         </form>
@@ -79,22 +80,22 @@
 
       <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg">
         <div class="border-b border-outline-variant/40 pb-space-md mb-space-lg">
-          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">Correo electrónico</h3>
-          <p class="text-body-md font-body-md text-secondary mt-0.5">Correo actual: <strong class="text-on-surface">{{ user.email }}</strong>. Lo usa para iniciar sesión.</p>
+          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Correo electrónico' %}</h3>
+          <p class="text-body-md font-body-md text-secondary mt-0.5">{% t 'Correo actual:' %} <strong class="text-on-surface">{{ user.email }}</strong>{% t '. Lo usa para iniciar sesión.' %}</p>
         </div>
         {% if correo_pendiente %}
           <div class="mb-space-md bg-tertiary/10 border border-tertiary/30 rounded-xl p-3.5 flex items-start gap-3">
             <span class="material-symbols-outlined text-[20px] text-tertiary shrink-0">check_circle</span>
-            <p class="text-body-sm font-body-sm text-on-surface leading-snug">El correo <strong>{{ correo_pendiente }}</strong> está disponible. Ingrese su contraseña actual para confirmar el cambio.</p>
+            <p class="text-body-sm font-body-sm text-on-surface leading-snug">{% t 'El correo' %} <strong>{{ correo_pendiente }}</strong>{% t ' está disponible. Ingrese su contraseña actual para confirmar el cambio.' %}</p>
           </div>
           <form class="space-y-4" method="post" action="{% url 'editar_perfil' %}" novalidate>
             {% csrf_token %}
             <input type="hidden" name="accion" value="confirmar_correo">
             {% include "componentes/campo.html" with field=form_confirmar.password icono="lock" %}
             <div class="flex flex-col-reverse sm:flex-row justify-end gap-3">
-              <button class="boton-secundario" form="cancelar-correo" type="submit">Cancelar</button>
-              <button class="boton-secundario bg-primary-container hover:bg-[#e0a41c] border-transparent font-bold" type="submit">
-                <span class="material-symbols-outlined text-[18px]">check</span>Confirmar cambio de correo
+              <button class="boton-secundario" form="cancelar-correo" type="submit">{% t 'Cancelar' %}</button>
+              <button class="boton-secundario bg-primary-container hover:brightness-90 text-on-primary-container border-transparent font-bold" type="submit">
+                <span class="material-symbols-outlined text-[18px]">check</span>{% t 'Confirmar cambio de correo' %}
               </button>
             </div>
           </form>
@@ -108,7 +109,7 @@
             {% include "componentes/campo.html" with field=form_correo.email icono="mail" %}
             <div class="flex justify-end">
               <button class="boton-secundario" type="submit">
-                <span class="material-symbols-outlined text-[18px]">search_check</span>Verificar correo
+                <span class="material-symbols-outlined text-[18px]">search_check</span>{% t 'Verificar correo' %}
               </button>
             </div>
           </form>
@@ -117,11 +118,11 @@
 
       <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
         <div>
-          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">Contraseña</h3>
-          <p class="text-body-md font-body-md text-secondary mt-0.5">Le enviaremos un código a su correo para confirmar el cambio.</p>
+          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Contraseña' %}</h3>
+          <p class="text-body-md font-body-md text-secondary mt-0.5">{% t 'Le enviaremos un código a su correo para confirmar el cambio.' %}</p>
         </div>
         <a class="boton-secundario" href="{% url 'password_change' %}">
-          <span class="material-symbols-outlined text-[18px]">password</span>Cambiar contraseña
+          <span class="material-symbols-outlined text-[18px]">password</span>{% t 'Cambiar contraseña' %}
         </a>
       </div>
     </section>

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
+{% load site_i18n %}
 
-{% block title %}Pantallas de diseño{% endblock %}
+{% block title %}{% t 'Pantallas de diseño' %}{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
-  <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Pantallas de diseño</h1>
+  <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">{% t 'Pantallas de diseño' %}</h1>
   <p class="text-body-md font-body-md text-secondary mt-1">
-    Los HTML de <code>frontend/html</code>, tal como vienen del diseño (datos de ejemplo, sin conexión al backend).
-    Solo se ven con <code>DEBUG=True</code>.
+    {% t 'Los HTML de' %} <code>frontend/html</code>{% t ', tal como vienen del diseño (datos de ejemplo, sin conexión al backend).' %}
+    {% t 'Solo se ven con' %} <code>DEBUG=True</code>.
   </p>
   <ul class="mt-space-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
     {% for nombre in pantallas %}

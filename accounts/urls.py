@@ -2,9 +2,11 @@ from django.contrib.auth import views as auth_views
 from django.urls import path, reverse_lazy
 
 from . import views
-from .forms import RestablecerContrasenaForm
+from .forms import IniciarSesionForm, RestablecerContrasenaForm
 
 urlpatterns = [
+    # Reemplaza el login de Django para avisar cuando la cuenta está suspendida.
+    path("login/", auth_views.LoginView.as_view(authentication_form=IniciarSesionForm), name="login"),
     path("register/", views.registro, name="register"),
     path(
         "reset/<uidb64>/<token>/",
@@ -28,4 +30,8 @@ urlpatterns = [
     path("cliente/", views.inicio_cliente, name="inicio_cliente"),
     path("empresa/", views.inicio_empresa, name="inicio_empresa"),
     path("administrador/", views.inicio_administrador, name="inicio_administrador"),
+    path("administrador/clientes/", views.clientes, name="clientes"),
+    path("administrador/clientes/<int:pk>/", views.detalle_cliente, name="detalle_cliente"),
+    path("administrador/clientes/<int:pk>/suspender/", views.suspender_cliente, name="suspender_cliente"),
+    path("administrador/clientes/<int:pk>/reactivar/", views.reactivar_cliente, name="reactivar_cliente"),
 ]

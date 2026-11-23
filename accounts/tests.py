@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
 from django.core import mail
+from django.db import connection
 from django.test import TestCase
 from django.urls import resolve, reverse
 from django.utils import timezone
@@ -11,6 +12,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from . import views
+from products.models import Brands, Categories, Currencies, ProductVariants, Products, Stores
+
 from .models import User
 
 
@@ -130,6 +133,23 @@ class RecuperarContrasenaTests(TestCase):
 
 
 class EliminarCuentaTests(TestCase):
+    # Al borrar un usuario también se borra su lista de deseos, que apunta a tablas de Supabase.
+    modelos_sin_migracion = [Brands, Categories, Currencies, Stores, Products, ProductVariants]
+
+    @classmethod
+    def setUpClass(cls):
+        with connection.schema_editor() as editor:
+            for modelo in cls.modelos_sin_migracion:
+                editor.create_model(modelo)
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        with connection.schema_editor() as editor:
+            for modelo in reversed(cls.modelos_sin_migracion):
+                editor.delete_model(modelo)
+
     def setUp(self):
         self.cliente = User.objects.create_user(email="ana@correo.com", password="Clave2026segura")
         self.otro = User.objects.create_user(email="luis@correo.com", password="Otra2026clave")

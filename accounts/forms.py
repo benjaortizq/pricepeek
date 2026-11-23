@@ -78,6 +78,18 @@ class EditarNombreForm(forms.ModelForm):
         fields = ("first_name",)
 
 
+class AlertasPrecioForm(forms.ModelForm):
+    """Interruptor de las alertas de baja de precio (RF-24)."""
+
+    active_alerts = forms.BooleanField(
+        label="Recibir alertas de baja de precio por correo", required=False
+    )
+
+    class Meta:
+        model = User
+        fields = ("active_alerts",)
+
+
 def correo_en_uso(email, user):
     """True si el correo ya pertenece a otra cuenta (sin importar mayúsculas)."""
     return User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists()

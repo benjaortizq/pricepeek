@@ -205,3 +205,6 @@ import sys
 if "test" in sys.argv:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
 
+
+# Dirección pública del sitio, para los enlaces de los correos (alertas de baja de precio).
+SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:8000")

@@ -16,6 +16,7 @@ from products.popularidad import mas_populares
 
 from .decorators import role_required
 from .forms import (
+    AlertasPrecioForm,
     CambioContrasenaForm,
     CodigoCambioContrasenaForm,
     ConfirmarCorreoForm,
@@ -164,7 +165,7 @@ def confirmar_cambio_contrasena(request):
     )
 
 
-def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=None):
+def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=None, form_alertas=None):
     correo_pendiente = request.session.get(CORREO_PENDIENTE)
     if correo_pendiente:
         form_confirmar = form_confirmar or ConfirmarCorreoForm(request.user, prefix="confirmar")
@@ -175,6 +176,7 @@ def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=N
             "form_nombre": form_nombre or EditarNombreForm(instance=request.user, prefix="nombre"),
             "form_correo": form_correo or NuevoCorreoForm(request.user, prefix="correo"),
             "form_confirmar": form_confirmar,
+            "form_alertas": form_alertas or AlertasPrecioForm(instance=request.user, prefix="alertas"),
             "correo_pendiente": correo_pendiente,
         },
     )
@@ -191,6 +193,13 @@ def editar_perfil(request):
                 messages.success(request, "Su nombre fue actualizado.")
                 return redirect("editar_perfil")
             return mostrar_perfil(request, form_nombre=form_nombre)
+        if accion == "alertas" and request.user.role == User.Role.CLIENT:
+            form_alertas = AlertasPrecioForm(request.POST, instance=request.user, prefix="alertas")
+            if form_alertas.is_valid():
+                form_alertas.save()
+                estado = "activadas" if request.user.active_alerts else "desactivadas"
+                messages.success(request, f"Las alertas de baja de precio quedaron {estado}.")
+            return redirect("editar_perfil")
         if accion == "cancelar_correo":
             request.session.pop(CORREO_PENDIENTE, None)
             return redirect("editar_perfil")

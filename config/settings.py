@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "core",
     "accounts",
     "products",
     "wishlist",
@@ -50,7 +49,6 @@ AUTH_USER_MODEL = "accounts.User"
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -124,10 +122,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
 LANGUAGE_CODE = 'es'  # RNF-22 / RNF-23
-LANGUAGES = [
-    ("es", "Español"),
-    ("en", "English"),
-]
 
 # Con USE_TZ la base guarda todo en UTC; esto solo cambia cómo se muestran las fechas.
 TIME_ZONE = 'America/Costa_Rica'

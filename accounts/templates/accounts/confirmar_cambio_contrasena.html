@@ -1,21 +1,19 @@
 {% extends "base_tarjeta.html" %}
-{% load site_i18n %}
 
-{% block title %}{% t 'Confirmar cambio de contraseña' %}{% endblock %}
+{% block title %}Confirmar cambio de contraseña{% endblock %}
 {% block icono_tarjeta %}{% include "componentes/icono_tarjeta.html" with icono="mark_email_unread" %}{% endblock %}
-{% block titulo_tarjeta %}{% t 'Confirmar cambio de contraseña' %}{% endblock %}
-{% block subtitulo_tarjeta %}{% t 'Enviamos un código de 6 dígitos a {correo}. El código es válido por {minutos} minutos.' correo=user.email minutos=minutos %}{% endblock %}
+{% block titulo_tarjeta %}Confirmar cambio de contraseña{% endblock %}
+{% block subtitulo_tarjeta %}Enviamos un código de 6 dígitos a {{ user.email }}. El código es válido por {{ minutos }} minutos.{% endblock %}
 
 {% block tarjeta %}
 <form class="space-y-4" method="post" novalidate>
   {% csrf_token %}
   {% include "componentes/campo.html" with field=form.codigo icono="pin" %}
   <div class="pt-2">
-    <button class="boton-primario" type="submit">{% t 'Confirmar' %}</button>
+    <button class="boton-primario" type="submit">Confirmar</button>
   </div>
 </form>
 
 {% url 'password_change' as url_cambio %}
-{% t 'Solicitar un nuevo código' as texto_nuevo_codigo %}
-{% include "componentes/volver.html" with url=url_cambio texto=texto_nuevo_codigo %}
+{% include "componentes/volver.html" with url=url_cambio texto="Solicitar un nuevo código" %}
 {% endblock %}

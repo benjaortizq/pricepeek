@@ -1,7 +1,6 @@
-{% load site_i18n %}
 {% for error in form.non_field_errors %}
   <div class="flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
     <span class="material-symbols-outlined text-[20px] text-error">error</span>
-    <p>{% t error %}</p>
+    <p>{{ error }}</p>
   </div>
 {% endfor %}

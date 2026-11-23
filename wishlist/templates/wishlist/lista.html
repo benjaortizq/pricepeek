@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% load precios site_i18n %}
+{% load precios %}
 
-{% block title %}{% t 'Mi lista de deseos' %}{% endblock %}
+{% block title %}Mi lista de deseos{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
   <div class="mb-space-lg">
-    <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">{% t 'Mi lista de deseos' %}</h1>
-    <p class="mt-1 text-body-md font-body-md text-secondary">{% t 'Productos que guardaste y sus mejores precios disponibles.' %}</p>
+    <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Mi lista de deseos</h1>
+    <p class="mt-1 text-body-md font-body-md text-secondary">Productos que guardaste y sus mejores precios disponibles.</p>
   </div>
 
   {% if items %}
@@ -24,24 +24,24 @@
           <div class="p-5 flex flex-col flex-grow">
             <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">{{ item.variant.product.brand.name }}</p>
             <a class="mt-1 text-body-lg font-body-lg font-bold text-on-surface hover:underline" href="{% url 'detalle_producto' item.variant.product_id %}">{{ item.variant.product.name }}</a>
-            <p class="mt-1 text-body-sm font-body-sm text-secondary">{% t 'Presentación: {producto}' producto=item.variant.name %}</p>
+            <p class="mt-1 text-body-sm font-body-sm text-secondary">Presentación: {{ item.variant.name }}</p>
 
             <div class="mt-5 pt-4 border-t border-outline-variant/40">
-              <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">{% t 'Precio actual más bajo' %}</p>
+              <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">Precio actual más bajo</p>
               {% if item.mejor_precio %}
                 <p class="mt-1 font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ item.mejor_precio.currency.symbol }}{{ item.mejor_precio.final|miles }}</p>
-                <p class="mt-1 text-body-sm font-body-sm text-secondary">{% t 'En' %} <strong class="text-on-surface">{{ item.mejor_precio.tienda }}</strong></p>
+                <p class="mt-1 text-body-sm font-body-sm text-secondary">En <strong class="text-on-surface">{{ item.mejor_precio.tienda }}</strong></p>
                 <a class="mt-3 inline-flex items-center gap-1 text-body-sm font-semibold text-on-surface hover:underline" href="{{ item.mejor_precio.product_web_url }}" rel="noopener noreferrer" target="_blank">
-                  {% t 'Ver en la tienda' %} <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                  Ver en la tienda <span class="material-symbols-outlined text-[16px]">open_in_new</span>
                 </a>
               {% else %}
-                <p class="mt-1 text-body-md font-body-md text-secondary">{% t 'No hay precios disponibles actualmente.' %}</p>
+                <p class="mt-1 text-body-md font-body-md text-secondary">No hay precios disponibles actualmente.</p>
               {% endif %}
             </div>
             <form method="post" action="{% url 'wishlist:eliminar' item.pk %}" class="mt-5 pt-4 border-t border-outline-variant/40">
               {% csrf_token %}
               <button class="inline-flex items-center gap-1.5 text-body-sm font-semibold text-error hover:underline" type="submit">
-                <span class="material-symbols-outlined text-[18px]">delete</span>{% t 'Eliminar de mi lista' %}
+                <span class="material-symbols-outlined text-[18px]">delete</span>Eliminar de mi lista
               </button>
             </form>
           </div>
@@ -51,9 +51,9 @@
   {% else %}
     <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-10 text-center">
       <span class="material-symbols-outlined text-[40px] text-secondary">favorite_border</span>
-      <p class="mt-2 text-body-lg font-body-lg text-on-surface font-semibold">{% t 'Tu lista de deseos está vacía.' %}</p>
-      <p class="mt-1 text-body-md font-body-md text-secondary">{% t 'Añade productos desde la búsqueda o desde sus páginas de detalle.' %}</p>
-      <a class="boton-secundario mt-5" href="{% url 'buscar_productos' %}">{% t 'Buscar productos' %}</a>
+      <p class="mt-2 text-body-lg font-body-lg text-on-surface font-semibold">Tu lista de deseos está vacía.</p>
+      <p class="mt-1 text-body-md font-body-md text-secondary">Añade productos desde la búsqueda o desde sus páginas de detalle.</p>
+      <a class="boton-secundario mt-5" href="{% url 'buscar_productos' %}">Buscar productos</a>
     </div>
   {% endif %}
 </div>

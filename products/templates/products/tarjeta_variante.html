@@ -1,4 +1,4 @@
-{% load precios site_i18n %}
+{% load precios %}
 {# Tarjeta de una variante distinta (GTIN) con su precio más bajo. #}
 <article class="bg-surface-container-lowest border border-outline-variant/60 hover:border-on-surface rounded-2xl overflow-hidden flex flex-col transition-colors" data-resultado-gtin="{{ variante.gtin }}">
   <a class="relative aspect-square bg-surface-container-lowest flex items-center justify-center p-5 border-b border-outline-variant/40" href="{% url 'detalle_producto' variante.product.pk %}#precio-{{ variante.gtin }}">
@@ -14,11 +14,11 @@
     <p class="text-xs text-secondary font-price-row tracking-wider">GTIN {{ variante.gtin }}</p>
     <div class="mt-auto pt-3">
       {% if variante.precio_minimo %}
-        <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">{% t 'Precio más bajo' %}</p>
+        <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">Precio más bajo</p>
         <p class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ variante.precio_minimo.currency.symbol }}{{ variante.precio_minimo.final_price|miles }}</p>
-        <p class="text-xs text-secondary">{% t 'En {tienda}' tienda=variante.precio_minimo.id_store.name %}</p>
+        <p class="text-xs text-secondary">En {{ variante.precio_minimo.id_store.name }}</p>
       {% else %}
-        <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">{% t 'Precio no disponible' %}</p>
+        <p class="text-label-badge font-label-badge uppercase tracking-wider text-secondary">Precio no disponible</p>
       {% endif %}
     </div>
   </div>

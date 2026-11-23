@@ -25,7 +25,6 @@ from . import vista_previa
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="panel"), name="inicio"),
     path("admin/", admin.site.urls),
-    path("i18n/", include("django.conf.urls.i18n")),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("products/", include("products.urls")),

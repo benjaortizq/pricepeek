@@ -1,19 +1,14 @@
-{% load site_i18n %}
-{% t "Inicio" as texto_inicio %}
-{% t "Perfil" as texto_perfil %}
-{% t "Lista de deseos" as texto_lista_deseos %}
-{% t "Reseñas reportadas" as texto_resenas_reportadas %}
 <header class="w-full bg-surface-container-lowest border-b border-outline-variant/30 sticky top-0 z-50">
   <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop h-16 flex justify-between items-center gap-4">
     <div class="flex items-center gap-space-lg min-w-0">
-      <a class="text-[18px] sm:text-headline-md font-headline-md font-extrabold text-on-surface tracking-tight flex items-center gap-1 shrink-0" href="{% url 'panel' %}">
+      <a class="text-headline-md font-headline-md font-extrabold text-on-surface tracking-tight flex items-center gap-1 shrink-0" href="{% url 'panel' %}">
         <span>PricePeek</span>
         <span class="w-2.5 h-2.5 rounded-full bg-primary-container inline-block"></span>
         <span class="text-body-sm font-body-sm text-secondary ml-1.5 font-medium tracking-normal hidden lg:inline">Costa Rica</span>
       </a>
-      <form class="hidden lg:flex items-center bg-surface-container-low rounded-full px-space-md py-1.5 border border-outline-variant/40 w-56 lg:w-72 focus-within:bg-surface-container-lowest focus-within:border-on-surface transition-all" action="{% url 'buscar_productos' %}" method="get" role="search">
+      <form class="hidden sm:flex items-center bg-surface-container-low rounded-full px-space-md py-1.5 border border-outline-variant/40 w-56 lg:w-72 focus-within:bg-surface-container-lowest focus-within:border-on-surface transition-all" action="{% url 'buscar_productos' %}" method="get" role="search">
         <span class="material-symbols-outlined text-secondary text-[20px] mr-2">search</span>
-        <input class="bg-transparent border-0 text-body-sm font-body-sm text-on-surface placeholder:text-secondary focus:ring-0 p-0 w-full outline-none" name="q" placeholder="{% t 'Buscar producto o marca...' %}" type="search" value="{{ request.GET.q|default:'' }}" aria-label="{% t 'Buscar producto o marca' %}">
+        <input class="bg-transparent border-0 text-body-sm font-body-sm text-on-surface placeholder:text-secondary focus:ring-0 p-0 w-full outline-none" name="q" placeholder="Buscar producto o marca..." type="search" value="{{ request.GET.q|default:'' }}" aria-label="Buscar producto o marca">
       </form>
     </div>
 
@@ -28,30 +23,30 @@
           {% url 'inicio_administrador' as url_inicio %}
         {% endif %}
         {% if actual == "inicio_cliente" or actual == "inicio_empresa" or actual == "inicio_administrador" %}
-          {% include "componentes/enlace_nav.html" with url=url_inicio texto=texto_inicio activo=True %}
+          {% include "componentes/enlace_nav.html" with url=url_inicio texto="Inicio" activo=True %}
         {% else %}
-          {% include "componentes/enlace_nav.html" with url=url_inicio texto=texto_inicio %}
+          {% include "componentes/enlace_nav.html" with url=url_inicio texto="Inicio" %}
         {% endif %}
         {% url 'editar_perfil' as url_perfil %}
         {% if actual == "editar_perfil" %}
-          {% include "componentes/enlace_nav.html" with url=url_perfil texto=texto_perfil activo=True %}
+          {% include "componentes/enlace_nav.html" with url=url_perfil texto="Perfil" activo=True %}
         {% else %}
-          {% include "componentes/enlace_nav.html" with url=url_perfil texto=texto_perfil %}
+          {% include "componentes/enlace_nav.html" with url=url_perfil texto="Perfil" %}
         {% endif %}
         {% if user.role == "client" %}
           {% url 'wishlist:lista' as url_lista_deseos %}
           {% if actual == "lista" %}
-            {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto=texto_lista_deseos activo=True %}
+            {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" activo=True %}
           {% else %}
-            {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto=texto_lista_deseos %}
+            {% include "componentes/enlace_nav.html" with url=url_lista_deseos texto="Lista de deseos" %}
           {% endif %}
         {% endif %}
         {% if user.role == "admin" %}
           {% url 'resenas_reportadas' as url_reportadas %}
           {% if actual == "resenas_reportadas" %}
-            {% include "componentes/enlace_nav.html" with url=url_reportadas texto=texto_resenas_reportadas activo=True %}
+            {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" activo=True %}
           {% else %}
-            {% include "componentes/enlace_nav.html" with url=url_reportadas texto=texto_resenas_reportadas %}
+            {% include "componentes/enlace_nav.html" with url=url_reportadas texto="Reseñas reportadas" %}
           {% endif %}
           {% url 'clientes' as url_clientes %}
           {% if actual == "clientes" or actual == "detalle_cliente" %}
@@ -63,36 +58,20 @@
       </nav>
       {% endwith %}
       <div class="flex items-center gap-space-sm">
-        {% include "componentes/selector_idioma.html" %}
         <a class="w-9 h-9 rounded-full bg-surface-container-low border border-outline-variant/50 flex items-center justify-center text-on-surface font-semibold text-body-sm uppercase hover:bg-surface-container transition-colors" href="{% url 'editar_perfil' %}" title="{{ user.first_name|default:user.email }}">
           {{ user.first_name|default:user.email|slice:":1" }}
         </a>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button class="p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors flex items-center" title="{% t 'Cerrar sesión' %}" aria-label="{% t 'Cerrar sesión' %}" type="submit">
-            <span class="material-symbols-outlined text-[20px]" aria-hidden="true">logout</span>
+          <button class="p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors flex items-center" title="Cerrar sesión" type="submit">
+            <span class="material-symbols-outlined text-[20px]">logout</span>
           </button>
         </form>
       </div>
     {% else %}
       <div class="flex items-center gap-2">
-        {% include "componentes/selector_idioma.html" %}
-        <a
-          class="w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-full text-on-surface font-semibold text-body-md hover:bg-surface-container-low transition-colors flex items-center justify-center"
-          href="{% url 'login' %}"
-          aria-label="{% t 'Iniciar sesión' %}"
-        >
-          <span class="material-symbols-outlined text-[20px] sm:hidden" aria-hidden="true">login</span>
-          <span class="hidden sm:inline">{% t 'Iniciar sesión' %}</span>
-        </a>
-        <a
-          class="w-9 h-9 sm:w-auto sm:h-auto sm:px-4 sm:py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-md transition-colors flex items-center justify-center"
-          href="{% url 'register' %}"
-          aria-label="{% t 'Crear cuenta' %}"
-        >
-          <span class="material-symbols-outlined text-[20px] sm:hidden" aria-hidden="true">person_add</span>
-          <span class="hidden sm:inline">{% t 'Crear cuenta' %}</span>
-        </a>
+        <a class="px-4 py-2 rounded-full text-on-surface font-semibold text-body-md hover:bg-surface-container-low transition-colors" href="{% url 'login' %}">Iniciar sesión</a>
+        <a class="px-4 py-2 rounded-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold text-body-md transition-colors" href="{% url 'register' %}">Crear cuenta</a>
       </div>
     {% endif %}
   </div>

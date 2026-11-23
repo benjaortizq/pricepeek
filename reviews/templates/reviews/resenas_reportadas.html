@@ -1,13 +1,12 @@
 {% extends "base.html" %}
-{% load site_i18n %}
 
-{% block title %}{% t 'Reseñas reportadas' %}{% endblock %}
+{% block title %}Reseñas reportadas{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-5xl mx-auto px-margin md:px-margin-desktop py-space-xl">
   <div class="mb-space-lg">
-    <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Reseñas reportadas' %}</h1>
-    <p class="mt-1 text-body-md font-body-md text-secondary">{% t 'Revise cada reseña denunciada y decida si se mantiene o se elimina.' %}</p>
+    <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">Reseñas reportadas</h1>
+    <p class="mt-1 text-body-md font-body-md text-secondary">Revise cada reseña denunciada y decida si se mantiene o se elimina.</p>
   </div>
 
   {% for grupo in grupos %}
@@ -17,7 +16,7 @@
         <div>
           <a class="font-semibold text-on-surface hover:underline" href="{% url 'detalle_producto' resena.variant.product_id %}">{{ resena.variant.product.name }}</a>
           <p class="text-body-sm font-body-sm text-secondary">
-            {% t 'Por' %}
+            Por
             {% if autor.first_name or autor.last_name %}{{ autor.first_name }} {{ autor.last_name }} ({{ autor.email }}){% else %}{{ autor.email }}{% endif %}
             · {{ resena.created_at|date:"d/m/Y" }}
           </p>
@@ -29,17 +28,17 @@
           {% endif %}
         </div>
         <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error-container/40 text-on-error-container text-body-sm font-semibold">
-          <span class="material-symbols-outlined text-[16px]">flag</span>{{ grupo.reportes|length }} {% if grupo.reportes|length == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
+          <span class="material-symbols-outlined text-[16px]">flag</span>{{ grupo.reportes|length }} reporte{{ grupo.reportes|length|pluralize }}
         </span>
       </div>
 
       <p class="mt-4 text-body-md font-body-md text-on-surface leading-relaxed">{{ resena.content }}</p>
-      <p class="mt-1 text-body-sm font-body-sm text-secondary">{% t 'Calificación: {calificacion} / 5' calificacion=resena.score %}</p>
+      <p class="mt-1 text-body-sm font-body-sm text-secondary">Calificación: {{ resena.score }} / 5</p>
       {% if grupo.foto %}
-        <img src="{{ grupo.foto.image.url }}" alt="{% t 'Foto de la reseña' %}" class="mt-4 rounded-xl border border-outline-variant/50 max-h-64 object-cover">
+        <img src="{{ grupo.foto.image.url }}" alt="Foto de la reseña" class="mt-4 rounded-xl border border-outline-variant/50 max-h-64 object-cover">
       {% endif %}
 
-      <h2 class="mt-5 text-body-md font-body-md font-bold text-on-surface">{% t 'Motivos de los reportes' %}</h2>
+      <h2 class="mt-5 text-body-md font-body-md font-bold text-on-surface">Motivos de los reportes</h2>
       <ul class="mt-2 space-y-2">
         {% for reporte in grupo.reportes %}
           <li class="rounded-xl bg-surface-container-low p-3 text-body-sm font-body-sm">
@@ -52,23 +51,23 @@
       <form class="mt-5 space-y-3" method="post" action="{% url 'moderar_resena' resena.pk %}">
         {% csrf_token %}
         <label class="block text-body-sm font-body-sm font-semibold text-on-surface" for="nota-{{ resena.pk }}">
-          {% t 'Motivo de la decisión' %} <span class="font-normal text-secondary">{% t '(obligatorio para eliminar)' %}</span>
+          Motivo de la decisión <span class="font-normal text-secondary">(obligatorio para eliminar)</span>
         </label>
         <textarea class="w-full rounded-xl bg-surface-container-low border border-outline-variant/50 px-4 py-3 text-body-md focus:border-on-surface focus:ring-0" id="nota-{{ resena.pk }}" name="note" rows="2" maxlength="500"></textarea>
 
         {% if not autor.is_active %}
-          <p class="text-body-sm font-body-sm text-secondary">{% t 'La cuenta del autor ya está suspendida.' %}</p>
+          <p class="text-body-sm font-body-sm text-secondary">La cuenta del autor ya está suspendida.</p>
         {% elif autor.role == "client" %}
           <label class="flex items-center gap-2 text-body-sm font-body-sm text-on-surface">
             <input type="checkbox" name="suspend">
-            {% t 'Suspender también la cuenta del autor (solo aplica al eliminar la reseña)' %}
+            Suspender también la cuenta del autor (solo aplica al eliminar la reseña)
           </label>
         {% endif %}
 
         <div class="flex flex-wrap gap-2">
-          <button class="boton-secundario" type="submit" name="action" value="keep">{% t 'Mantener reseña' %}</button>
-          <button class="px-5 py-2.5 rounded-full bg-error hover:brightness-95 text-on-error font-semibold text-body-md transition-colors inline-flex items-center gap-2" type="submit" name="action" value="delete" onclick="return confirm('{% t '¿Eliminar esta reseña? No se puede deshacer.' %}')">
-            <span class="material-symbols-outlined text-[18px]">delete</span>{% t 'Eliminar reseña' %}
+          <button class="boton-secundario" type="submit" name="action" value="keep">Mantener reseña</button>
+          <button class="px-5 py-2.5 rounded-full bg-error hover:bg-[#93000a] text-on-error font-semibold text-body-md transition-colors inline-flex items-center gap-2" type="submit" name="action" value="delete" onclick="return confirm('¿Eliminar esta reseña? No se puede deshacer.')">
+            <span class="material-symbols-outlined text-[18px]">delete</span>Eliminar reseña
           </button>
         </div>
       </form>
@@ -76,7 +75,7 @@
     {% endwith %}
   {% empty %}
     <div class="tarjeta p-8 text-center">
-      <p class="text-body-md font-body-md text-secondary">{% t 'No hay reseñas reportadas pendientes de revisión.' %}</p>
+      <p class="text-body-md font-body-md text-secondary">No hay reseñas reportadas pendientes de revisión.</p>
     </div>
   {% endfor %}
 </div>

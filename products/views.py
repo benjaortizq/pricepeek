@@ -33,7 +33,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 
-from core.translations import translate_text
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
@@ -305,9 +304,7 @@ def buscar(request):
             ).only("product_id").first()
             if variante:
                 return redirect("detalle_producto", pk=variante.product_id)
-            error_codigo = translate_text(
-                "No encontramos ningún producto registrado con ese código de barras."
-            )
+            error_codigo = "No encontramos ningún producto registrado con ese código de barras."
         else:
             error_codigo = codigo_barras.motivo
     categoria = _parametro_de_consulta(
@@ -521,7 +518,7 @@ def comparar_precios(request):
     nombre = _parametro_de_consulta(request, "nombre", "name", "q")
     if not nombre:
         return JsonResponse(
-            {"error": translate_text("Debe indicar el nombre del producto a comparar.")},
+            {"error": "Debe indicar el nombre del producto a comparar."},
             status=400,
         )
 

@@ -1,7 +1,5 @@
 from django.core.exceptions import ValidationError
 
-from core.translations import translate_text
-
 
 class LetraYNumeroValidator:
     """RNF-07: la contraseña debe incluir al menos una letra y un número."""
@@ -9,16 +7,14 @@ class LetraYNumeroValidator:
     def validate(self, password, user=None):
         if not any(c.isalpha() for c in password):
             raise ValidationError(
-                translate_text("La contraseña debe incluir al menos una letra."),
+                "La contraseña debe incluir al menos una letra.",
                 code="password_sin_letra",
             )
         if not any(c.isdigit() for c in password):
             raise ValidationError(
-                translate_text("La contraseña debe incluir al menos un número."),
+                "La contraseña debe incluir al menos un número.",
                 code="password_sin_numero",
             )
 
     def get_help_text(self):
-        return translate_text(
-            "Su contraseña debe incluir al menos una letra y un número."
-        )
+        return "Su contraseña debe incluir al menos una letra y un número."

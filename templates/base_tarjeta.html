@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load site_i18n %}
 {# Tarjeta centrada de las pantallas de cuenta (iniciar sesión, crear cuenta, recuperar contraseña...). #}
 
 {% block content %}
@@ -11,7 +10,7 @@
           <div class="inline-flex items-center text-headline-lg font-headline-lg font-extrabold text-on-surface tracking-tight mb-1.5">
             PricePeek<span class="w-2.5 h-2.5 bg-primary-container rounded-full ml-1"></span>
           </div>
-          <p class="text-secondary font-body-sm text-body-sm mb-6">{% t 'Comparador de precios imparcial de Costa Rica' %}</p>
+          <p class="text-secondary font-body-sm text-body-sm mb-6">Comparador de precios imparcial de Costa Rica</p>
         {% endblock %}
         <h1 class="text-headline-md font-headline-md font-bold text-on-surface tracking-tight mb-2">{% block titulo_tarjeta %}{% endblock %}</h1>
         <p class="text-secondary font-body-md text-body-md">{% block subtitulo_tarjeta %}{% endblock %}</p>
@@ -20,7 +19,7 @@
     </div>
     <div class="flex items-center justify-center gap-2 mt-6 text-center px-4">
       <span class="material-symbols-outlined text-secondary text-[16px]">verified_user</span>
-      <p class="text-body-sm font-body-sm text-secondary">{% t 'Tus datos están protegidos. PricePeek nunca compartirá tu información personal con comercios.' %}</p>
+      <p class="text-body-sm font-body-sm text-secondary">Tus datos están protegidos. PricePeek nunca compartirá tu información personal con comercios.</p>
     </div>
   </div>
 </div>

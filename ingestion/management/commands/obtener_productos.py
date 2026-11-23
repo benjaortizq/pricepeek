@@ -36,8 +36,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--categoria",
             nargs="+",
-            help="Walmart, Maxipali y Automercado: solo los productos de estas categorías, con la ruta que sale en "
-            "la URL de la tienda (por ejemplo: --categoria electronica articulos-para-el-hogar/colchones-y-blancos). "
+            help="Walmart, Maxipali, Automercado y Peri: solo los productos de estas categorías, con la ruta que sale "
+            "en la URL de la tienda (por ejemplo: --categoria electronica articulos-para-el-hogar/colchones-y-blancos; "
+            "en Peri, sin los códigos del final: panaderia/galletas). "
             "Es mucho más rápido que leer toda la lista: la búsqueda trae los productos completos.",
         )
         parser.add_argument("--limite", type=int, help="Revisar como máximo esta cantidad de páginas.")

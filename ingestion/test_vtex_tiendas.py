@@ -240,7 +240,7 @@ class ObtenerPorCategoriaTests(ProductosDeTiendaTestCase):
         self.assertEqual((iphone.suggested_gtin, iphone.category), (GTIN_IPHONE, "Electrónica > Celulares > APPLE"))
 
     def test_solo_para_las_tiendas_que_tienen_categorias(self):
-        with self.assertRaisesMessage(CommandError, "--categoria solo sirve para automercado, maxipali, walmart."):
+        with self.assertRaisesMessage(CommandError, "--categoria solo sirve para automercado, maxipali, peri, walmart."):
             call_command("obtener_productos", "--tienda", "gollo", "--categoria", "celulares", stdout=StringIO())
 
 

@@ -204,22 +204,3 @@ import sys
 if "test" in sys.argv:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
 
-# Configuación de almacenamiento en Supabase S3 (para las fotos de reviews)
-if os.environ.get("SUPABASE_S3_ENDPOINT"):
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-            "OPTIONS": {
-                "bucket_name": os.environ["SUPABASE_STORAGE_BUCKET"],
-                "endpoint_url": os.environ["SUPABASE_S3_ENDPOINT"],
-                "region_name": os.environ["SUPABASE_S3_REGION"],
-                "access_key": os.environ["SUPABASE_S3_ACCESS_KEY"],
-                "secret_key": os.environ["SUPABASE_S3_SECRET_KEY"],
-                "addressing_style": "path",
-                "file_overwrite": False,
-            },
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }

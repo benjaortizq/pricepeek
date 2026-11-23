@@ -1,15 +1,17 @@
 """Pruebas de la actualización de precios y del comando actualizar_precios."""
 
+import re
 from datetime import timedelta
 from decimal import Decimal
 from io import StringIO
 from unittest import mock
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import override_settings
 from django.utils import timezone
 
-from products.models import Prices, Stores
+from products.models import Prices, ProductView, Stores
 from products.tests import CatalogoTestCase, fechas
 
 from .actualizacion import ACTUALIZADO, FALLO, NO_SOPORTADA, SIN_CAMBIOS, elegir_oferta, expandir_upc_e, revisar
@@ -212,3 +214,103 @@ class ComandoActualizarPreciosTests(PrecioGuardadoTestCase):
         salida = self.correr({API_LECHE: ErrorDescarga("La tienda respondió con el código 503.")})
         self.assertIn("No se pudo descargar la página. La tienda respondió con el código 503.", salida)
         self.assertIn("1 con fallo · 1 incidencias", salida)
+
+
+COMANDO = "ingestion.management.commands.actualizar_precios"
+
+
+class RelojFalso:
+    """Reemplaza a time.monotonic: el tiempo solo pasa cuando se revisa un precio."""
+
+    def __init__(self):
+        self.ahora = 0.0
+
+    def __call__(self):
+        return self.ahora
+
+
+class PrioridadYTiempoTests(PrecioGuardadoTestCase):
+    """El orden en que se revisan los precios, el tiempo estimado y --minutos."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.variante_yogur = cls.variante(cls.producto("Yogur natural", cls.dos_pinos, cls.lacteos), "7441001234598")
+
+    def pendiente(self, variante, dias):
+        """Un precio revisado hace `dias` días, de una URL que no es de una tienda soportada (no hace peticiones)."""
+        fila = self.precio(variante, self.walmart, 1000)
+        Prices.objects.filter(pk=fila.pk).update(updated_at=timezone.now() - timedelta(days=dias))
+
+    def tres_pendientes(self):
+        self.pendiente(self.variante_leche, dias=2)
+        self.pendiente(self.variante_ketchup, dias=5)
+        self.pendiente(self.variante_yogur, dias=3)
+
+    def correr(self, *argumentos, segundos_por_precio=0):
+        reloj = RelojFalso()
+
+        def revisar_y_tardar(precio, http, guardar=True):
+            reloj.ahora += segundos_por_precio
+            return revisar(precio, http, guardar=guardar)
+
+        salida = StringIO()
+        with (
+            mock.patch(f"{COMANDO}.ClienteHttp", return_value=HttpFalso()),
+            mock.patch(f"{COMANDO}.reloj", reloj),
+            mock.patch(f"{COMANDO}.revisar", side_effect=revisar_y_tardar),
+        ):
+            call_command("actualizar_precios", *argumentos, stdout=salida)
+        return salida.getvalue()
+
+    def orden(self, salida):
+        return re.findall(r"\] Walmart · (.+?): tienda no soportada", salida)
+
+    def test_primero_los_mas_vistos_y_despues_los_que_llevan_mas_sin_revisarse(self):
+        self.tres_pendientes()
+        ProductView.objects.create(product_id=self.leche.pk, visitor="u1", hour=timezone.now())
+        salida = self.correr()
+        # La leche es la que se revisó hace menos, pero es la única que alguien vio esta semana.
+        self.assertEqual(self.orden(salida), ["Leche entera 1L", "Salsa de tomate", "Yogur natural"])
+        self.assertIn("Primero 1 precio de productos vistos en los últimos 7 días", salida)
+
+    def test_dice_cuantos_hay_de_cada_tienda_y_cuanto_se_tardaria(self):
+        self.tres_pendientes()
+        salida = self.correr()
+        self.assertIn("Se van a revisar 3 precios: Walmart 3", salida)
+        self.assertIn("Tiempo estimado: menos de 1 min (unos 2 s por precio).", salida)
+        self.assertNotIn("Primero", salida)  # nadie ha visto nada todavía
+        self.assertEqual(self.orden(salida), ["Salsa de tomate", "Yogur natural", "Leche entera 1L"])
+
+    def test_si_no_alcanza_el_tiempo_dice_cuantos_caben(self):
+        self.tres_pendientes()
+        salida = self.correr("--minutos", "1", "--pausa", "30")
+        self.assertIn(
+            "Tiempo estimado: ~2 min (unos 30 s por precio). Con --minutos 1 alcanza para unos 2; "
+            "los demás quedan para la próxima vez.",
+            salida,
+        )
+
+    def test_con_minutos_para_cuando_se_acaba_el_tiempo(self):
+        self.tres_pendientes()
+        salida = self.correr("--minutos", "1", segundos_por_precio=40)
+        # A los 40 s empieza el segundo; a los 80 s ya pasó el minuto y el tercero no se revisa.
+        self.assertEqual(self.orden(salida), ["Salsa de tomate", "Yogur natural"])
+        self.assertIn("2 revisados", salida)
+        self.assertIn("Tardó 1 min.", salida)
+        self.assertIn(
+            "Se acabó el tiempo (--minutos 1): queda 1 precio para la próxima vez, los menos vistos y revisados hace menos.",
+            salida,
+        )
+
+    @mock.patch(f"{COMANDO}.AVISAR_CADA", 1)
+    def test_avisa_cuanto_falta_segun_lo_que_ha_tardado(self):
+        self.tres_pendientes()
+        salida = self.correr(segundos_por_precio=120)
+        self.assertIn("  … 1/3 en 2 min; faltan ~4 min", salida)
+        self.assertIn("  … 2/3 en 4 min; faltan ~2 min", salida)
+        self.assertNotIn("3/3 en", salida)  # al terminar ya no hace falta
+
+    def test_minutos_tiene_que_ser_mayor_que_cero(self):
+        with self.assertRaisesMessage(CommandError, "--minutos tiene que ser mayor que 0."):
+            call_command("actualizar_precios", "--minutos", "0", stdout=StringIO())

@@ -53,7 +53,7 @@ class LanguageSelectorTests(SimpleTestCase):
         for asset in ("js/main.js", "js/tailwind.config.js", "css/base.css"):
             self.assertContains(
                 response,
-                f'{static(asset)}?v=20261122-theme',
+                f'{static(asset)}?v=20261123-theme',
             )
 
     def test_page_language_follows_language_cookie(self):

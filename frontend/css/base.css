@@ -70,7 +70,8 @@
   --color-surface: 20 19 19;
   --color-secondary-fixed-dim: 77 71 71;
   --color-on-tertiary-fixed: 0 33 9;
-  --color-primary: 245 184 46;
+  /* Dark-mode brand yellow: #DBA110 */
+  --color-primary: 219 161 16;
   --color-tertiary: 125 221 147;
   --color-on-secondary-fixed-variant: 200 198 197;
   --color-background: 20 19 19;
@@ -89,7 +90,7 @@
   --color-surface-container-high: 43 41 41;
   --color-on-primary-container: 63 46 0;
   --color-on-error: 69 10 10;
-  --color-surface-tint: 245 184 46;
+  --color-surface-tint: 219 161 16;
   --color-on-error-container: 255 218 214;
   --color-error: 255 180 171;
   --color-inverse-on-surface: 50 47 47;
@@ -101,7 +102,7 @@
   --color-tertiary-fixed: 127 252 151;
   --color-secondary-fixed: 229 226 225;
   --color-tertiary-container: 0 83 32;
-  --color-primary-container: 245 184 46;
+  --color-primary-container: 219 161 16;
   --color-surface-variant: 71 67 67;
   --color-surface-bright: 59 57 57;
 }

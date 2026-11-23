@@ -1,29 +1,30 @@
 {% extends "base.html" %}
+{% load site_i18n %}
 
-{% block title %}{% if palabra %}Buscar «{{ palabra }}»{% else %}Productos{% endif %}{% endblock %}
+{% block title %}{% if palabra %}{% t 'Buscar «{busqueda}»' busqueda=palabra %}{% else %}{% t 'Productos' %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
   <form class="max-w-4xl bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-3 focus-within:border-on-surface transition-colors" action="{% url 'buscar_productos' %}" method="get" role="search">
     <div class="flex items-center gap-2 pl-2">
       <span class="material-symbols-outlined text-secondary">search</span>
-      <input class="flex-grow bg-transparent border-0 text-body-lg font-body-lg text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="Buscar por nombre, marca o código UPC/EAN" type="search" value="{{ palabra }}" aria-label="Buscar producto, marca o código de barras">
-      <button class="px-5 py-2 rounded-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold text-body-md transition-colors" type="submit">Buscar</button>
+      <input class="flex-grow bg-transparent border-0 text-body-lg font-body-lg text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="{% t 'Buscar por nombre, marca o código UPC/EAN' %}" type="search" value="{{ palabra }}" aria-label="{% t 'Buscar producto, marca o código de barras' %}">
+      <button class="px-5 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-md transition-colors" type="submit">{% t 'Buscar' %}</button>
     </div>
     <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-outline-variant/40 pt-3">
       <label class="flex flex-col gap-1 text-body-sm font-semibold text-secondary">
-        Categoría
+        {% t 'Categoría' %}
         <select class="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="categoria">
-          <option value="">Todas las categorías</option>
+          <option value="">{% t 'Todas las categorías' %}</option>
           {% for categoria_opcion in categorias %}
             <option value="{{ categoria_opcion.id }}"{% if categoria_seleccionada == categoria_opcion.id|stringformat:"s" or categoria_seleccionada == categoria_opcion.name %} selected{% endif %}>{{ categoria_opcion.name }}</option>
           {% endfor %}
         </select>
       </label>
       <label class="flex flex-col gap-1 text-body-sm font-semibold text-secondary">
-        Marca
+        {% t 'Marca' %}
         <select class="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="marca">
-          <option value="">Todas las marcas</option>
+          <option value="">{% t 'Todas las marcas' %}</option>
           {% for marca_opcion in marcas %}
             <option value="{{ marca_opcion.id }}"{% if marca_seleccionada == marca_opcion.id|stringformat:"s" or marca_seleccionada == marca_opcion.name or marca_seleccionada == marca_opcion.slug %} selected{% endif %}>{{ marca_opcion.name }}</option>
           {% endfor %}
@@ -40,17 +41,17 @@
 
   <div class="mt-space-lg mb-space-md">
     <h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">
-      {% if corregida and variantes %}Mostrando resultados para «{{ corregida }}»{% elif palabra %}Resultados para «{{ palabra }}»{% else %}Todos los productos{% endif %}
+      {% if corregida and variantes %}{% t 'Mostrando resultados para «{corregida}»' corregida=corregida %}{% elif palabra %}{% t 'Resultados para «{busqueda}»' busqueda=palabra %}{% else %}{% t 'Todos los productos' %}{% endif %}
     </h1>
     {% if corregida and variantes %}
-      <p class="text-body-md font-body-md text-secondary mt-0.5">Usted escribió «{{ palabra }}».</p>
+      <p class="text-body-md font-body-md text-secondary mt-0.5">{% t 'Usted escribió «{busqueda}».' busqueda=palabra %}</p>
     {% endif %}
     <div class="flex flex-wrap items-center gap-3 mt-0.5">
       <p class="text-body-md font-body-md text-secondary">
-        {{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }} distinto{{ pagina.paginator.count|pluralize:"s" }} por GTIN
+        {{ pagina.paginator.count }} {% if pagina.paginator.count == 1 %}{% t 'producto distinto por GTIN' %}{% else %}{% t 'productos distintos por GTIN' %}{% endif %}
       </p>
       {% if categoria_seleccionada or marca_seleccionada %}
-        <a class="text-body-md font-semibold text-on-surface hover:underline" href="?q={{ palabra|urlencode }}">Limpiar filtros</a>
+        <a class="text-body-md font-semibold text-on-surface hover:underline" href="?q={{ palabra|urlencode }}">{% t 'Limpiar filtros' %}</a>
       {% endif %}
     </div>
   </div>
@@ -62,13 +63,13 @@
       {% endfor %}
     </div>
     {% if pagina.has_other_pages %}
-      <nav class="mt-space-lg flex items-center justify-center gap-3" aria-label="Páginas de resultados">
+      <nav class="mt-space-lg flex items-center justify-center gap-3" aria-label="{% t 'Páginas de resultados' %}">
         {% if pagina.has_previous %}
-          <a class="boton-secundario" href="?q={{ palabra|urlencode }}{% if categoria_seleccionada %}&categoria={{ categoria_seleccionada|urlencode }}{% endif %}{% if marca_seleccionada %}&marca={{ marca_seleccionada|urlencode }}{% endif %}&amp;pagina={{ pagina.previous_page_number }}"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Anterior</a>
+          <a class="boton-secundario" href="?q={{ palabra|urlencode }}{% if categoria_seleccionada %}&categoria={{ categoria_seleccionada|urlencode }}{% endif %}{% if marca_seleccionada %}&marca={{ marca_seleccionada|urlencode }}{% endif %}&amp;pagina={{ pagina.previous_page_number }}"><span class="material-symbols-outlined text-[18px]">arrow_back</span>{% t 'Anterior' %}</a>
         {% endif %}
-        <span class="text-body-md font-body-md text-secondary">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+        <span class="text-body-md font-body-md text-secondary">{% t 'Página {pagina} de {total}' pagina=pagina.number total=pagina.paginator.num_pages %}</span>
         {% if pagina.has_next %}
-          <a class="boton-secundario" href="?q={{ palabra|urlencode }}{% if categoria_seleccionada %}&categoria={{ categoria_seleccionada|urlencode }}{% endif %}{% if marca_seleccionada %}&marca={{ marca_seleccionada|urlencode }}{% endif %}&amp;pagina={{ pagina.next_page_number }}">Siguiente<span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
+          <a class="boton-secundario" href="?q={{ palabra|urlencode }}{% if categoria_seleccionada %}&categoria={{ categoria_seleccionada|urlencode }}{% endif %}{% if marca_seleccionada %}&marca={{ marca_seleccionada|urlencode }}{% endif %}&amp;pagina={{ pagina.next_page_number }}">{% t 'Siguiente' %}<span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
         {% endif %}
       </nav>
     {% endif %}
@@ -76,10 +77,10 @@
     <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-10 text-center">
       <span class="material-symbols-outlined text-[40px] text-secondary">search_off</span>
       <p class="mt-2 text-body-lg font-body-lg text-on-surface font-semibold">
-        {% if palabra %}No encontramos productos con «{{ palabra }}»{% if categoria_seleccionada or marca_seleccionada %} en la categoría o marca seleccionada{% endif %}.{% else %}No encontramos productos con los filtros seleccionados.{% endif %}
+        {% if palabra %}{% t 'No encontramos productos con «{busqueda}»' busqueda=palabra %}{% if categoria_seleccionada or marca_seleccionada %} {% t 'en la categoría o marca seleccionada' %}{% endif %}.{% else %}{% t 'No encontramos productos con los filtros seleccionados.' %}{% endif %}
       </p>
       <p class="text-body-md font-body-md text-secondary">
-        {% if categoria_seleccionada or marca_seleccionada %}Pruebe con otra palabra, categoría o marca.{% else %}Pruebe con otra palabra o con el nombre de la marca.{% endif %}
+        {% if categoria_seleccionada or marca_seleccionada %}{% t 'Pruebe con otra palabra, categoría o marca.' %}{% else %}{% t 'Pruebe con otra palabra o con el nombre de la marca.' %}{% endif %}
       </p>
     </div>
   {% endif %}

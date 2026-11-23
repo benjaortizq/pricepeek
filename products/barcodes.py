@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from core.translations import translate_text
+
 # Un código válido tiene 8 (EAN-8), 12 (UPC-A), 13 (EAN-13) o 14 (GTIN-14) dígitos.
 FORMATOS = {8: "EAN-8", 12: "UPC-A", 13: "EAN-13", 14: "GTIN-14"}
 
@@ -55,7 +57,10 @@ def validar_codigo_barras(codigo):
         return ResultadoCodigo(
             False,
             codigo,
-            motivo=f"El código de barras tiene {len(codigo)} dígitos; debe tener 8, 12, 13 o 14.",
+            motivo=translate_text(
+                "El código de barras tiene {digitos} dígitos; debe tener 8, 12, 13 o 14.",
+                digitos=len(codigo),
+            ),
         )
 
     esperado = calcular_digito_verificador(codigo[:-1])
@@ -63,9 +68,10 @@ def validar_codigo_barras(codigo):
         return ResultadoCodigo(
             False,
             codigo,
-            motivo=(
-                f"El dígito verificador no coincide (debería terminar en {esperado}). "
-                "Revise que el código esté completo y bien escrito."
+            motivo=translate_text(
+                "El dígito verificador no coincide (debería terminar en {esperado}). "
+                "Revise que el código esté completo y bien escrito.",
+                esperado=esperado,
             ),
         )
 

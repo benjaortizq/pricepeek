@@ -1,0 +1,26 @@
+{% load site_i18n %}
+{% idioma_actual as idioma %}
+<div class="flex items-center rounded-full border border-outline-variant/50 bg-surface-container-low p-0.5" role="group" aria-label="{% t 'Cambiar idioma' %}">
+  <form method="post" action="{% url 'set_language' %}">
+    {% csrf_token %}
+    <input type="hidden" name="language" value="es">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button
+      type="submit"
+      class="px-1.5 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-body-sm font-label-badge font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary {% if idioma == 'es' %}bg-primary-container text-on-primary-container{% else %}text-secondary hover:text-on-surface{% endif %}"
+      aria-label="{% t 'Cambiar idioma a español' %}"
+      {% if idioma == 'es' %}aria-current="true"{% endif %}
+    >ES</button>
+  </form>
+  <form method="post" action="{% url 'set_language' %}">
+    {% csrf_token %}
+    <input type="hidden" name="language" value="en">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button
+      type="submit"
+      class="px-1.5 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-body-sm font-label-badge font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary {% if idioma == 'en' %}bg-primary-container text-on-primary-container{% else %}text-secondary hover:text-on-surface{% endif %}"
+      aria-label="{% t 'Cambiar idioma a inglés' %}"
+      {% if idioma == 'en' %}aria-current="true"{% endif %}
+    >EN</button>
+  </form>
+</div>

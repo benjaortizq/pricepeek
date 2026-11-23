@@ -1,24 +1,25 @@
 {% extends "base.html" %}
+{% load site_i18n %}
 
-{% block title %}{{ titulo }}{% endblock %}
+{% block title %}{% t titulo %}{% endblock %}
 
 {% block content %}
 <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl">
   <section class="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-8 sm:p-12 text-center">
     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low border border-outline-variant/40 text-secondary text-label-badge font-label-badge uppercase tracking-wider">
       <span class="material-symbols-outlined text-[14px] text-tertiary">verified</span>
-      {{ titulo }}
+      {% t titulo %}
     </span>
     <h1 class="mt-4 text-display-mobile font-display-mobile md:text-display md:font-display text-on-surface tracking-tight">
-      Hola, {{ user.first_name|default:user.email }}
+      {% t 'Hola, {usuario}' usuario=user.first_name|default:user.email %}
     </h1>
     <p class="mt-3 text-body-lg font-body-lg text-secondary max-w-xl mx-auto">
-      Compare precios de forma imparcial en los comercios de Costa Rica.
+      {% t 'Compare precios de forma imparcial en los comercios de Costa Rica.' %}
     </p>
     <form class="mt-6 mx-auto flex items-center gap-2 bg-surface-container-low border border-outline-variant/60 rounded-full pl-4 pr-1.5 py-1.5 max-w-2xl focus-within:bg-surface-container-lowest focus-within:border-on-surface transition-colors" action="{% url 'buscar_productos' %}" method="get" role="search">
       <span class="material-symbols-outlined text-secondary">search</span>
-      <input class="flex-grow bg-transparent border-0 text-body-lg font-body-lg text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="Buscar por nombre o marca" type="search" aria-label="Buscar producto o marca">
-      <button class="px-5 py-2 rounded-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold text-body-md transition-colors" type="submit">Buscar</button>
+      <input class="flex-grow bg-transparent border-0 text-body-lg font-body-lg text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="{% t 'Buscar por nombre o marca' %}" type="search" aria-label="{% t 'Buscar producto o marca' %}">
+      <button class="px-5 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-md transition-colors" type="submit">{% t 'Buscar' %}</button>
     </form>
     {% if user.role == "admin" %}
       <div class="mt-6 flex flex-wrap justify-center gap-2">
@@ -31,10 +32,10 @@
   <section class="mt-space-xl">
     <div class="flex items-end justify-between gap-4 mb-space-md">
       <div>
-        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% if hay_populares %}Populares esta semana{% else %}Productos{% endif %}</h2>
+        <h2 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% if hay_populares %}{% t 'Populares esta semana' %}{% else %}{% t 'Productos' %}{% endif %}</h2>
       </div>
       <a class="hidden sm:inline-flex items-center gap-1 text-body-md font-semibold text-on-surface hover:underline" href="{% url 'buscar_productos' %}">
-        Ver todos <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        {% t 'Ver todos' %} <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
       </a>
     </div>
     {% if productos %}
@@ -44,7 +45,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="text-body-md font-body-md text-secondary">Todavía no hay productos en el catálogo.</p>
+      <p class="text-body-md font-body-md text-secondary">{% t 'Todavía no hay productos en el catálogo.' %}</p>
     {% endif %}
   </section>
 </div>

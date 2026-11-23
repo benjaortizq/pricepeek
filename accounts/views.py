@@ -145,7 +145,11 @@ def confirmar_cambio_contrasena(request):
                     )
                     return redirect("password_change")
                 request.session[CAMBIO_PENDIENTE] = pendiente
-                form.add_error("codigo", "El código ingresado no es correcto.")
+                restantes = settings.PASSWORD_CHANGE_CODE_MAX_ATTEMPTS - pendiente["intentos"]
+                form.add_error(
+                    "codigo",
+                    f"El código no coincide. Revise el mensaje de correo e inténtelo de nuevo; le quedan {restantes} intento{'s' if restantes != 1 else ''}.",
+                )
             else:
                 usuario = request.user
                 usuario.password = pendiente["password"]

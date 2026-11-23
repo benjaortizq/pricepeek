@@ -98,12 +98,12 @@ def reportar_resena(request, review_id):
     destino = redirect("detalle_producto", pk=resena.variant.product_id)
 
     if resena.user_id == request.user.pk:
-        messages.error(request, "No puede reportar su propia reseña.")
+        messages.error(request, "No se envió el reporte porque corresponde a su propia reseña. Solo puede reportar reseñas de otras personas.")
         return destino
 
     form = ReviewReportForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "Indique el motivo del reporte (máximo 500 caracteres).")
+        messages.error(request, "No se envió el reporte porque el motivo está vacío o supera los 500 caracteres. Escriba un motivo de hasta 500 caracteres e inténtelo de nuevo.")
         return destino
 
     _, creado = ReviewReport.objects.get_or_create(
@@ -114,7 +114,7 @@ def reportar_resena(request, review_id):
     if creado:
         messages.success(request, "Gracias. Su reporte fue enviado y el equipo de PricePeek lo revisará.")
     else:
-        messages.error(request, "Usted ya reportó esta reseña.")
+        messages.info(request, "Esta reseña ya fue reportada por usted; no necesita enviarla de nuevo.")
     return destino
 
 
@@ -153,7 +153,7 @@ def moderar_resena(request, review_id):
         review_id=review_id, status=ReviewReport.Status.PENDING
     )
     if not pendientes.exists():
-        messages.error(request, "Esa reseña ya no tiene reportes pendientes.")
+        messages.info(request, "Esta reseña ya no tiene reportes pendientes. Actualice la lista para ver las reseñas que todavía requieren revisión.")
         return redirect("resenas_reportadas")
 
     form = ModerationForm(request.POST)
@@ -196,7 +196,7 @@ def moderar_resena(request, review_id):
         try:
             almacenamiento.delete(nombre)
         except Exception:
-            messages.warning(request, "La reseña se eliminó, pero no se pudo borrar su foto del almacenamiento.")
+            messages.warning(request, "La reseña se eliminó, pero no se pudo borrar su foto del almacenamiento. Avise al equipo de soporte para que elimine el archivo pendiente.")
 
     if eliminar:
         mensaje = "Reseña eliminada."

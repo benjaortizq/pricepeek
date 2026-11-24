@@ -52,6 +52,13 @@ class SuspenderClienteForm(forms.Form):
 class RegistroClienteForm(UserCreationForm):
     first_name = forms.CharField(label=translate_text_lazy("Nombre"), max_length=150)
     email = forms.EmailField(label=translate_text_lazy("Correo electrónico"))
+    accept_privacy = forms.BooleanField(
+        required=True,
+        label="",
+        error_messages={
+            "required": "Debe autorizar el tratamiento de sus datos para crear una cuenta."
+        },
+    )
 
     class Meta:
         model = User
@@ -69,6 +76,16 @@ class RegistroClienteForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class ConsentimientoPrivacidadForm(forms.Form):
+    accept_privacy = forms.BooleanField(
+        required=True,
+        label="",
+        error_messages={
+            "required": "Debe autorizar el tratamiento de sus datos para continuar."
+        },
+    )
 
 
 class RestablecerContrasenaForm(SetPasswordForm):

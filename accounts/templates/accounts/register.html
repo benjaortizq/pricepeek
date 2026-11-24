@@ -14,6 +14,18 @@
   {% include "componentes/campo.html" with field=form.password1 icono="lock" %}
   {% include "componentes/campo.html" with field=form.password2 icono="lock" %}
 
+  <div class="flex items-start gap-3 pt-1">
+    {{ form.accept_privacy }}
+    <label class="text-body-sm font-body-sm text-secondary" for="{{ form.accept_privacy.id_for_label }}">
+      {% t 'He leído la' %}
+      <a class="font-semibold text-on-surface underline underline-offset-2" href="{% url 'privacidad' %}" target="_blank" rel="noopener">{% t 'Política de privacidad' %}</a>
+      {% t 'y autorizo de forma expresa el tratamiento de mis datos personales para administrar mi cuenta y las funciones que decida usar, como la lista de deseos, las alertas y las reseñas, así como registrar los productos que consulto para calcular su popularidad, de acuerdo con esta política.' %}
+    </label>
+  </div>
+  {% for error in form.accept_privacy.errors %}
+    <p class="text-body-sm text-error" role="alert">{% t error %}</p>
+  {% endfor %}
+
   <div class="pt-2">
     <button class="boton-primario" type="submit">
       <span>{% t 'Crear cuenta' %}</span>

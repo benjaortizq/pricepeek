@@ -1,0 +1,32 @@
+{% extends "base_tarjeta.html" %}
+{% load site_i18n %}
+
+{% block title %}{% t 'Consentimiento de privacidad' %}{% endblock %}
+{% block icono_tarjeta %}{% include "componentes/icono_tarjeta.html" with icono="verified_user" %}{% endblock %}
+{% block titulo_tarjeta %}{% t 'Revise la política de privacidad' %}{% endblock %}
+{% block subtitulo_tarjeta %}{% t 'Actualizamos el aviso de privacidad. Para continuar usando su cuenta, revise la política y otorgue su consentimiento expreso.' %}{% endblock %}
+
+{% block tarjeta %}
+<form class="space-y-4" method="post">
+  {% csrf_token %}
+  {% include "componentes/errores_form.html" %}
+  <div class="flex items-start gap-3">
+    {{ form.accept_privacy }}
+    <label class="text-body-sm font-body-sm text-secondary" for="{{ form.accept_privacy.id_for_label }}">
+      {% t 'He leído la' %}
+      <a class="font-semibold text-on-surface underline underline-offset-2" href="{% url 'privacidad' %}" target="_blank" rel="noopener">{% t 'Política de privacidad' %}</a>
+      {% t 'y autorizo de forma expresa el tratamiento de mis datos personales para administrar mi cuenta y las funciones que decida usar, como la lista de deseos, las alertas y las reseñas, así como registrar los productos que consulto para calcular su popularidad, de acuerdo con esta política.' %}
+    </label>
+  </div>
+  {% for error in form.accept_privacy.errors %}
+    <p class="text-body-sm text-error" role="alert">{% t error %}</p>
+  {% endfor %}
+  <button class="boton-primario" type="submit">{% t 'Aceptar y continuar' %}</button>
+</form>
+<div class="mt-5 text-center">
+  <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button class="text-body-sm font-semibold text-secondary underline underline-offset-2" type="submit">{% t 'Cerrar sesión' %}</button>
+  </form>
+</div>
+{% endblock %}

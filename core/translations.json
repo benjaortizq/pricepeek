@@ -214,6 +214,8 @@
     "Ir a tienda": "Go to store",
     "Precio final con descuento reportado por la tienda": "Final price with the store-reported discount",
     "Actualizado {fecha}": "Updated {fecha}",
+    "El precio lleva más de 48 horas sin actualizarse.": "This price has not been updated in over 48 hours.",
+    "Precio sin actualizar por más de 48 horas": "Price not updated in over 48 hours",
     "Otras opciones para este GTIN": "Other options for this GTIN",
     "El porcentaje se calcula sobre el mejor precio de este GTIN.": "The percentage is calculated from the lowest price for this GTIN.",
     "No hay un precio disponible con el cual comparar estas ofertas.": "No available price to compare these offers against.",

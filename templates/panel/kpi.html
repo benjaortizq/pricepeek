@@ -1,0 +1,24 @@
+{% load site_i18n %}
+{% comment %}
+  Tarjeta de indicador (frontend/html/admin-panel-moderacion.html, «4 KPI BENTO STATS»).
+  kpi: el diccionario de core.panel.indicador, con los textos en español.
+{% endcomment %}
+<div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant {% if kpi.destacada %}relative overflow-hidden{% endif %} flex flex-col justify-between">
+  <div class="flex items-start justify-between gap-2">
+    <span class="font-body-sm text-body-sm text-secondary font-medium">{% t kpi.etiqueta %}</span>
+    {% if kpi.insignia %}
+      <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2 py-0.5 rounded-full shrink-0 {% if kpi.tono == 'alerta' %}bg-error-container text-on-error-container{% elif kpi.tono == 'bien' %}bg-tertiary-container/30 text-tertiary{% elif kpi.tono == 'marca' %}bg-primary-fixed text-on-primary-fixed{% else %}bg-surface-container-high text-on-surface-variant{% endif %}">
+        {% if kpi.icono %}<span class="material-symbols-outlined text-xs" aria-hidden="true">{{ kpi.icono }}</span>{% endif %}
+        {% t kpi.insignia %}
+      </span>
+    {% endif %}
+  </div>
+  <div class="my-3">
+    <div class="font-price-hero text-price-hero font-bold text-on-surface">{{ kpi.valor }}{% if kpi.unidad %} <span class="text-sm font-normal text-secondary font-body-md">{% t kpi.unidad %}</span>{% endif %}</div>
+  </div>
+  <div class="flex items-center justify-between gap-2 text-body-sm font-body-sm pt-2 border-t border-outline-variant/40 text-secondary">
+    <span class="truncate">{% if kpi.pie_izq %}{% t kpi.pie_izq %}{% endif %}</span>
+    {% if kpi.pie_der %}<span class="font-medium text-on-surface shrink-0">{% t kpi.pie_der %}</span>{% endif %}
+  </div>
+  {% if kpi.destacada %}<div class="absolute bottom-0 left-0 right-0 h-1 bg-primary-container"></div>{% endif %}
+</div>

@@ -1,0 +1,29 @@
+{% load site_i18n %}
+{% comment %}
+  Pie de la tabla (frontend/html/admin-panel-moderacion.html, «Pagination & Status Subfooter»).
+  pagina: la página del Paginator; total_texto: «24 reportes», en español y con la cantidad.
+{% endcomment %}
+<div class="p-4 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm text-secondary bg-surface-container-low/20">
+  <div>
+    {% t 'Mostrando' %} <span class="font-semibold text-on-surface">{{ pagina.start_index }} - {{ pagina.end_index }}</span> {% t 'de' %} <span class="font-semibold text-on-surface">{% t total_texto %}</span>
+  </div>
+  {% if pagina.has_other_pages %}
+    <nav class="flex items-center gap-2" aria-label="{% t 'Páginas' %}">
+      {% if pagina.has_previous %}
+        <a class="p-1.5 rounded-lg border border-outline-variant text-secondary hover:text-on-surface hover:bg-surface-container transition-colors flex" href="{% querystring pagina=pagina.previous_page_number %}" aria-label="{% t 'Anterior' %}">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">chevron_left</span>
+        </a>
+      {% else %}
+        <span class="p-1.5 rounded-lg border border-outline-variant text-secondary opacity-40 flex" aria-hidden="true"><span class="material-symbols-outlined text-base">chevron_left</span></span>
+      {% endif %}
+      <span class="px-3 py-1 bg-surface-container-lowest rounded-lg border border-outline-variant text-on-surface font-semibold text-xs">{% t 'Página {pagina} de {total}' pagina=pagina.number total=pagina.paginator.num_pages %}</span>
+      {% if pagina.has_next %}
+        <a class="p-1.5 rounded-lg border border-outline-variant text-secondary hover:text-on-surface hover:bg-surface-container transition-colors flex" href="{% querystring pagina=pagina.next_page_number %}" aria-label="{% t 'Siguiente' %}">
+          <span class="material-symbols-outlined text-base" aria-hidden="true">chevron_right</span>
+        </a>
+      {% else %}
+        <span class="p-1.5 rounded-lg border border-outline-variant text-secondary opacity-40 flex" aria-hidden="true"><span class="material-symbols-outlined text-base">chevron_right</span></span>
+      {% endif %}
+    </nav>
+  {% endif %}
+</div>

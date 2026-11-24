@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
@@ -11,8 +12,10 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import role_required
 from accounts.models import User
+from core.panel import duracion_aproximada, indicador, inicio_de_hoy, inicio_del_mes, pestanas, plural
 
-from .models import Incident
+from . import ejecucion_manual
+from .models import Incident, ManualRun
 from .resolucion import EXTRACCION_FALLIDA, NoSePuedeResolver, Resolucion, acciones_para, codigos_de_la_tienda
 
 INCIDENCIAS_POR_PAGINA = 25
@@ -73,10 +76,20 @@ def incidencias(request):
     if registro == FALLIDAS:
         del_registro = del_registro.filter(status__in=ESTADOS[estado])
 
+    pendiente = Q(kind__in=REGISTROS[FALLIDAS], status=Incident.Status.PENDING)
     totales = Incident.objects.aggregate(
-        fallidas=Count("pk", filter=Q(kind__in=REGISTROS[FALLIDAS], status=Incident.Status.PENDING)),
+        fallidas=Count("pk", filter=pendiente),
         excluidos=Count("pk", filter=Q(kind__in=REGISTROS[EXCLUIDOS])),
+        fallidas_hoy=Count("pk", filter=pendiente & Q(created_at__gte=inicio_de_hoy())),
+        excluidos_mes=Count("pk", filter=Q(kind__in=REGISTROS[EXCLUIDOS], created_at__gte=inicio_del_mes())),
+        sospechosos=Count("pk", filter=pendiente & Q(kind=Incident.Kind.SUSPICIOUS_PRICE)),
+        codigos_distintos=Count("pk", filter=pendiente & Q(kind=Incident.Kind.BARCODE_MISMATCH)),
+        resueltas_mes=Count(
+            "pk",
+            filter=Q(kind__in=REGISTROS[FALLIDAS], status=Incident.Status.RESOLVED, resolved_at__gte=inicio_del_mes()),
+        ),
     )
+    comercios_afectados = len(comercios_del_registro(Incident.objects.filter(pendiente)))
     por_tipo = dict(del_registro.order_by().values_list("kind").annotate(total=Count("pk")))
     comercios = comercios_del_registro(del_registro)
 
@@ -128,8 +141,56 @@ def incidencias(request):
             "periodo": periodo,
             "periodos": [(clave, nombre) for clave, (nombre, _) in PERIODOS.items()],
             "hay_filtros": bool(busqueda or comercio or tipo or periodo or estado),
+            "kpis": tarjetas_de_incidencias(totales, comercios_afectados),
+            "pestanas": pestanas(
+                reverse("incidencias"),
+                "registro",
+                [
+                    (FALLIDAS, "Extracciones fallidas", totales["fallidas"]),
+                    (EXCLUIDOS, "Productos excluidos", totales["excluidos"]),
+                ],
+                registro,
+            ),
+            "total_texto": plural(pagina.paginator.count, "incidencia", "incidencias"),
         },
     )
+
+
+def tarjetas_de_incidencias(totales, comercios_afectados):
+    """Las tarjetas de arriba de la tabla (frontend/html/admin-panel-moderacion.html)."""
+    return [
+        indicador(
+            "Extracciones fallidas",
+            totales["fallidas"],
+            unidad="pendientes",
+            insignia=f"+{totales['fallidas_hoy']} hoy",
+            tono="alerta" if totales["fallidas_hoy"] else "",
+            icono="arrow_upward" if totales["fallidas_hoy"] else "",
+            pie_izq=plural(comercios_afectados, "comercio afectado", "comercios afectados"),
+            destacada=True,
+        ),
+        indicador(
+            "Precios por confirmar",
+            totales["sospechosos"] + totales["codigos_distintos"],
+            pie_izq=plural(totales["sospechosos"], "cambio sospechoso", "cambios sospechosos"),
+            pie_der=plural(totales["codigos_distintos"], "código distinto", "códigos distintos"),
+        ),
+        indicador(
+            "Productos excluidos",
+            totales["excluidos"],
+            insignia="Automático",
+            pie_izq="Sin código de barras válido",
+            pie_der=f"+{totales['excluidos_mes']} este mes",
+        ),
+        indicador(
+            "Resueltas este mes",
+            totales["resueltas_mes"],
+            insignia="Desde el panel",
+            tono="bien",
+            icono="check_circle",
+            pie_izq="Extracciones fallidas",
+        ),
+    ]
 
 
 def _volver(request):
@@ -162,3 +223,104 @@ def resolver_incidencia(request, pk):
                 request, f"También se resolvieron {resultado.repetidas} incidencias repetidas del mismo precio."
             )
     return redirect(_volver(request))
+
+
+# --- Ejecución manual de la obtención de datos ---
+
+
+@role_required(User.Role.ADMIN)
+def obtencion_de_datos(request):
+    """Los comercios que usan web scraping, para actualizarlos sin esperar a la corrida de cada hora."""
+    ejecucion_manual.marcar_interrumpidas()
+    github_al_dia = ejecucion_manual.sincronizar_con_github()
+    comercios = ejecucion_manual.comercios_con_scraping()
+    ejecuciones = list(ejecucion_manual.ultimas_ejecuciones())
+    activas = {}
+    for ejecucion in ManualRun.objects.filter(status__in=ManualRun.ACTIVE).order_by("created_at"):
+        activas[ejecucion.store_name] = ejecucion
+    for comercio in comercios:
+        comercio["en_curso"] = activas.get(comercio["nombre"])
+
+    precios = sum(comercio["precios"] for comercio in comercios)
+    desactualizados = sum(comercio["desactualizados"] for comercio in comercios)
+    revisiones = [comercio["ultima_revision"] for comercio in comercios if comercio["ultima_revision"]]
+    hace = duracion_aproximada(timezone.now() - max(revisiones)) if revisiones else ("—", "")
+    hoy = ManualRun.objects.filter(created_at__gte=inicio_de_hoy()).count()
+    opciones = ejecucion_manual.opciones_disponibles()
+    return render(
+        request,
+        "ingestion/obtencion.html",
+        {
+            "comercios": comercios,
+            "ejecuciones": ejecuciones,
+            "hay_en_curso": bool(activas),
+            "github_al_dia": github_al_dia,
+            "en_el_servidor": opciones[ManualRun.Runner.SERVER],
+            "en_github": opciones[ManualRun.Runner.GITHUB],
+            "url_del_workflow": (
+                f"https://github.com/{settings.GITHUB_REPOSITORIO}/actions/workflows/{settings.GITHUB_WORKFLOW_PRECIOS}"
+                if settings.GITHUB_REPOSITORIO
+                else ""
+            ),
+            "minutos": ejecucion_manual.MINUTOS,
+            "minutos_por_defecto": ejecucion_manual.MINUTOS_POR_DEFECTO,
+            "kpis": [
+                indicador(
+                    "Comercios con web scraping",
+                    len(comercios),
+                    pie_izq=plural(precios, "precio que se revisa", "precios que se revisan"),
+                    destacada=True,
+                ),
+                indicador(
+                    "Desde la última revisión",
+                    hace[0],
+                    unidad=hace[1],
+                    insignia="Cada hora",
+                    tono="bien",
+                    icono="schedule",
+                    pie_izq="Actualización programada en GitHub Actions",
+                ),
+                indicador(
+                    "Precios desactualizados",
+                    desactualizados,
+                    insignia=f"Más de {ejecucion_manual.HORAS_DESACTUALIZADO} h",
+                    tono="alerta" if desactualizados else "",
+                    pie_izq="Sin revisar en su tienda",
+                ),
+                indicador(
+                    "Ejecuciones manuales hoy",
+                    hoy,
+                    insignia=f"{len(activas)} en curso" if activas else "",
+                    tono="marca",
+                    pie_izq="Pedidas desde este panel",
+                ),
+            ],
+        },
+    )
+
+
+@role_required(User.Role.ADMIN)
+@require_POST
+def ejecutar_obtencion(request):
+    """El botón «Ejecutar ahora» de un comercio: en el servidor o en GitHub Actions."""
+    try:
+        ejecucion = ejecucion_manual.solicitar(
+            request.POST.get("comercio"),
+            request.POST.get("donde"),
+            request.user,
+            minutos=request.POST.get("minutos"),
+            todos=request.POST.get("todos") == "on",
+            prueba=request.POST.get("prueba") == "on",
+        )
+    except ejecucion_manual.NoSePuedeEjecutar as error:
+        messages.error(request, str(error))
+    else:
+        if ejecucion.runner == ManualRun.Runner.SERVER:
+            messages.success(request, f"Empezó la obtención de datos de {ejecucion.store_name} en el servidor.")
+        else:
+            messages.success(
+                request,
+                f"Se pidió a GitHub Actions la obtención de datos de {ejecucion.store_name}; "
+                "puede tardar un par de minutos en empezar.",
+            )
+    return redirect("obtencion_de_datos")

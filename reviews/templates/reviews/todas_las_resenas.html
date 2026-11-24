@@ -1,0 +1,223 @@
+{% extends "panel/base.html" %}
+{% load site_i18n panel %}
+{% comment %}
+  Todas las reseñas (issue «Eliminación de reseñas»). Diseño: frontend/html/admin-resenas-reportadas.html
+  (tabla) y admin-modal-eliminar-resena.html (ventana para eliminar, en reviews/ventana_eliminar.html).
+{% endcomment %}
+
+{% block title %}{% t 'Todas las reseñas' %}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span>{% t 'Moderación' %}</span>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Todas las reseñas' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Todas las reseñas' %}{% endblock %}
+{% block descripcion %}{% t 'Revise las reseñas publicadas y elimine las que incumplen las políticas de uso. Cada eliminación queda registrada con la política incumplida y su razón.' %}{% endblock %}
+
+{% block acciones %}
+  <a class="bg-surface-container-lowest text-on-surface border border-outline-variant rounded-full px-4 py-2 font-body-md text-body-md font-semibold hover:bg-surface-container transition-colors flex items-center gap-2" href="{% url 'terminos' %}" target="_blank" rel="noopener noreferrer">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">policy</span><span>{% t 'Políticas de uso' %}</span>
+  </a>
+  <a class="p-1.5 rounded-full hover:bg-surface-container text-secondary hover:text-on-surface transition-colors flex" href="{{ request.get_full_path }}" title="{% t 'Actualizar la lista' %}" aria-label="{% t 'Actualizar la lista' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">refresh</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% for kpi in kpis %}{% include "panel/kpi.html" %}{% endfor %}
+</div>
+
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col gap-4 bg-surface-container-low/40">
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      {% for pestana in pestanas %}{% include "panel/pestana.html" %}{% endfor %}
+    </div>
+    <form class="flex flex-col sm:flex-row sm:items-center gap-2" method="get" role="search">
+      {% if vista %}<input type="hidden" name="vista" value="{{ vista }}">{% endif %}
+      <div class="flex items-center flex-grow min-w-0 bg-surface-container-lowest rounded-full border border-outline-variant px-3.5 py-1.5 focus-within:ring-2 focus-within:ring-on-surface transition-all">
+        <span class="material-symbols-outlined text-secondary mr-2 text-lg" aria-hidden="true">search</span>
+        <input class="bg-transparent border-none text-on-surface placeholder:text-secondary text-body-sm font-body-sm focus:outline-none w-full p-0 focus:ring-0" name="q" type="search" value="{{ busqueda }}" placeholder="{% t 'Texto, producto o autor' %}" aria-label="{% t 'Buscar reseñas por texto, producto o autor' %}">
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <select class="rounded-full border border-outline-variant bg-surface-container-lowest pl-3.5 pr-8 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-on-surface focus:ring-0" name="calificacion" aria-label="{% t 'Calificación' %}">
+          <option value="">{% t 'Cualquier calificación' %}</option>
+          {% for valor in "54321" %}
+            <option value="{{ valor }}"{% if valor == calificacion %} selected{% endif %}>{{ valor|estrellas }} ({{ valor }})</option>
+          {% endfor %}
+        </select>
+        <button class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors flex items-center gap-1" type="submit">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">tune</span>{% t 'Filtrar' %}
+        </button>
+        {% if hay_filtros %}
+          <a class="text-body-sm font-semibold text-on-surface hover:underline whitespace-nowrap" href="{% url 'todas_las_resenas' %}{% if vista %}?vista={{ vista }}{% endif %}">{% t 'Limpiar filtros' %}</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if pagina.object_list %}
+    <div class="overflow-x-auto">
+      {% if vista == 'eliminadas' %}
+        <!-- REGISTRO DE ELIMINACIONES -->
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+              <th class="py-3 px-4">{% t 'ID y fecha' %}</th>
+              <th class="py-3 px-4">{% t 'Producto' %}</th>
+              <th class="py-3 px-4 min-w-[16rem]">{% t 'Texto de reseña y usuario' %}</th>
+              <th class="py-3 px-4">{% t 'Política incumplida' %}</th>
+              <th class="py-3 px-4 min-w-[14rem]">{% t 'Motivo de la eliminación' %}</th>
+              <th class="py-3 px-4">{% t 'Eliminada por' %}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+            {% for eliminada in pagina.object_list %}
+              <tr class="hover:bg-surface-container-low/50 transition-colors align-top">
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-{{ eliminada.review_id }}</span>
+                  <div class="text-body-sm font-body-sm text-secondary mt-0.5">{{ eliminada.deleted_at|date:"d/m/Y H:i" }}</div>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="font-bold text-on-surface line-clamp-1">{{ eliminada.product_name|default:"—" }}</div>
+                  {% if eliminada.variant_name and eliminada.variant_name != eliminada.product_name %}<div class="text-body-sm text-secondary mt-1 line-clamp-1">{{ eliminada.variant_name }}</div>{% endif %}
+                  {% if eliminada.score %}<div class="text-primary-container text-sm mt-1" aria-hidden="true">{{ eliminada.score|estrellas }}</div>{% endif %}
+                </td>
+                <td class="py-4 px-4">
+                  {% if eliminada.content %}<p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">"{{ eliminada.content }}"</p>{% endif %}
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <span class="text-xs text-secondary break-all">{{ eliminada.author.email|default:"—" }}</span>
+                    {% if eliminada.author_suspended %}<span class="px-1.5 rounded bg-error text-on-error text-[10px] font-label-badge">{% t 'Se suspendió al autor' %}</span>{% endif %}
+                  </div>
+                </td>
+                <td class="py-4 px-4">
+                  <span class="inline-block font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t eliminada.get_policy_display %}</span>
+                  <div class="text-[11px] text-secondary mt-1">
+                    {% if eliminada.reports == 1 %}{% t 'Tenía 1 reporte' %}{% elif eliminada.reports %}{% t 'Tenía {n} reportes' n=eliminada.reports %}{% else %}{% t 'Sin reportes' %}{% endif %}
+                  </div>
+                </td>
+                <td class="py-4 px-4 text-body-sm whitespace-pre-line break-words">{{ eliminada.reason }}</td>
+                <td class="py-4 px-4 whitespace-nowrap text-body-sm">{{ eliminada.deleted_by.email|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <!-- RESEÑAS PUBLICADAS -->
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+              <th class="py-3 px-4">{% t 'ID y fecha' %}</th>
+              <th class="py-3 px-4">{% t 'Producto' %}</th>
+              <th class="py-3 px-4">{% t 'Calificación' %}</th>
+              <th class="py-3 px-4 min-w-[18rem]">{% t 'Texto de reseña y usuario' %}</th>
+              <th class="py-3 px-4 text-center">{% t 'Evidencia foto' %}</th>
+              <th class="py-3 px-4 text-center">{% t 'Reportes' %}</th>
+              <th class="py-3 px-4 text-right">{% t 'Acciones' %}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+            {% for resena in pagina.object_list %}
+              {% with autor=resena.user %}
+              <tr class="hover:bg-surface-container-low/50 transition-colors">
+                <td class="py-4 px-4 align-top whitespace-nowrap">
+                  <span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-{{ resena.pk }}</span>
+                  <div class="text-body-sm font-body-sm text-secondary mt-0.5">{{ resena.created_at|date:"d/m/Y H:i" }}</div>
+                </td>
+                <td class="py-4 px-4 align-top">
+                  <a class="font-bold text-on-surface line-clamp-1 hover:underline" href="{% url 'detalle_producto' resena.variant.product_id %}">{{ resena.variant.product.name }}</a>
+                  <div class="flex items-center gap-1.5 mt-1">
+                    <span class="inline-block w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+                    <span class="text-body-sm font-body-sm font-medium text-secondary line-clamp-1">{{ resena.variant.name }}</span>
+                  </div>
+                </td>
+                <td class="py-4 px-4 align-top whitespace-nowrap">
+                  <div class="flex items-center text-primary-container font-semibold text-sm">
+                    <span aria-hidden="true">{{ resena.score|estrellas }}</span>
+                    <span class="text-secondary font-label-badge text-xs ml-1">({{ resena.score }}.0)</span>
+                    <span class="sr-only">{% t 'Calificación: {calificacion} / 5' calificacion=resena.score %}</span>
+                  </div>
+                </td>
+                <td class="py-4 px-4 align-top">
+                  <p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">"{{ resena.content }}"</p>
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <span class="text-xs font-bold text-on-surface">{% if autor.first_name or autor.last_name %}{{ autor.first_name }} {{ autor.last_name }}{% else %}{{ autor.email }}{% endif %}</span>
+                    {% if autor.first_name or autor.last_name %}<span class="text-xs text-secondary">• {{ autor.email }}</span>{% endif %}
+                    {% if not autor.is_active %}
+                      <span class="px-1.5 rounded bg-error text-on-error text-[10px] font-label-badge">{% t 'Suspendida' %}</span>
+                    {% elif resena.infracciones >= reiteradas %}
+                      <span class="px-1.5 rounded bg-error-container/40 text-error text-[10px] font-label-badge">{% t 'Reiterado' %}</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td class="py-4 px-4 align-top text-center">
+                  {% if resena.foto %}
+                    <a class="relative group inline-block" href="{{ resena.foto.image.url }}" target="_blank" rel="noopener noreferrer" title="{% t 'Foto de la reseña' %}">
+                      <div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform" src="{{ resena.foto.image.url }}" alt="{% t 'Foto de la reseña' %}">
+                      </div>
+                    </a>
+                  {% else %}
+                    <span class="inline-flex flex-col items-center gap-0.5 text-secondary text-[11px]">
+                      <span class="material-symbols-outlined text-[20px]" aria-hidden="true">no_photography</span>{% t 'Sin foto' %}
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="py-4 px-4 align-top text-center whitespace-nowrap">
+                  {% if resena.reportes %}
+                    <a class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20 hover:underline" href="{% url 'resenas_reportadas' %}?revisar={{ resena.pk }}#inspeccion" title="{% t 'Ver en la cola de reseñas reportadas' %}">
+                      <span class="material-symbols-outlined text-[12px]" aria-hidden="true">flag</span>{{ resena.reportes }} {% if resena.reportes == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
+                    </a>
+                    <div class="text-[11px] text-secondary mt-1 max-w-[10rem] mx-auto truncate">{{ resena.primer_reporte }}</div>
+                  {% else %}
+                    <span class="text-body-sm text-secondary">{% t 'Sin reportes' %}</span>
+                  {% endif %}
+                </td>
+                <td class="py-4 px-4 align-top text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <a class="p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex" href="{% url 'detalle_producto' resena.variant.product_id %}" title="{% t 'Ver en el producto' %}" aria-label="{% t 'Ver en el producto' %}">
+                      <span class="material-symbols-outlined text-lg" aria-hidden="true">visibility</span>
+                    </a>
+                    <a class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-error/30 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" href="#eliminar-{{ resena.pk }}" title="{% t 'Eliminar reseña' %}">
+                      <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span><span>{% t 'Eliminar' %}</span>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+    {% include "panel/paginacion.html" %}
+  {% else %}
+    <div class="p-8 text-center">
+      <span class="material-symbols-outlined text-[32px] text-tertiary" aria-hidden="true">task_alt</span>
+      <p class="mt-2 text-body-md font-body-md text-secondary">
+        {% if hay_filtros %}
+          {% t 'No hay reseñas que coincidan con la búsqueda.' %}
+        {% elif vista == 'eliminadas' %}
+          {% t 'Todavía no se ha eliminado ninguna reseña.' %}
+        {% elif vista == 'reportadas' %}
+          {% t 'No hay reseñas reportadas pendientes de revisión.' %}
+        {% else %}
+          {% t 'Todavía no hay reseñas publicadas.' %}
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% if vista != 'eliminadas' %}
+  {% for resena in pagina.object_list %}
+    {% with autor=resena.user %}
+    {% url 'eliminar_por_incumplimiento' resena.pk as url_eliminar %}
+    {% include "reviews/ventana_eliminar.html" with numero_reportes=resena.reportes motivo_reporte=resena.primer_reporte volver=request.get_full_path %}
+    {% endwith %}
+  {% endfor %}
+{% endif %}
+{% endblock %}

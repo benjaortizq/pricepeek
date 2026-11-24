@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from reviews.models import ReviewReport
+from reviews.models import ReviewDeletion, ReviewReport
 
 from .models import User
 
@@ -20,8 +20,10 @@ class SuspensionBase(TestCase):
         cls.otro = User.objects.create_user(email="cumplido@example.com", password=CLAVE, first_name="Ana")
 
     def eliminar_resena_de(self, autor, review_id, nota="Lenguaje ofensivo.", reportantes=None):
-        """Simula una reseña del autor que el administrador eliminó tras uno o más reportes."""
-        for reportante in reportantes or [self.otro]:
+        """Simula una reseña del autor que el administrador eliminó tras uno o más reportes:
+        sus reportes resueltos y el registro de la eliminación (de donde salen las infracciones)."""
+        reportantes = reportantes or [self.otro]
+        for reportante in reportantes:
             ReviewReport.objects.create(
                 review_id=review_id,
                 reporter=reportante,
@@ -32,6 +34,16 @@ class SuspensionBase(TestCase):
                 resolved_at=timezone.now(),
                 resolution_note=nota,
             )
+        ReviewDeletion.objects.get_or_create(
+            review_id=review_id,
+            defaults={
+                "author": autor,
+                "deleted_by": self.admin,
+                "policy": ReviewDeletion.Policy.DISRESPECTFUL,
+                "reason": nota,
+                "reports": len(reportantes),
+            },
+        )
 
     def recargar(self, usuario):
         return User.objects.get(pk=usuario.pk)

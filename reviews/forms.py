@@ -3,6 +3,8 @@ from django.utils.functional import lazy
 
 from core.translations import translate_text, translate_text_lazy
 
+from .models import ReviewDeletion
+
 
 def _star_label(value):
     singular = "estrella" if value == 1 else "estrellas"
@@ -53,14 +55,43 @@ class ModerationForm(forms.Form):
     note = forms.CharField(
         label=translate_text_lazy("Motivo de la decisión"), required=False, max_length=500
     )
+    # La política de uso que incumple: obligatoria para eliminar (issue «Eliminación de reseñas»).
+    policy = forms.ChoiceField(
+        label=translate_text_lazy("Política de uso que incumple"),
+        choices=[("", "")] + ReviewDeletion.SELECTABLE,
+        required=False,
+        error_messages={"invalid_choice": "Elija la política de uso que incumple la reseña."},
+    )
     suspend = forms.BooleanField(
         label=translate_text_lazy("Suspender al autor"), required=False
     )
 
     def clean(self):
         datos = super().clean()
-        if datos.get("action") == self.DELETE and not datos.get("note"):
-            self.add_error("note", "Indique el motivo de la eliminación.")
-        if datos.get("action") != self.DELETE:
+        if datos.get("action") == self.DELETE:
+            if not datos.get("policy"):
+                self.add_error("policy", "Elija la política de uso que incumple la reseña.")
+            if not datos.get("note"):
+                self.add_error("note", "Indique el motivo de la eliminación.")
+        else:
             datos["suspend"] = False  # solo se sanciona al autor cuando se elimina su reseña
         return datos
+
+
+class EliminarResenaForm(forms.Form):
+    """Eliminar una reseña desde «Todas las reseñas»: siempre con la política y la razón."""
+
+    policy = forms.ChoiceField(
+        label=translate_text_lazy("Política de uso que incumple"),
+        choices=ReviewDeletion.SELECTABLE,
+        error_messages={
+            "required": "Elija la política de uso que incumple la reseña.",
+            "invalid_choice": "Elija la política de uso que incumple la reseña.",
+        },
+    )
+    note = forms.CharField(
+        label=translate_text_lazy("Motivo de la eliminación"),
+        max_length=500,
+        error_messages={"required": "Indique el motivo de la eliminación."},
+    )
+    suspend = forms.BooleanField(label=translate_text_lazy("Suspender al autor"), required=False)

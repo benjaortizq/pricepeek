@@ -1,0 +1,43 @@
+{% load site_i18n %}
+{% comment %}
+  Los campos de la ventana para eliminar una reseña (frontend/html/admin-modal-eliminar-resena.html):
+  la política de uso que incumple y la razón, las dos obligatorias, y si se suspende al autor.
+  Necesita resena, autor y politicas en el contexto.
+{% endcomment %}
+<div class="space-y-4 pt-1">
+  <div class="space-y-1.5">
+    <label class="block text-body-sm font-headline-md font-bold text-on-surface" for="politica-{{ resena.pk }}">
+      {% t 'Política de uso que incumple' %} <span class="text-error">*</span> <span class="text-secondary font-normal">{% t '(solo se eliminan las reseñas que incumplen los términos)' %}</span>
+    </label>
+    <div class="relative">
+      <select class="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2.5 text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors cursor-pointer pr-10" id="politica-{{ resena.pk }}" name="policy" required>
+        <option value="">{% t 'Elija una política' %}</option>
+        {% for valor, nombre in politicas %}
+          <option value="{{ valor }}">{% t nombre %}</option>
+        {% endfor %}
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-secondary">
+        <span class="material-symbols-outlined text-[20px]" aria-hidden="true">expand_more</span>
+      </div>
+    </div>
+  </div>
+  <div class="space-y-1.5">
+    <label class="block text-body-sm font-headline-md font-bold text-on-surface" for="motivo-{{ resena.pk }}">
+      {% t 'Motivo de la eliminación' %} <span class="text-error">*</span> <span class="text-secondary font-normal">{% t '(queda en el historial del cliente)' %}</span>
+    </label>
+    <textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors resize-none" id="motivo-{{ resena.pk }}" name="note" rows="3" maxlength="500" required placeholder="{% t 'Por ejemplo: lenguaje ofensivo contra otros usuarios.' %}"></textarea>
+  </div>
+  {% if not autor.is_active %}
+    <p class="text-body-sm text-secondary">{% t 'La cuenta del autor ya está suspendida.' %}</p>
+  {% elif autor.role == "client" %}
+    <label class="flex items-start gap-3 cursor-pointer group">
+      <span class="flex items-center h-5">
+        <input class="w-4 h-4 text-on-surface rounded border-outline-variant focus:ring-0 focus:ring-offset-0 cursor-pointer accent-on-surface" type="checkbox" name="suspend">
+      </span>
+      <span class="text-body-sm">
+        <span class="font-medium text-on-surface group-hover:text-primary transition-colors">{% t 'Suspender también la cuenta del autor' %}</span>
+        <span class="block text-secondary text-body-sm">{% t 'No podrá iniciar sesión ni publicar reseñas hasta que un administrador reactive la cuenta.' %}</span>
+      </span>
+    </label>
+  {% endif %}
+</div>

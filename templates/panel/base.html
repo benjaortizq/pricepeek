@@ -40,6 +40,7 @@
       {% include "panel/enlace_lateral.html" with url_name="inicio_administrador" icono="dashboard" texto="Resumen" activo_si="inicio_administrador" %}
       {% include "panel/enlace_lateral.html" with url_name="clientes" icono="group" texto="Clientes" activo_si="clientes detalle_cliente" %}
       {% include "panel/enlace_lateral.html" with url_name="resenas_reportadas" icono="rate_review" texto="Reseñas reportadas" activo_si="resenas_reportadas" contador=pendientes.resenas %}
+      {% include "panel/enlace_lateral.html" with url_name="todas_las_resenas" icono="reviews" texto="Todas las reseñas" activo_si="todas_las_resenas" %}
       {% include "panel/enlace_lateral.html" with url_name="incidencias" icono="sync_problem" texto="Incidencias de datos" activo_si="incidencias" contador=pendientes.incidencias %}
       {% include "panel/enlace_lateral.html" with url_name="obtencion_de_datos" icono="cloud_sync" texto="Obtención de datos" activo_si="obtencion_de_datos" contador=pendientes.ejecuciones %}
     </nav>
@@ -101,6 +102,7 @@
       {% include "panel/enlace_movil.html" with url_name="inicio_administrador" texto="Resumen" activo_si="inicio_administrador" %}
       {% include "panel/enlace_movil.html" with url_name="clientes" texto="Clientes" activo_si="clientes detalle_cliente" %}
       {% include "panel/enlace_movil.html" with url_name="resenas_reportadas" texto="Reseñas reportadas" activo_si="resenas_reportadas" contador=pendientes.resenas %}
+      {% include "panel/enlace_movil.html" with url_name="todas_las_resenas" texto="Todas las reseñas" activo_si="todas_las_resenas" %}
       {% include "panel/enlace_movil.html" with url_name="incidencias" texto="Incidencias de datos" activo_si="incidencias" contador=pendientes.incidencias %}
       {% include "panel/enlace_movil.html" with url_name="obtencion_de_datos" texto="Obtención de datos" activo_si="obtencion_de_datos" contador=pendientes.ejecuciones %}
     </nav>

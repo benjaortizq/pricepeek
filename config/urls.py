@@ -27,9 +27,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("i18n/", include("django.conf.urls.i18n")),
     path(
-        "terminos-y-condiciones/",
-        TemplateView.as_view(template_name="terminos.html"),
-        name="terminos",
+        "privacidad/",
+        TemplateView.as_view(template_name="privacidad.html"),
+        name="privacidad",
     ),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),

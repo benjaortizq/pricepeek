@@ -375,15 +375,11 @@
           <div class="flex items-center justify-between gap-3 mb-3">
             <div class="flex items-center gap-3">
               <span class="w-9 h-9 rounded-full bg-surface-container-low border border-outline-variant/50 flex items-center justify-center font-semibold text-body-sm uppercase">
-                {{ resena.user.first_name|default:resena.user.email|slice:":1" }}
+                {{ resena.user.first_name|default:"Cliente"|slice:":1" }}
               </span>
               <div>
                 <p class="font-semibold text-on-surface text-body-md">
-                  {% if resena.user.first_name or resena.user.last_name %}
-                    {{ resena.user.first_name }} {{ resena.user.last_name }}
-                  {% else %}
-                    {{ resena.user.email }}
-                  {% endif %}
+                  {% t 'Cliente' %}
                 </p>
                 <p class="text-body-sm font-body-sm text-secondary">{{ resena.created_at|date:"d/m/Y" }}</p>
               </div>

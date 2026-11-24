@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
@@ -66,6 +67,31 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+
+class PrivacyConsent(models.Model):
+    """Registro de consentimiento informado otorgado al crear una cuenta."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="privacy_consents",
+    )
+    policy_version = models.CharField(max_length=20)
+    accepted_at = models.DateTimeField(default=timezone.now)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "accounts_privacy_consent"
+        ordering = ["-accepted_at"]
+
+    def __str__(self):
+        return (
+            f"Consentimiento {self.policy_version} del usuario "
+            f"{self.user_id or 'eliminado'}"
+        )
 
 
 class AccountsUser(models.Model):

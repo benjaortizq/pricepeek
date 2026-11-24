@@ -21,6 +21,12 @@
       <input class="flex-grow bg-transparent border-0 text-body-lg font-body-lg text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="{% t 'Buscar por nombre o marca' %}" type="search" aria-label="{% t 'Buscar producto o marca' %}">
       <button class="px-5 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-md transition-colors" type="submit">{% t 'Buscar' %}</button>
     </form>
+    {% if user.role == "enterprise" %}
+      <div class="mt-6 flex flex-wrap justify-center gap-2">
+        <a class="boton-secundario" href="{% url 'enterprise:panel' %}"><span class="material-symbols-outlined text-[18px]">storefront</span>{% t 'Ir al panel de empresa' %}</a>
+        <a class="boton-secundario" href="{% url 'enterprise:catalogo' %}"><span class="material-symbols-outlined text-[18px]">inventory_2</span>{% t 'Ver catálogo' %}</a>
+      </div>
+    {% endif %}
     {% if user.role == "admin" %}
       <div class="mt-6 flex flex-wrap justify-center gap-2">
         <a class="boton-secundario" href="{% url 'resenas_reportadas' %}"><span class="material-symbols-outlined text-[18px]">flag</span>Reseñas reportadas</a>

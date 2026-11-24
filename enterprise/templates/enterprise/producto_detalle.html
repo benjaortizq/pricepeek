@@ -1,0 +1,78 @@
+{% extends "enterprise/base_empresa.html" %}
+{% load site_i18n enterprise_tags %}
+
+{% block title %}{{ precio.gtin.product.name }}{% endblock %}
+
+{% block empresa_content %}
+<a class="inline-flex items-center gap-1 text-body-sm font-semibold text-secondary hover:text-on-surface" href="{% url 'enterprise:catalogo' %}"><span class="material-symbols-outlined text-[18px]">arrow_back</span>{% t 'Volver al catálogo' %}</a>
+<div class="mt-3 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+  <div class="flex items-start gap-4 min-w-0">
+    <div class="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl border border-outline-variant/50 bg-surface-container-lowest flex items-center justify-center overflow-hidden shrink-0">
+      {% if imagen %}<img src="{{ imagen.image_url }}" alt="{{ precio.gtin.product.name }}" class="w-full h-full object-contain p-1">{% else %}<span class="material-symbols-outlined text-[36px] text-secondary">image_not_supported</span>{% endif %}
+    </div>
+    <div class="min-w-0">
+      <p class="text-body-sm font-semibold text-secondary">{{ precio.gtin.product.brand.name }} · {{ precio.gtin.product.category.name }}</p>
+      <h1 class="mt-1 text-headline-lg font-headline-lg tracking-tight">{{ precio.gtin.product.name }}</h1>
+      <p class="mt-1 text-body-md text-secondary">{{ precio.gtin.name }}</p>
+      <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 font-mono text-body-sm"><span class="material-symbols-outlined text-[16px]">barcode</span>{{ precio.gtin_id }}</p>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary-container font-bold" href="{% url 'enterprise:editar_producto' price_id=precio.pk %}"><span class="material-symbols-outlined text-[19px]">edit</span>{% t 'Editar precio' %}</a>
+    <a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-outline-variant font-semibold" href="{% url 'enterprise:desactivar_producto' price_id=precio.pk %}"><span class="material-symbols-outlined text-[19px]">visibility_off</span>{% t 'Desactivar' %}</a>
+    <a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-error/40 text-error font-semibold" href="{% url 'enterprise:eliminar_producto' price_id=precio.pk %}"><span class="material-symbols-outlined text-[19px]">delete</span>{% t 'Quitar precio' %}</a>
+  </div>
+</div>
+
+<section class="mt-space-lg grid grid-cols-1 xl:grid-cols-3 gap-space-md">
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <p class="text-body-sm font-semibold text-secondary">{% t 'Precio base' %}</p>
+    <p class="mt-2 text-price-hero font-price-hero font-bold">{{ precio.price|money:precio.currency.symbol }}</p>
+    {% if precio.discount %}<p class="mt-1 text-body-sm text-secondary">{% t 'Descuento de {porcentaje} %' porcentaje=precio.discount|percent %}</p>{% endif %}
+    <p class="mt-4 text-body-sm font-semibold text-secondary">{% t 'Precio final' %}</p>
+    <p class="mt-1 text-price-hero font-price-hero font-bold text-tertiary">{{ precio.final_price|money:precio.currency.symbol }}</p>
+  </article>
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <p class="text-body-sm font-semibold text-secondary">{% t 'Mínimo de otras tiendas' %}</p>
+    {% if precio.competitor_price is not None %}<p class="mt-2 text-price-hero font-price-hero font-bold">{{ precio.competitor_price|money:precio.currency.symbol }}</p>{% else %}<p class="mt-2 text-headline-md font-bold text-secondary">{% t 'Sin referencia' %}</p>{% endif %}
+    <div class="mt-4">
+      {% if precio.competitiveness == "green" %}<span class="inline-flex items-center gap-1 rounded-full bg-tertiary-container/30 px-3 py-1.5 text-tertiary font-bold"><span class="material-symbols-outlined text-[17px]">trending_down</span>{% t 'Más barato que el mercado' %}</span>
+      {% elif precio.competitiveness == "yellow" %}<span class="inline-flex items-center gap-1 rounded-full bg-primary-fixed-dim/40 px-3 py-1.5 text-primary font-bold"><span class="material-symbols-outlined text-[17px]">horizontal_rule</span>{% t 'Empate con el mínimo' %}</span>
+      {% elif precio.competitiveness == "red" %}<span class="inline-flex items-center gap-1 rounded-full bg-error-container/50 px-3 py-1.5 text-error font-bold"><span class="material-symbols-outlined text-[17px]">trending_up</span>{% t 'Por encima del mercado' %}</span>
+      {% else %}<span class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-3 py-1.5 text-secondary font-bold"><span class="material-symbols-outlined text-[17px]">help</span>{% t 'Sin referencia' %}</span>{% endif %}
+    </div>
+  </article>
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <p class="text-body-sm font-semibold text-secondary">{% t 'Estado de la oferta' %}</p>
+    <p class="mt-2 font-bold {% if precio.is_available %}text-tertiary{% else %}text-secondary{% endif %}">{% if precio.is_available %}{% t 'Disponible' %}{% else %}{% t 'No disponible' %}{% endif %}</p>
+    <p class="mt-4 text-body-sm font-semibold text-secondary">{% t 'Última actualización' %}</p>
+    <p class="mt-1">{% t 'Actualizado {fecha}' fecha=precio.updated_at|date:"d/m/Y H:i" %}</p>
+    {% if precio.product_web_url %}<a class="mt-4 inline-flex items-center gap-1 font-semibold hover:underline" href="{{ precio.product_web_url }}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined text-[18px]">open_in_new</span>{% t 'Ver en la tienda' %}</a>{% endif %}
+  </article>
+</section>
+
+<section class="mt-space-lg grid grid-cols-1 xl:grid-cols-2 gap-space-md">
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <h2 class="text-headline-md font-headline-md">{% t 'Información del producto' %}</h2>
+    <h3 class="mt-5 font-bold">{% t 'Descripción' %}</h3>
+    <p class="mt-2 text-secondary">{% if precio.gtin.product.description %}{{ precio.gtin.product.description }}{% else %}{% t 'Sin descripción.' %}{% endif %}</p>
+    <h3 class="mt-5 font-bold">{% t 'Características' %}</h3>
+    <pre class="mt-2 rounded-xl bg-surface-container-low p-4 text-body-sm whitespace-pre-wrap overflow-x-auto">{{ precio.gtin.attributes|json_pretty }}</pre>
+  </article>
+
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <div class="flex items-center justify-between gap-3"><h2 class="text-headline-md font-headline-md">{% t 'Problemas y alertas' %}</h2><span class="rounded-full bg-surface-container-high px-2.5 py-1 text-body-sm font-bold">{{ problemas|length }}</span></div>
+    {% if problemas %}
+    <div class="mt-4 space-y-3">
+      {% for problema in problemas %}
+      <div class="rounded-xl border border-outline-variant/60 bg-surface-container-low p-4">
+        <div class="flex items-start gap-3"><span class="material-symbols-outlined text-error mt-0.5">warning</span><div><h3 class="font-bold">{% t problema.title %}</h3><p class="mt-1 text-body-sm text-secondary">{% t problema.description %}</p>{% if problema.key == "missing_description" or problema.key == "missing_attributes" %}<a class="mt-2 inline-flex items-center gap-1 font-bold text-body-sm hover:underline" href="{% url 'detalle_producto' pk=precio.gtin.product_id %}"><span class="material-symbols-outlined text-[17px]">inventory_2</span>{% t problema.action_label %}</a>{% else %}<a class="mt-2 inline-flex items-center gap-1 font-bold text-body-sm hover:underline" href="{% url 'enterprise:editar_producto' price_id=precio.pk %}"><span class="material-symbols-outlined text-[17px]">arrow_forward</span>{% t problema.action_label %}</a>{% endif %}</div></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="mt-4 rounded-xl border border-tertiary/30 bg-tertiary-container/20 p-4 flex items-center gap-3 text-tertiary"><span class="material-symbols-outlined">check_circle</span><p class="font-semibold">{% t 'No se detectaron problemas en esta oferta.' %}</p></div>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

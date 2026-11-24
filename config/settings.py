@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "wishlist",
     "reviews",
     "ingestion",
+    "enterprise",
 ]
 AUTH_USER_MODEL = "accounts.User"
 
@@ -197,6 +198,8 @@ else:
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panel"
 LOGOUT_REDIRECT_URL = "login"
+
+STALE_PRICE_DAYS = 2
 
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 24 horas
 PASSWORD_CHANGE_CODE_TIMEOUT = 60 * 10  # el código para confirmar el cambio vale 10 minutos

@@ -130,6 +130,12 @@
                     <div class="font-price-hero text-price-hero text-on-primary-container font-bold tracking-tight">
                       {{ grupo.mejor.currency.symbol }}{{ grupo.mejor.final|miles }}
                     </div>
+                                        {% if grupo.mejor.desactualizado %}
+                      <span class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900" role="status" title="{% t 'El precio lleva más de 48 horas sin actualizarse.' %}">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">schedule</span>
+                        {% t 'Precio sin actualizar por más de 48 horas' %}
+                      </span>
+                    {% endif %}
                     <div class="mt-1 text-body-sm font-body-sm font-medium text-on-primary-container/90">
                       {{ grupo.variante.name }}
                       <span class="font-price-row tracking-wider">· {{ grupo.gtin }}</span>
@@ -221,6 +227,13 @@
                     <div class="md:col-span-2 md:text-right">
                       {% if precio.final_price is not None %}
                         <span class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
+                                                {% if precio.desactualizado %}
+                          <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900" role="status" title="{% t 'El precio lleva más de 48 horas sin actualizarse.' %}">
+                            <span class="material-symbols-outlined text-sm" aria-hidden="true">schedule</span>
+                            {% t 'Precio sin actualizar por más de 48 horas' %}
+                          </span>
+                        {% endif %}
+
                         {% if precio.discount %}
                           <span class="block text-[11px] text-secondary font-label-badge">{% widthratio precio.discount 1 100 as porcentaje %}{% t 'Descuento de {porcentaje} %' porcentaje=porcentaje %}</span>
                         {% endif %}
@@ -387,7 +400,7 @@
           {% if user.is_authenticated and user.role == "client" and resena.user_id == user.pk %}
             <div class="mt-4 flex items-center gap-4 border-t border-outline-variant/40 pt-3">
               <a class="text-body-sm font-semibold text-on-surface hover:underline" href="{% url 'editar_resena' resena.pk %}">{% t 'Editar reseña' %}</a>
-              <form method="post" action="{% url 'eliminar_resena' resena.pk %}" onsubmit="return confirm('{% t '¿Eliminar tu reseña? Esta acción no se puede deshacer.' %}');">
+              <form method="post" action="{% url 'eliminar_resena' resena.pk %}" onsubmit="return confirm(this.dataset.confirm);" data-confirm="{% t '¿Eliminar tu reseña? Esta acción no se puede deshacer.' %}">
                 {% csrf_token %}
                 <button class="text-body-sm font-semibold text-error hover:underline" type="submit">{% t 'Eliminar reseña' %}</button>
               </form>

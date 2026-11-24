@@ -91,6 +91,15 @@ class AccountsUser(models.Model):
         managed = False
         db_table = 'accounts_user'
 
+class Stores(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField()
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'stores'
 
 class AccountsUserGroups(models.Model):
     id = models.BigAutoField(primary_key=True)

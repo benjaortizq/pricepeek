@@ -22,6 +22,16 @@ class SiteTranslationTests(SimpleTestCase):
                 "Hello, Alex",
             )
 
+    def test_translates_a_dynamic_message_after_its_values_were_formatted(self):
+        mensaje = "La cuenta de ana@example.com fue suspendida."
+        with translation.override("en"):
+            self.assertEqual(
+                translate_text(mensaje),
+                "The account for ana@example.com was suspended.",
+            )
+        with translation.override("es"):
+            self.assertEqual(translate_text(mensaje), mensaje)
+
     def test_translates_english_model_labels_to_spanish(self):
         with translation.override("es"):
             self.assertEqual(translate_text("Client"), "Cliente")

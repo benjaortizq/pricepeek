@@ -119,19 +119,19 @@
       {% if user.role == "client" %}
       <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-space-lg">
         <div class="border-b border-outline-variant/40 pb-space-md mb-space-lg">
-          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">Alertas de precio</h3>
-          <p class="text-body-md font-body-md text-secondary mt-0.5">Le avisamos por correo cuando baja el precio de un producto de su lista de deseos.</p>
+          <h3 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Alertas de precio' %}</h3>
+          <p class="text-body-md font-body-md text-secondary mt-0.5">{% t 'Le avisamos por correo cuando baja el precio de un producto de su lista de deseos.' %}</p>
         </div>
         <form class="space-y-4" method="post" action="{% url 'editar_perfil' %}">
           {% csrf_token %}
           <input type="hidden" name="accion" value="alertas">
           <label class="flex items-center gap-3 text-body-md font-body-md text-on-surface" for="{{ form_alertas.active_alerts.id_for_label }}">
             {{ form_alertas.active_alerts }}
-            {{ form_alertas.active_alerts.label }}
+            {% t form_alertas.active_alerts.label %}
           </label>
           <div class="flex justify-end">
             <button class="boton-secundario bg-primary-container hover:bg-[#e0a41c] border-transparent font-bold" type="submit">
-              <span class="material-symbols-outlined text-[18px]">check</span>Guardar alertas
+              <span class="material-symbols-outlined text-[18px]">check</span>{% t 'Guardar alertas' %}
             </button>
           </div>
         </form>

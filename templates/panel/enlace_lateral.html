@@ -1,0 +1,14 @@
+{% load site_i18n %}{# Enlace de la barra lateral del panel; activo_si: los url_name (separados por espacios) en que se resalta. #}
+{% if actual in activo_si.split %}
+  <a class="bg-surface-container text-on-surface font-bold border-l-4 border-primary pl-3 py-2.5 rounded-r-lg flex items-center gap-3 transition-colors duration-150" href="{% url url_name %}" aria-current="page">
+    <span class="material-symbols-outlined text-lg text-primary" aria-hidden="true">{{ icono }}</span>
+    <span class="text-on-surface">{% t texto %}</span>
+    {% if contador %}<span class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-label-badge font-label-badge bg-primary-container text-on-primary-container">{{ contador }}</span>{% endif %}
+  </a>
+{% else %}
+  <a class="text-secondary flex items-center gap-3 px-4 py-2.5 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 font-body-md text-body-md" href="{% url url_name %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">{{ icono }}</span>
+    <span>{% t texto %}</span>
+    {% if contador %}<span class="ml-auto text-[11px] font-label-badge text-secondary bg-surface-container px-2 py-0.5 rounded-full">{{ contador }}</span>{% endif %}
+  </a>
+{% endif %}

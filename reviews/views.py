@@ -1,17 +1,24 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import role_required
 from accounts.models import User
+from accounts.views import INFRACCIONES_REITERADAS
+from core.panel import indicador, pestanas, plural
 from products.models import Products
 from .forms import ModerationForm, ReviewForm, ReviewReportForm
+from .indicadores import resumen_de_moderacion
 from .models import ReviewPhoto, ReviewReport, Reviews
+
+RESENAS_POR_PAGINA = 10
 
 
 def _delete_review_photo(photo):
@@ -70,6 +77,8 @@ def eliminar_resena(request, pk):
     foto = ReviewPhoto.objects.filter(review_id=resena.pk).first()
     if foto:
         _delete_review_photo(foto)
+    # Sin la reseña ya no hay nada que moderar: que no queden en la cola del administrador.
+    ReviewReport.objects.filter(review_id=resena.pk, status=ReviewReport.Status.PENDING).delete()
     resena.delete()
     return redirect("detalle_producto", pk=producto_id)
 
@@ -154,7 +163,87 @@ def resenas_reportadas(request):
     for review_id, grupo in grupos.items():
         grupo["foto"] = fotos.get(review_id)
         grupo["infracciones"] = infracciones.get(grupo["resena"].user_id, 0)
-    return render(request, "reviews/resenas_reportadas.html", {"grupos": list(grupos.values())})
+        grupo["ultimo_reporte"] = grupo["reportes"][-1].created_at
+    grupos = list(grupos.values())
+
+    # Las pestañas de la tabla (frontend/html/admin-resenas-reportadas.html).
+    filtros = {
+        "": grupos,
+        "con-foto": [grupo for grupo in grupos if grupo["foto"]],
+        "reiterados": [grupo for grupo in grupos if grupo["infracciones"] >= INFRACCIONES_REITERADAS],
+    }
+    filtro = request.GET.get("filtro", "")
+    if filtro not in filtros:
+        filtro = ""
+    pagina = Paginator(filtros[filtro], RESENAS_POR_PAGINA).get_page(request.GET.get("pagina"))
+
+    # La que se ve en el panel de inspección: la elegida con «Inspeccionar» o la primera de la página.
+    revisar = request.GET.get("revisar", "")
+    seleccionado = next((g for g in grupos if str(g["resena"].pk) == revisar), None)
+    if seleccionado is None and pagina.object_list:
+        seleccionado = pagina.object_list[0]
+
+    return render(
+        request,
+        "reviews/resenas_reportadas.html",
+        {
+            "pagina": pagina,
+            "grupos": pagina.object_list,
+            "seleccionado": seleccionado,
+            "filtro": filtro,
+            "kpis": tarjetas_de_moderacion(resumen_de_moderacion()),
+            "pestanas": pestanas(
+                reverse("resenas_reportadas"),
+                "filtro",
+                [
+                    ("", "Todas las reportadas", len(filtros[""])),
+                    ("con-foto", "Con foto", len(filtros["con-foto"])),
+                    ("reiterados", "Autor reiterado", len(filtros["reiterados"])),
+                ],
+                filtro,
+            ),
+            "total_texto": plural(pagina.paginator.count, "reseña reportada", "reseñas reportadas"),
+            "reiteradas": INFRACCIONES_REITERADAS,
+        },
+    )
+
+
+def tarjetas_de_moderacion(datos):
+    """Las tarjetas de arriba de la tabla (frontend/html/admin-resenas-reportadas.html)."""
+    tiempo = datos["tiempo_promedio"] or ("—", "")
+    tasa = datos["tasa_eliminacion"]
+    return [
+        indicador(
+            "En cola de revisión",
+            datos["en_cola"],
+            unidad="reseñas" if datos["en_cola"] != 1 else "reseña",
+            insignia=f"+{datos['reportes_hoy']} hoy",
+            tono="alerta" if datos["reportes_hoy"] else "",
+            icono="arrow_upward" if datos["reportes_hoy"] else "",
+            pie_izq=plural(datos["reportes_pendientes"], "reporte pendiente", "reportes pendientes"),
+            destacada=True,
+        ),
+        indicador(
+            "Tiempo prom. resolución",
+            tiempo[0],
+            unidad=tiempo[1],
+            pie_izq="Últimos 30 días" if datos["tiempo_promedio"] else "Sin datos",
+        ),
+        indicador(
+            "Tasa de eliminación",
+            "—" if tasa is None else tasa,
+            unidad="" if tasa is None else "%",
+            insignia="Últimos 30 días",
+            pie_izq=plural(datos["eliminadas_30"], "reseña eliminada", "reseñas eliminadas"),
+            pie_der=plural(datos["mantenidas_30"], "reseña mantenida", "reseñas mantenidas"),
+        ),
+        indicador(
+            "Eliminadas este mes",
+            datos["eliminadas_mes"],
+            unidad="reseñas" if datos["eliminadas_mes"] != 1 else "reseña",
+            pie_izq="Por incumplir las políticas",
+        ),
+    ]
 
 
 @role_required(User.Role.ADMIN)

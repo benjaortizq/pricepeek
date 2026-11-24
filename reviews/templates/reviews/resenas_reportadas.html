@@ -1,83 +1,331 @@
-{% extends "base.html" %}
-{% load site_i18n %}
+{% extends "panel/base.html" %}
+{% load site_i18n panel %}
+{% comment %}
+  Diseño: frontend/html/admin-resenas-reportadas.html (tabla), admin-panel-moderacion.html
+  (panel de inspección) y admin-modal-eliminar-resena.html (ventana para eliminar, que se abre
+  con el enlace #eliminar-<id> sin JavaScript).
+{% endcomment %}
 
 {% block title %}{% t 'Reseñas reportadas' %}{% endblock %}
 
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span>{% t 'Moderación' %}</span>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Reseñas reportadas' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Moderación y Auditoría de Reseñas' %}{% endblock %}
+{% block descripcion %}{% t 'Revise cada reseña denunciada y decida si se mantiene o se elimina.' %}{% endblock %}
+
+{% block acciones %}
+  <span class="text-body-sm font-body-sm text-secondary">{% t 'Orden: el reporte más antiguo primero' %}</span>
+  <a class="p-1.5 rounded-full hover:bg-surface-container text-secondary hover:text-on-surface transition-colors flex" href="{{ request.get_full_path }}" title="{% t 'Actualizar la lista' %}" aria-label="{% t 'Actualizar la lista' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">refresh</span>
+  </a>
+{% endblock %}
+
 {% block content %}
-<div class="w-full max-w-5xl mx-auto px-margin md:px-margin-desktop py-space-xl">
-  <div class="mb-space-lg">
-    <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Reseñas reportadas' %}</h1>
-    <p class="mt-1 text-body-md font-body-md text-secondary">{% t 'Revise cada reseña denunciada y decida si se mantiene o se elimina.' %}</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% for kpi in kpis %}{% include "panel/kpi.html" %}{% endfor %}
+</div>
+
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/40">
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      {% for pestana in pestanas %}{% include "panel/pestana.html" %}{% endfor %}
+    </div>
   </div>
 
-  {% for grupo in grupos %}
-    {% with resena=grupo.resena autor=grupo.resena.user %}
-    <article class="tarjeta p-6 mb-space-md">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <a class="font-semibold text-on-surface hover:underline" href="{% url 'detalle_producto' resena.variant.product_id %}">{{ resena.variant.product.name }}</a>
-          <p class="text-body-sm font-body-sm text-secondary">
-            {% t 'Por' %}
-            {% if autor.first_name or autor.last_name %}{{ autor.first_name }} {{ autor.last_name }} ({{ autor.email }}){% else %}{{ autor.email }}{% endif %}
-            · {{ resena.created_at|date:"d/m/Y" }}
-          </p>
-          {% if autor.role == "client" %}
-            <p class="text-body-sm font-body-sm {% if grupo.infracciones %}text-error font-semibold{% else %}text-secondary{% endif %}">
-              {% if grupo.infracciones %}Le eliminaron {{ grupo.infracciones }} reseña{{ grupo.infracciones|pluralize }} antes{% else %}Sin reseñas eliminadas antes{% endif %}
-              · <a class="font-semibold text-on-surface hover:underline" href="{% url 'detalle_cliente' autor.pk %}">Ver historial del cliente</a>
-            </p>
-          {% endif %}
+  {% if grupos %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+            <th class="py-3 px-4">{% t 'ID y fecha' %}</th>
+            <th class="py-3 px-4">{% t 'Producto' %}</th>
+            <th class="py-3 px-4">{% t 'Calificación' %}</th>
+            <th class="py-3 px-4 min-w-[18rem]">{% t 'Texto de reseña y usuario' %}</th>
+            <th class="py-3 px-4 text-center">{% t 'Evidencia foto' %}</th>
+            <th class="py-3 px-4 text-center">{% t 'Reportes' %}</th>
+            <th class="py-3 px-4">{% t 'Estado' %}</th>
+            <th class="py-3 px-4 text-right">{% t 'Acciones' %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+          {% for grupo in grupos %}
+            {% with resena=grupo.resena autor=grupo.resena.user %}
+            <tr class="hover:bg-surface-container-low/50 transition-colors{% if grupo.resena.pk == seleccionado.resena.pk %} bg-surface-container-low/50{% endif %}">
+              <td class="py-4 px-4 align-top whitespace-nowrap">
+                <span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#REV-{{ resena.pk }}</span>
+                <div class="text-body-sm font-body-sm text-secondary mt-0.5">{{ grupo.ultimo_reporte|date:"d/m/Y H:i" }}</div>
+              </td>
+              <td class="py-4 px-4 align-top">
+                <a class="font-bold text-on-surface line-clamp-1 hover:underline" href="{% url 'detalle_producto' resena.variant.product_id %}">{{ resena.variant.product.name }}</a>
+                <div class="flex items-center gap-1.5 mt-1">
+                  <span class="inline-block w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+                  <span class="text-body-sm font-body-sm font-medium text-secondary line-clamp-1">{{ resena.variant.name }}</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 align-top whitespace-nowrap">
+                <div class="flex items-center text-primary-container font-semibold text-sm">
+                  <span aria-hidden="true">{{ resena.score|estrellas }}</span>
+                  <span class="text-secondary font-label-badge text-xs ml-1">({{ resena.score }}.0)</span>
+                  <span class="sr-only">{% t 'Calificación: {calificacion} / 5' calificacion=resena.score %}</span>
+                </div>
+              </td>
+              <td class="py-4 px-4 align-top">
+                <p class="text-body-sm font-body-sm text-on-surface line-clamp-2 italic">"{{ resena.content }}"</p>
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                  <span class="text-xs font-bold text-on-surface">{% if autor.first_name or autor.last_name %}{{ autor.first_name }} {{ autor.last_name }}{% else %}{{ autor.email }}{% endif %}</span>
+                  {% if autor.first_name or autor.last_name %}<span class="text-xs text-secondary">• {{ autor.email }}</span>{% endif %}
+                  {% if not autor.is_active %}
+                    <span class="px-1.5 rounded bg-error text-on-error text-[10px] font-label-badge">{% t 'Suspendida' %}</span>
+                  {% elif grupo.infracciones >= reiteradas %}
+                    <span class="px-1.5 rounded bg-error-container/40 text-error text-[10px] font-label-badge">{% t 'Reiterado' %}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="py-4 px-4 align-top text-center">
+                {% if grupo.foto %}
+                  <a class="relative group inline-block" href="{{ grupo.foto.image.url }}" target="_blank" rel="noopener noreferrer" title="{% t 'Foto de la reseña' %}">
+                    <div class="w-12 h-12 rounded-lg border border-outline-variant/40 overflow-hidden bg-surface-container flex items-center justify-center">
+                      <img class="w-full h-full object-cover group-hover:scale-105 transition-transform" src="{{ grupo.foto.image.url }}" alt="{% t 'Foto de la reseña' %}">
+                    </div>
+                  </a>
+                {% else %}
+                  <span class="inline-flex flex-col items-center gap-0.5 text-secondary text-[11px]">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">no_photography</span>{% t 'Sin foto' %}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 align-top text-center whitespace-nowrap">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20">
+                  <span class="material-symbols-outlined text-[12px]" aria-hidden="true">flag</span>{{ grupo.reportes|length }} {% if grupo.reportes|length == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
+                </span>
+                <div class="text-[11px] text-secondary mt-1 max-w-[10rem] mx-auto truncate">{{ grupo.reportes.0.reason }}</div>
+              </td>
+              <td class="py-4 px-4 align-top whitespace-nowrap">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface text-label-badge font-label-badge border border-outline-variant/40">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>{% t 'Pendiente' %}
+                </span>
+              </td>
+              <td class="py-4 px-4 align-top text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-1.5">
+                  <a class="p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex" href="{% querystring revisar=resena.pk %}#inspeccion" title="{% t 'Inspeccionar la reseña' %}" aria-label="{% t 'Inspeccionar la reseña' %} #REV-{{ resena.pk }}">
+                    <span class="material-symbols-outlined text-lg" aria-hidden="true">visibility</span>
+                  </a>
+                  <form method="post" action="{% url 'moderar_resena' resena.pk %}">
+                    {% csrf_token %}
+                    <button class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/50 rounded-full text-body-sm font-body-sm font-semibold text-on-surface transition-colors" type="submit" name="action" value="keep" title="{% t 'Mantener reseña' %}">
+                      <span class="material-symbols-outlined text-tertiary text-[16px]" aria-hidden="true">check</span><span>{% t 'Mantener' %}</span>
+                    </button>
+                  </form>
+                  <a class="inline-flex items-center gap-1 px-3 py-1.5 bg-surface-container-lowest hover:bg-error-container/30 border border-error/30 text-error rounded-full text-body-sm font-body-sm font-semibold transition-colors" href="#eliminar-{{ resena.pk }}" title="{% t 'Eliminar reseña' %}">
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span><span>{% t 'Eliminar' %}</span>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endwith %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "panel/paginacion.html" %}
+  {% else %}
+    <div class="p-8 text-center">
+      <span class="material-symbols-outlined text-[32px] text-tertiary" aria-hidden="true">task_alt</span>
+      <p class="mt-2 text-body-md font-body-md text-secondary">
+        {% if filtro %}{% t 'No hay reseñas reportadas con este filtro.' %}{% else %}{% t 'No hay reseñas reportadas pendientes de revisión.' %}{% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% if seleccionado %}
+  {% with resena=seleccionado.resena autor=seleccionado.resena.user %}
+  <!-- PANEL DE INSPECCIÓN -->
+  <section id="inspeccion" class="bg-surface-container-low rounded-2xl border border-outline-variant p-6 scroll-mt-28" aria-labelledby="titulo-inspeccion">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">fact_check</span>
+        <h2 id="titulo-inspeccion" class="font-headline-md text-headline-md font-bold text-on-surface">{% t 'Inspección de la reseña' %}</h2>
+      </div>
+      <span class="text-body-sm text-secondary">{% t 'ID seleccionado:' %} <strong class="text-on-surface font-mono">#REV-{{ resena.pk }}</strong></span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant">
+        <span class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Evidencia subida por el usuario' %}</span>
+        {% if seleccionado.foto %}
+          <div class="rounded-lg overflow-hidden border border-outline-variant relative bg-surface-variant">
+            <img class="w-full h-44 object-cover" src="{{ seleccionado.foto.image.url }}" alt="{% t 'Foto de la reseña' %}">
+          </div>
+        {% else %}
+          <div class="h-44 rounded-lg border border-dashed border-outline-variant flex flex-col items-center justify-center gap-1 text-secondary text-body-sm">
+            <span class="material-symbols-outlined text-[28px]" aria-hidden="true">no_photography</span>{% t 'La reseña no tiene foto.' %}
+          </div>
+        {% endif %}
+        <div class="mt-3 flex items-center justify-between text-body-sm text-secondary">
+          <span>{% t 'Calificación: {calificacion} / 5' calificacion=resena.score %}</span>
+          <span class="text-primary-container font-semibold" aria-hidden="true">{{ resena.score|estrellas }}</span>
         </div>
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error-container/40 text-on-error-container text-body-sm font-semibold">
-          <span class="material-symbols-outlined text-[16px]">flag</span>{{ grupo.reportes|length }} {% if grupo.reportes|length == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
-        </span>
       </div>
 
-      <p class="mt-4 text-body-md font-body-md text-on-surface leading-relaxed">{{ resena.content }}</p>
-      <p class="mt-1 text-body-sm font-body-sm text-secondary">{% t 'Calificación: {calificacion} / 5' calificacion=resena.score %}</p>
-      {% if grupo.foto %}
-        <img src="{{ grupo.foto.image.url }}" alt="{% t 'Foto de la reseña' %}" class="mt-4 rounded-xl border border-outline-variant/50 max-h-64 object-cover">
-      {% endif %}
+      <div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col justify-between">
+        <div>
+          <span class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Detalle de la reseña' %}</span>
+          <div class="space-y-2.5">
+            <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+              <span class="text-secondary shrink-0">{% t 'Producto' %}</span>
+              <span class="font-semibold text-on-surface text-right">{{ resena.variant.product.name }}</span>
+            </div>
+            <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+              <span class="text-secondary shrink-0">{% t 'Autor' %}</span>
+              <span class="font-semibold text-on-surface text-right break-all">{{ autor.email }}</span>
+            </div>
+            <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+              <span class="text-secondary shrink-0">{% t 'Publicada' %}</span>
+              <span class="font-semibold text-on-surface">{{ resena.created_at|date:"d/m/Y" }}</span>
+            </div>
+            {% if autor.role == "client" %}
+              <div class="flex justify-between items-center gap-3 text-body-sm">
+                <span class="text-secondary shrink-0">{% t 'Historial' %}</span>
+                {% if seleccionado.infracciones %}
+                  <span class="font-label-badge text-label-badge text-error bg-error-container/40 px-2 py-0.5 rounded-full text-right">Le eliminaron {{ seleccionado.infracciones }} reseña{{ seleccionado.infracciones|pluralize }} antes</span>
+                {% else %}
+                  <span class="font-label-badge text-label-badge text-tertiary bg-tertiary-container/30 px-2 py-0.5 rounded-full">Sin reseñas eliminadas antes</span>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-outline-variant/40">
+          <p class="text-body-sm text-on-surface italic whitespace-pre-line break-words">"{{ resena.content }}"</p>
+          {% if autor.role == "client" %}
+            <a class="mt-2 inline-flex items-center gap-1 text-body-sm font-semibold text-on-surface hover:underline" href="{% url 'detalle_cliente' autor.pk %}">
+              {% t 'Ver historial del cliente' %}<span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
 
-      <h2 class="mt-5 text-body-md font-body-md font-bold text-on-surface">{% t 'Motivos de los reportes' %}</h2>
-      <ul class="mt-2 space-y-2">
-        {% for reporte in grupo.reportes %}
-          <li class="rounded-xl bg-surface-container-low p-3 text-body-sm font-body-sm">
-            <p class="text-secondary">{{ reporte.reporter.first_name|default:reporte.reporter.email }} · {{ reporte.created_at|date:"d/m/Y H:i" }}</p>
-            <p class="mt-1 text-on-surface">{{ reporte.reason }}</p>
+      <form class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col justify-between h-full" method="post" action="{% url 'moderar_resena' resena.pk %}">
+        {% csrf_token %}
+        <div>
+          <span class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Veredicto del moderador' %}</span>
+          <p class="text-body-sm text-secondary mb-4">{% t 'Si la reseña cumple las políticas de uso, manténgala y los reportes quedan resueltos. Si no, elimínela indicando el motivo.' %}</p>
+          <label class="block text-body-sm font-semibold text-on-surface mb-1.5" for="nota-{{ resena.pk }}">{% t 'Nota de la decisión' %} <span class="font-normal text-secondary">{% t '(opcional al mantener)' %}</span></label>
+          <textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors resize-none" id="nota-{{ resena.pk }}" name="note" rows="3" maxlength="500"></textarea>
+        </div>
+        <div class="mt-6 flex items-center gap-2">
+          <a class="flex-1 text-center bg-surface-container hover:bg-error-container/30 text-error border border-error/30 font-body-md text-body-md font-semibold py-2 px-3 rounded-full transition-colors" href="#eliminar-{{ resena.pk }}">{% t 'Eliminar reseña' %}</a>
+          <button class="flex-1 bg-primary-container hover:brightness-95 text-on-primary-container font-body-md text-body-md font-bold py-2 px-3 rounded-full transition-colors active:scale-[0.98]" type="submit" name="action" value="keep">{% t 'Mantener reseña' %}</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="mt-6">
+      <span class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Motivos de los reportes' %}</span>
+      <ul class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {% for reporte in seleccionado.reportes %}
+          <li class="bg-surface-container-lowest rounded-xl border border-outline-variant p-3 text-body-sm">
+            <p class="text-secondary break-all">{% if reporte.reporter.first_name %}{{ reporte.reporter.first_name }} · {% endif %}{{ reporte.reporter.email }} · {{ reporte.created_at|date:"d/m/Y H:i" }}</p>
+            <p class="mt-1 text-on-surface whitespace-pre-line break-words">{{ reporte.reason }}</p>
           </li>
         {% endfor %}
       </ul>
+    </div>
+  </section>
+  {% endwith %}
+{% endif %}
 
-      <form class="mt-5 space-y-3" method="post" action="{% url 'moderar_resena' resena.pk %}">
-        {% csrf_token %}
-        <label class="block text-body-sm font-body-sm font-semibold text-on-surface" for="nota-{{ resena.pk }}">
-          {% t 'Motivo de la decisión' %} <span class="font-normal text-secondary">{% t '(obligatorio para eliminar)' %}</span>
-        </label>
-        <textarea class="w-full rounded-xl bg-surface-container-low border border-outline-variant/50 px-4 py-3 text-body-md focus:border-on-surface focus:ring-0" id="nota-{{ resena.pk }}" name="note" rows="2" maxlength="500"></textarea>
+{% for grupo in grupos %}
+  {% with resena=grupo.resena autor=grupo.resena.user %}
+  <!-- VENTANA PARA ELIMINAR (frontend/html/admin-modal-eliminar-resena.html) -->
+  <div id="eliminar-{{ resena.pk }}" class="hidden target:flex fixed inset-0 z-50 items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-eliminar-{{ resena.pk }}">
+    <a class="absolute inset-0 cursor-default" href="#cerrar" tabindex="-1" aria-hidden="true"></a>
+    <form class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" method="post" action="{% url 'moderar_resena' resena.pk %}">
+      {% csrf_token %}
+      <div class="p-6 pb-4 border-b border-surface-container flex items-start gap-4">
+        <div class="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center shrink-0 border border-error/20">
+          <span class="material-symbols-outlined text-[28px]" aria-hidden="true">warning</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <h2 id="titulo-eliminar-{{ resena.pk }}" class="text-headline-md font-headline-md text-on-surface">{% t '¿Eliminar esta reseña definitivamente?' %}</h2>
+            <a class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors flex" href="#cerrar" title="{% t 'Cerrar ventana' %}" aria-label="{% t 'Cerrar ventana' %}">
+              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+            </a>
+          </div>
+          <p class="text-body-md font-body-md text-secondary mt-1 leading-relaxed">{% t 'La reseña deja de mostrarse en PricePeek y la eliminación queda en el historial del autor como un incumplimiento de las políticas.' %}</p>
+        </div>
+      </div>
 
-        {% if not autor.is_active %}
-          <p class="text-body-sm font-body-sm text-secondary">{% t 'La cuenta del autor ya está suspendida.' %}</p>
-        {% elif autor.role == "client" %}
-          <label class="flex items-center gap-2 text-body-sm font-body-sm text-on-surface">
-            <input type="checkbox" name="suspend">
-            {% t 'Suspender también la cuenta del autor (solo aplica al eliminar la reseña)' %}
-          </label>
-        {% endif %}
+      <div class="p-6 space-y-5 overflow-y-auto">
+        <div class="bg-surface-container-low rounded-xl border border-outline-variant p-4 space-y-3">
+          <div class="flex flex-wrap items-center gap-2 text-body-sm pb-2.5 border-b border-surface-container">
+            <span class="font-price-row font-bold text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">#REV-{{ resena.pk }}</span>
+            <span class="font-headline-md font-bold text-on-surface">{{ resena.variant.product.name }}</span>
+            <span class="text-secondary">({{ resena.variant.name }})</span>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-body-sm min-w-0">
+              <span class="font-semibold text-on-surface">{% t 'Autor:' %}</span>
+              <span class="text-secondary font-mono break-all">{{ autor.email }}</span>
+            </div>
+            <div class="flex items-center gap-1 text-body-sm">
+              <span class="font-bold text-on-surface mr-1">{% t 'Calificación:' %}</span>
+              <span class="text-primary-container" aria-hidden="true">{{ resena.score|estrellas }}</span>
+              <span class="font-price-row font-bold text-secondary ml-1">{{ resena.score }}.0</span>
+            </div>
+          </div>
+          <div class="bg-surface-container-lowest p-3 rounded-lg border-l-4 border-error text-body-md text-on-surface italic break-words">"{{ resena.content }}"</div>
+          <div class="flex items-center gap-2 text-body-sm text-error bg-error-container/40 p-2.5 rounded-lg border border-error/20">
+            <span class="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">flag</span>
+            <span><strong>{{ grupo.reportes|length }} {% if grupo.reportes|length == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}:</strong> {{ grupo.reportes.0.reason|truncatechars:140 }}</span>
+          </div>
+        </div>
 
-        <div class="flex flex-wrap gap-2">
-          <button class="boton-secundario" type="submit" name="action" value="keep">{% t 'Mantener reseña' %}</button>
-          <button class="px-5 py-2.5 rounded-full bg-error hover:brightness-95 text-on-error font-semibold text-body-md transition-colors inline-flex items-center gap-2" type="submit" name="action" value="delete" onclick="return confirm('{% t '¿Eliminar esta reseña? No se puede deshacer.' %}')">
-            <span class="material-symbols-outlined text-[18px]">delete</span>{% t 'Eliminar reseña' %}
+        <div class="space-y-4 pt-1">
+          <div class="space-y-1.5">
+            <label class="block text-body-sm font-headline-md font-bold text-on-surface" for="motivo-{{ resena.pk }}">
+              {% t 'Motivo de la eliminación' %} <span class="text-error">*</span> <span class="text-secondary font-normal">{% t '(queda en el historial del cliente)' %}</span>
+            </label>
+            <textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors resize-none" id="motivo-{{ resena.pk }}" name="note" rows="3" maxlength="500" required placeholder="{% t 'Por ejemplo: lenguaje ofensivo contra otros usuarios.' %}"></textarea>
+          </div>
+          {% if not autor.is_active %}
+            <p class="text-body-sm text-secondary">{% t 'La cuenta del autor ya está suspendida.' %}</p>
+          {% elif autor.role == "client" %}
+            <label class="flex items-start gap-3 cursor-pointer group">
+              <span class="flex items-center h-5">
+                <input class="w-4 h-4 text-on-surface rounded border-outline-variant focus:ring-0 focus:ring-offset-0 cursor-pointer accent-on-surface" type="checkbox" name="suspend">
+              </span>
+              <span class="text-body-sm">
+                <span class="font-medium text-on-surface group-hover:text-primary transition-colors">{% t 'Suspender también la cuenta del autor' %}</span>
+                <span class="block text-secondary text-body-sm">{% t 'No podrá iniciar sesión ni publicar reseñas hasta que un administrador reactive la cuenta.' %}</span>
+              </span>
+            </label>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="p-6 py-4 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-1.5 text-secondary text-body-sm">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">lock</span>
+          <span>{% t 'No se puede deshacer' %}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <a class="px-5 py-2 rounded-full border border-outline-variant text-on-surface font-headline-md font-bold text-body-md hover:bg-surface-container transition-colors" href="#cerrar">{% t 'Cancelar' %}</a>
+          <button class="px-5 py-2 rounded-full bg-error text-on-error font-headline-md font-bold text-body-md hover:brightness-95 transition-colors flex items-center gap-2 shadow-sm" type="submit" name="action" value="delete">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+            <span>{% t 'Eliminar definitivamente' %}</span>
           </button>
         </div>
-      </form>
-    </article>
-    {% endwith %}
-  {% empty %}
-    <div class="tarjeta p-8 text-center">
-      <p class="text-body-md font-body-md text-secondary">{% t 'No hay reseñas reportadas pendientes de revisión.' %}</p>
-    </div>
-  {% endfor %}
-</div>
+      </div>
+    </form>
+  </div>
+  {% endwith %}
+{% endfor %}
 {% endblock %}

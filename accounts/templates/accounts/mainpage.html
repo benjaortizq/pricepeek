@@ -21,13 +21,6 @@
       <input class="flex-grow bg-transparent border-0 text-body-lg font-body-lg text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="{% t 'Buscar por nombre o marca' %}" type="search" aria-label="{% t 'Buscar producto o marca' %}">
       <button class="px-5 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-md transition-colors" type="submit">{% t 'Buscar' %}</button>
     </form>
-    {% if user.role == "admin" %}
-      <div class="mt-6 flex flex-wrap justify-center gap-2">
-        <a class="boton-secundario" href="{% url 'resenas_reportadas' %}"><span class="material-symbols-outlined text-[18px]">flag</span>Reseñas reportadas</a>
-        <a class="boton-secundario" href="{% url 'clientes' %}"><span class="material-symbols-outlined text-[18px]">group</span>Clientes</a>
-        <a class="boton-secundario" href="{% url 'incidencias' %}"><span class="material-symbols-outlined text-[18px]">sync_problem</span>{% t 'Incidencias de datos' %}</a>
-      </div>
-    {% endif %}
   </section>
 
   <section class="mt-space-xl">

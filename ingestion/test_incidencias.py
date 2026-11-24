@@ -78,7 +78,7 @@ class ExtraccionesFallidasTests(RegistroDeIncidenciasBase):
             self.assertContains(respuesta, producto)
         self.assertNotContains(respuesta, "Llanta sin GTIN")
         self.assertContains(respuesta, "3 incidencias")
-        self.assertEqual(respuesta.context["totales"], {"fallidas": 3, "excluidos": 1})
+        self.assertEqual((respuesta.context["totales"]["fallidas"], respuesta.context["totales"]["excluidos"]), (3, 1))
 
     def test_muestra_el_tipo_el_comercio_y_el_motivo(self):
         respuesta = self.consultar()

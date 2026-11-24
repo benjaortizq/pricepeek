@@ -7,7 +7,7 @@ from core.templatetags.panel import estrellas, pendientes_del_panel
 from core.translations import translate_text
 from ingestion.models import Incident
 
-from .models import ReviewReport, Reviews
+from .models import ReviewDeletion, ReviewReport, Reviews
 from .test_reportes import ReportesBase
 
 
@@ -112,9 +112,8 @@ class ResenasReportadasEnElPanelTests(PanelBase):
         self.crear_reporte()
         self.assertNotContains(self.client.get(self.url, {"filtro": "reiterados"}), f"#REV-{self.resena.pk}")
         for review_id in (900, 901):
-            ReviewReport.objects.create(
-                review_id=review_id, reporter=self.otro_cliente, review_author=self.autor,
-                reason="Spam.", status=ReviewReport.Status.DELETED,
+            ReviewDeletion.objects.create(
+                review_id=review_id, author=self.autor, policy=ReviewDeletion.Policy.PROMOTIONAL, reason="Spam."
             )
         self.assertContains(self.client.get(self.url, {"filtro": "reiterados"}), f"#REV-{self.resena.pk}")
 

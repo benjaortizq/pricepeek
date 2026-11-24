@@ -54,20 +54,33 @@
           <thead>
             <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
               <th class="py-3 px-4">{% t 'Fecha' %}</th>
+              <th class="py-3 px-4">{% t 'Producto' %}</th>
+              <th class="py-3 px-4">{% t 'Política incumplida' %}</th>
+              <th class="py-3 px-4 min-w-[14rem]">{% t 'Motivo de la eliminación' %}</th>
               <th class="py-3 px-4">{% t 'Reportes' %}</th>
-              <th class="py-3 px-4">{% t 'Motivo de la eliminación' %}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
             {% for infraccion in infracciones %}
-              <tr class="hover:bg-surface-container-low/50 transition-colors">
-                <td class="py-4 px-4 whitespace-nowrap text-body-sm">{{ infraccion.fecha|date:"d/m/Y"|default:"—" }}</td>
-                <td class="py-4 px-4 whitespace-nowrap">
-                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20">
-                    <span class="material-symbols-outlined text-[12px]" aria-hidden="true">flag</span>{{ infraccion.reportes }} {% if infraccion.reportes == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
-                  </span>
+              <tr class="hover:bg-surface-container-low/50 transition-colors align-top">
+                <td class="py-4 px-4 whitespace-nowrap text-body-sm">
+                  {{ infraccion.deleted_at|date:"d/m/Y" }}
+                  {% if infraccion.deleted_by %}<div class="text-[11px] text-secondary mt-0.5 break-all">{{ infraccion.deleted_by.email }}</div>{% endif %}
                 </td>
-                <td class="py-4 px-4 text-body-sm">{{ infraccion.motivo|default:"—" }}</td>
+                <td class="py-4 px-4 text-body-sm">{{ infraccion.product_name|default:"—" }}</td>
+                <td class="py-4 px-4 text-body-sm">
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t infraccion.get_policy_display %}</span>
+                </td>
+                <td class="py-4 px-4 text-body-sm whitespace-pre-line break-words">{{ infraccion.reason }}</td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  {% if infraccion.reports %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20">
+                      <span class="material-symbols-outlined text-[12px]" aria-hidden="true">flag</span>{{ infraccion.reports }} {% if infraccion.reports == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
+                    </span>
+                  {% else %}
+                    <span class="text-body-sm text-secondary">{% t 'Sin reportes' %}</span>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

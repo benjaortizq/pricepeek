@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from core.panel import duracion_aproximada, inicio_de_hoy, inicio_del_mes
 
-from .models import ReviewReport
+from .models import ReviewDeletion, ReviewReport
 
 DIAS_DEL_PROMEDIO = 30
 
@@ -34,10 +34,8 @@ def resumen_de_moderacion():
         "reportes_pendientes": pendientes.count(),
         "reportes_hoy": pendientes.filter(created_at__gte=inicio_de_hoy()).count(),
         "tiempo_promedio": duracion_aproximada(sum(duraciones, timedelta()) / len(duraciones)) if duraciones else None,
-        "eliminadas_mes": ReviewReport.objects.filter(status=Status.DELETED, resolved_at__gte=inicio_del_mes())
-        .values("review_id")
-        .distinct()
-        .count(),
+        # Todas las eliminaciones, vengan o no de un reporte.
+        "eliminadas_mes": ReviewDeletion.objects.filter(deleted_at__gte=inicio_del_mes()).count(),
         "eliminadas_30": eliminadas,
         "mantenidas_30": mantenidas,
         "tasa_eliminacion": round(100 * eliminadas / decididas) if decididas else None,

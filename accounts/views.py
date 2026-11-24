@@ -25,6 +25,7 @@ from products.models import Products
 from products.ofertas import categorias_del_inicio, mejores_ofertas, ultima_verificacion
 from products.popularidad import mas_populares
 from reviews.indicadores import resumen_de_moderacion
+from reviews.models import ReviewDeletion, ReviewReport, Reviews
 from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
 from .decorators import role_required
@@ -268,13 +269,8 @@ INFRACCIONES_REITERADAS = 2  # desde cuántas reseñas eliminadas se resalta al 
 
 def clientes_con_infracciones():
     """Clientes con la cantidad de reseñas suyas que el administrador eliminó por incumplir políticas."""
-    return User.objects.filter(role=User.Role.CLIENT).annotate(
-        infracciones=Count(
-            "reportes_recibidos__review_id",
-            filter=Q(reportes_recibidos__status=ReviewReport.Status.DELETED),
-            distinct=True,
-        )
-    )
+    # Cada eliminación queda en ReviewDeletion, venga o no de un reporte.
+    return User.objects.filter(role=User.Role.CLIENT).annotate(infracciones=Count("resenas_eliminadas", distinct=True))
 
 
 @role_required(User.Role.ADMIN)
@@ -338,12 +334,7 @@ def clientes(request):
 
 
 def mostrar_detalle_cliente(request, cliente, form=None):
-    infracciones = list(
-        ReviewReport.objects.filter(review_author=cliente, status=ReviewReport.Status.DELETED)
-        .values("review_id")
-        .annotate(reportes=Count("id"), fecha=Max("resolved_at"), motivo=Max("resolution_note"))
-        .order_by("-fecha")
-    )
+    infracciones = list(ReviewDeletion.objects.filter(author=cliente).select_related("deleted_by"))
     return render(
         request,
         "accounts/detalle_cliente.html",

@@ -1,11 +1,10 @@
 """Qué productos son populares ahora: cuántas personas distintas vieron cada uno esta semana.
 
 Cada vez que alguien abre el detalle de un producto se guarda una visita (ProductView), una sola
-por visitante, producto y hora: recargar la página no suma. La popularidad de un producto es
-cuántos visitantes distintos tuvo en los últimos DIAS_DE_POPULARIDAD días.
+por cliente, producto y hora: recargar la página no suma. No se registran visitas anónimas. La
+popularidad de un producto es cuántos clientes distintos lo vieron en los últimos días.
 
-Solo cuentan los clientes y los visitantes anónimos: los administradores y las empresas no son
-interés de compra, y los robots (buscadores, vistas previas de enlaces) tampoco.
+Solo cuentan los clientes con sesión; los administradores, las empresas y los robots tampoco.
 """
 
 import logging
@@ -31,14 +30,13 @@ logger = logging.getLogger(__name__)
 
 def _visitante(request):
     """«u<id>» para el cliente que inició sesión y «s<clave>» para el anónimo; None si no cuenta."""
+    # Las visitas anónimas dejaron de guardarse; solo se procesa la sesión del cliente.
     if _ROBOT.search(request.headers.get("User-Agent", "")):
         return None
     usuario = request.user
-    if usuario.is_authenticated:
-        return f"u{usuario.pk}" if usuario.role == "client" else None
-    if not request.session.session_key:
-        request.session.save()  # le da una sesión para reconocerlo si vuelve
-    return f"s{request.session.session_key}"
+    if usuario.is_authenticated and usuario.role == "client":
+        return f"u{usuario.pk}"
+    return None
 
 
 def registrar_visita(request, producto_id):
@@ -62,7 +60,7 @@ def registrar_visita(request, producto_id):
 
 
 def popularidad_reciente(producto="pk"):
-    """Cuántos visitantes distintos tuvo el producto en los últimos días.
+    """Cuántos clientes distintos tuvieron el producto en los últimos días.
 
     ``producto`` es dónde está el id del producto en la consulta de afuera: "pk" en una de
     productos, "gtin__product_id" en una de precios.

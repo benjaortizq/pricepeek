@@ -7,7 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Max, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -19,15 +21,17 @@ from ingestion.models import Incident
 from ingestion.resolucion import EXTRACCION_FALLIDA
 from ingestion.views import ICONOS
 from products.busqueda import buscar_productos, con_imagen
+from products.models import ProductView
 from products.popularidad import mas_populares
 from reviews.indicadores import resumen_de_moderacion
-from reviews.models import ReviewReport, Reviews
+from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
 from .decorators import role_required
 from .forms import (
     AlertasPrecioForm,
     CambioContrasenaForm,
     CodigoCambioContrasenaForm,
+    ConsentimientoPrivacidadForm,
     ConfirmarCorreoForm,
     EditarNombreForm,
     EliminarCuentaForm,
@@ -36,7 +40,8 @@ from .forms import (
     SuspenderClienteForm,
     correo_en_uso,
 )
-from .models import User
+from .models import PrivacyConsent, User
+from .privacy import PRIVACY_POLICY_VERSION
 
 CAMBIO_PENDIENTE = "cambio_contrasena_pendiente"
 CORREO_PENDIENTE = "cambio_correo_pendiente"
@@ -46,12 +51,42 @@ def registro(request):
     if request.method == "POST":
         form = RegistroClienteForm(request.POST)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                usuario = form.save()
+                PrivacyConsent.objects.create(
+                    user=usuario,
+                    policy_version=PRIVACY_POLICY_VERSION,
+                    accepted_at=timezone.now(),
+                )
             messages.success(request, "Su cuenta fue creada. Ya puede iniciar sesión.")
             return redirect("login")
     else:
         form = RegistroClienteForm()
     return render(request, "accounts/register.html", {"form": form})
+
+
+@login_required
+@role_required(User.Role.CLIENT)
+def consentimiento_privacidad(request):
+    if PrivacyConsent.objects.filter(
+        user=request.user,
+        policy_version=PRIVACY_POLICY_VERSION,
+        revoked_at__isnull=True,
+    ).exists():
+        return redirect("panel")
+
+    if request.method == "POST":
+        form = ConsentimientoPrivacidadForm(request.POST)
+        if form.is_valid():
+            PrivacyConsent.objects.create(
+                user=request.user,
+                policy_version=PRIVACY_POLICY_VERSION,
+                accepted_at=timezone.now(),
+            )
+            return redirect("panel")
+    else:
+        form = ConsentimientoPrivacidadForm()
+    return render(request, "accounts/consentimiento_privacidad.html", {"form": form})
 
 
 @login_required
@@ -346,13 +381,125 @@ def eliminar_cuenta(request):
         form = EliminarCuentaForm(request.user, request.POST)
         if form.is_valid():
             usuario = request.user
-            logout(request)
-            usuario.delete()
+            resenas_ids = list(
+                Reviews.objects.filter(user_id=usuario.pk).values_list("pk", flat=True)
+            )
+            fotos = list(ReviewPhoto.objects.filter(review_id__in=resenas_ids))
+            with transaction.atomic():
+                ReviewReport.objects.filter(
+                    Q(reporter=usuario) | Q(review_id__in=resenas_ids)
+                ).delete()
+                ReviewPhoto.objects.filter(review_id__in=resenas_ids).delete()
+                Reviews.objects.filter(user_id=usuario.pk).delete()
+                PrivacyConsent.objects.filter(
+                    user=usuario, revoked_at__isnull=True
+                ).update(revoked_at=timezone.now())
+                logout(request)
+                usuario.delete()
+            for foto in fotos:
+                if foto.image.name:
+                    foto.image.storage.delete(foto.image.name)
             messages.success(request, "Su cuenta y sus datos fueron eliminados.")
             return redirect("login")
     else:
         form = EliminarCuentaForm(request.user)
     return render(request, "accounts/eliminar_cuenta.html", {"form": form})
+
+
+@login_required
+@role_required(User.Role.CLIENT)
+def descargar_datos_personales(request):
+    """Entrega al cliente una copia legible de los datos personales de su cuenta."""
+    usuario = request.user
+    lista_deseos = [
+        {
+            "producto": articulo.variant.product.name,
+            "variante": articulo.variant.name,
+            "precio_objetivo": articulo.target_price,
+            "moneda": articulo.currency.name,
+            "alerta_activa": articulo.alert_enabled,
+            "comercio": articulo.store.name if articulo.store_id else None,
+        }
+        for articulo in usuario.wishlist_items.select_related(
+            "variant__product", "currency", "store"
+        )
+    ]
+    resenas_query = Reviews.objects.filter(user_id=usuario.pk).select_related(
+        "variant__product"
+    )
+    fotos_resenas = {
+        foto.review_id: foto
+        for foto in ReviewPhoto.objects.filter(
+            review_id__in=resenas_query.values_list("pk", flat=True)
+        )
+    }
+    resenas = [
+        {
+            "producto": resena.variant.product.name,
+            "contenido": resena.content,
+            "calificacion": resena.score,
+            "creada": resena.created_at.isoformat(),
+            "actualizada": resena.updated_at.isoformat(),
+            "foto": fotos_resenas[resena.pk].image.url
+            if resena.pk in fotos_resenas
+            else None,
+        }
+        for resena in resenas_query
+    ]
+    datos = {
+        "cuenta": {
+            "nombre": usuario.first_name,
+            "apellido": usuario.last_name,
+            "correo": usuario.email,
+            "tipo": usuario.get_role_display(),
+            "creada": usuario.date_joined.isoformat(),
+            "ultimo_acceso": usuario.last_login.isoformat() if usuario.last_login else None,
+            "ultimo_cambio_de_contrasena": usuario.last_password_change.isoformat(),
+            "alertas_por_correo": usuario.active_alerts,
+            "suspendida_desde": usuario.suspended_at.isoformat()
+            if usuario.suspended_at
+            else None,
+            "motivo_de_suspension": usuario.suspension_reason,
+        },
+        "lista_de_deseos": lista_deseos,
+        "resenas": resenas,
+        "reportes_de_resenas": [
+            {
+                "id_resena": reporte.review_id,
+                "motivo": reporte.reason,
+                "estado": reporte.get_status_display(),
+                "creado": reporte.created_at.isoformat(),
+            }
+            for reporte in ReviewReport.objects.filter(reporter=usuario)
+        ],
+        "reportes_recibidos": [
+            {
+                "id_resena": reporte.review_id,
+                "motivo": reporte.reason,
+                "estado": reporte.get_status_display(),
+                "nota_de_resolucion": reporte.resolution_note,
+                "creado": reporte.created_at.isoformat(),
+            }
+            for reporte in ReviewReport.objects.filter(review_author=usuario)
+        ],
+        "visitas_a_productos": [
+            {"id_producto": visita.product_id, "hora": visita.hour.isoformat()}
+            for visita in ProductView.objects.filter(user=usuario).order_by("-hour")
+        ],
+        "consentimientos_de_privacidad": [
+            {
+                "version": consentimiento.policy_version,
+                "aceptado": consentimiento.accepted_at.isoformat(),
+                "revocado": consentimiento.revoked_at.isoformat()
+                if consentimiento.revoked_at
+                else None,
+            }
+            for consentimiento in PrivacyConsent.objects.filter(user=usuario)
+        ],
+    }
+    respuesta = JsonResponse(datos, json_dumps_params={"ensure_ascii": False, "indent": 2})
+    respuesta["Content-Disposition"] = 'attachment; filename="mis-datos-pricepeek.json"'
+    return respuesta
 
 
 def enviar_codigo_cambio_contrasena(user, codigo):

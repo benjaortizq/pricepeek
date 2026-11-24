@@ -287,6 +287,16 @@
     "Eliminar de mi lista": "Remove from my list",
     "Tu lista de deseos está vacía.": "Your wishlist is empty.",
     "Añade productos desde la búsqueda o desde sus páginas de detalle.": "Add products from search or their detail pages.",
-    "Buscar productos": "Search products"
+    "Buscar productos": "Search products",
+    "Total de tu lista por comercio": "Total of your list by store",
+    "Lo que costaría comprar 1 producto en cada comercio.": "What it would cost to buy 1 product at each store.",
+    "Lo que costaría comprar {cantidad} productos (una unidad de cada uno) en cada comercio.": "What it would cost to buy {cantidad} products (one unit of each) at each store.",
+    "Montos en {moneda} ({simbolo}).": "Amounts in {moneda} ({simbolo}).",
+    "Opción completa más barata": "Cheapest complete option",
+    "Tiene todos los productos de tu lista.": "Has every product on your list.",
+    "Le falta 1 producto: {productos}.": "Missing 1 product: {productos}.",
+    "Le faltan {cantidad} productos: {productos}.": "Missing {cantidad} products: {productos}.",
+    "Ningún comercio ofrece todos los productos de tu lista.": "No store offers every product on your list.",
+    "Todavía no hay precios disponibles para comparar.": "There are no prices available to compare yet."
   }
 }

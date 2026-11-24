@@ -212,6 +212,17 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PricePeek <no-reply@p
 # SCRUM-56: cada cuántas horas se vuelve a revisar un precio en la página de su tienda
 # (python manage.py actualizar_precios se salta los que se revisaron hace menos tiempo).
 PRECIOS_FRECUENCIA_HORAS = int(os.environ.get("PRECIOS_FRECUENCIA_HORAS", "24"))
+
+# Ejecución manual de la obtención de datos desde el panel de administración.
+# En el servidor: corre actualizar_precios en segundo plano dentro de este mismo proceso.
+OBTENCION_EN_EL_SERVIDOR = os.environ.get("OBTENCION_EN_EL_SERVIDOR", "True") == "True"
+# En GitHub Actions: pide una corrida del workflow .github/workflows/actualizar-precios.yml.
+# GITHUB_ACTIONS_TOKEN es un token «fine-grained» con permiso Actions: Read and write sobre el
+# repositorio. Sin token ni repositorio, la opción aparece desactivada en el panel.
+GITHUB_ACTIONS_TOKEN = os.environ.get("GITHUB_ACTIONS_TOKEN", "")
+GITHUB_REPOSITORIO = os.environ.get("GITHUB_REPOSITORIO", "")  # por ejemplo: usuario/pricepeek
+GITHUB_WORKFLOW_PRECIOS = os.environ.get("GITHUB_WORKFLOW_PRECIOS", "actualizar-precios.yml")
+GITHUB_RAMA = os.environ.get("GITHUB_RAMA", "main")
 import sys
  
 if "test" in sys.argv:

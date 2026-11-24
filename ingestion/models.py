@@ -127,3 +127,63 @@ class StoreProduct(models.Model):
         if not self.suggested_gtin:
             return None
         return ProductVariants.objects.select_related("product__brand").filter(gtin=self.suggested_gtin).first()
+
+
+class ManualRun(models.Model):
+    """Una obtención de datos que el administrador pidió a mano para un comercio
+    (issue «Ejecución manual de la obtención de datos»).
+
+    Corre actualizar_precios --tienda <comercio> en el servidor de PricePeek o en GitHub Actions
+    (el mismo workflow de cada hora), sin esperar a la próxima actualización programada.
+    """
+
+    class Runner(models.TextChoices):
+        SERVER = "server", "Servidor de PricePeek"
+        GITHUB = "github", "GitHub Actions"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "En cola"
+        RUNNING = "running", "En curso"
+        FINISHED = "finished", "Terminada"
+        FAILED = "failed", "Falló"
+        INTERRUPTED = "interrupted", "Interrumpida"
+
+    ACTIVE = (Status.PENDING, Status.RUNNING)
+    SUMMARY_MAX_LENGTH = 255
+
+    store_name = models.CharField("comercio", max_length=100)
+    # La fila de stores (tabla de Supabase): no es una llave foránea, como en StoreProduct.
+    store_id = models.BigIntegerField("id del comercio", null=True, blank=True)
+    runner = models.CharField("dónde corre", max_length=20, choices=Runner.choices)
+    status = models.CharField("estado", max_length=20, choices=Status.choices, default=Status.PENDING)
+    minutes = models.PositiveSmallIntegerField("minutos como máximo", default=20)
+    all_prices = models.BooleanField("revisar todos los precios", default=True)
+    dry_run = models.BooleanField("modo de prueba", default=False)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="pedida por",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    created_at = models.DateTimeField("pedida el", auto_now_add=True)
+    updated_at = models.DateTimeField("actualizada el", auto_now=True)
+    started_at = models.DateTimeField("empezó", null=True, blank=True)
+    finished_at = models.DateTimeField("terminó", null=True, blank=True)
+    summary = models.CharField("resultado", max_length=SUMMARY_MAX_LENGTH, blank=True)
+    output = models.TextField("salida del comando", blank=True)
+    github_run_id = models.BigIntegerField("corrida de GitHub", null=True, blank=True)
+    github_url = models.URLField("enlace a GitHub", max_length=500, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "ejecución manual"
+        verbose_name_plural = "ejecuciones manuales"
+
+    def __str__(self):
+        return f"{self.store_name} en {self.get_runner_display()} ({self.get_status_display()})"
+
+    @property
+    def is_active(self):
+        return self.status in self.ACTIVE

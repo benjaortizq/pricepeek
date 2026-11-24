@@ -1,0 +1,336 @@
+{% extends "panel/base.html" %}
+{% load site_i18n %}
+{% comment %}
+  Ejecución manual de la obtención de datos. Diseño: frontend/html/admin-panel-moderacion.html
+  (tarjetas, tabla y pie) y admin-modal-eliminar-resena.html (las ventanas, que se abren con
+  #ejecutar-<id> y #salida-<id> sin JavaScript).
+{% endcomment %}
+
+{% block title %}{% t 'Obtención de datos' %}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span>{% t 'Datos de los comercios' %}</span>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Obtención de datos' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Obtención de datos' %}{% endblock %}
+{% block descripcion %}{% t 'Actualice los precios de un comercio que usa web scraping en cualquier momento, sin esperar a la actualización programada de cada hora.' %}{% endblock %}
+
+{% block acciones %}
+  {% if url_del_workflow %}
+    <a class="bg-surface-container-lowest text-on-surface border border-outline-variant rounded-full px-4 py-2 font-body-md text-body-md font-semibold hover:bg-surface-container transition-colors flex items-center gap-2" href="{{ url_del_workflow }}" target="_blank" rel="noopener noreferrer">
+      <span class="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span><span>{% t 'Ver en GitHub Actions' %}</span>
+    </a>
+  {% endif %}
+  <a class="p-1.5 rounded-full hover:bg-surface-container text-secondary hover:text-on-surface transition-colors flex" href="{% url 'obtencion_de_datos' %}" title="{% t 'Actualizar la lista' %}" aria-label="{% t 'Actualizar la lista' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">refresh</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% for kpi in kpis %}{% include "panel/kpi.html" %}{% endfor %}
+</div>
+
+{% if not github_al_dia %}
+  <div role="status" class="flex items-start gap-3 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3.5 text-body-sm text-on-surface">
+    <span class="material-symbols-outlined text-[20px] text-secondary" aria-hidden="true">cloud_off</span>
+    <p>{% t 'No se pudo consultar el estado de las corridas en GitHub; se vuelve a intentar al actualizar la página.' %}</p>
+  </div>
+{% endif %}
+
+<!-- COMERCIOS -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/40">
+    <h2 class="font-headline-md text-headline-md font-bold text-on-surface">{% t 'Comercios que usan web scraping' %}</h2>
+    <div class="text-body-sm font-body-sm text-secondary flex items-center gap-2">
+      {% if en_el_servidor %}<span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span>{% t 'Servidor disponible' %}</span>{% endif %}
+      {% if en_github %}<span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span>{% t 'GitHub Actions disponible' %}</span>{% endif %}
+    </div>
+  </div>
+  {% if comercios %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+            <th class="py-3 px-4">{% t 'Comercio' %}</th>
+            <th class="py-3 px-4">{% t 'Precios que se revisan' %}</th>
+            <th class="py-3 px-4">{% t 'Última revisión' %}</th>
+            <th class="py-3 px-4">{% t 'Desactualizados' %}</th>
+            <th class="py-3 px-4">{% t 'Incidencias pendientes' %}</th>
+            <th class="py-3 px-4">{% t 'Estado' %}</th>
+            <th class="py-3 px-4 text-right">{% t 'Acciones' %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+          {% for comercio in comercios %}
+            <tr class="hover:bg-surface-container-low/50 transition-colors">
+              <td class="py-4 px-4">
+                <div class="font-semibold text-on-surface flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-primary-container shrink-0"></span>{{ comercio.nombre }}
+                </div>
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap font-price-row">{{ comercio.precios }}</td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if comercio.ultima_revision %}
+                  <div class="text-on-surface text-body-sm font-medium">{% t 'Hace {tiempo}' tiempo=comercio.ultima_revision|timesince %}</div>
+                  <div class="text-[11px] text-secondary mt-0.5">{{ comercio.ultima_revision|date:"d/m/Y H:i" }}</div>
+                {% else %}
+                  <span class="text-body-sm text-secondary">—</span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if comercio.desactualizados %}
+                  <span class="inline-flex items-center gap-1 font-label-badge text-label-badge text-error">
+                    <span class="w-1.5 h-1.5 rounded-full bg-error"></span>{{ comercio.desactualizados }}
+                  </span>
+                {% else %}
+                  <span class="text-body-sm text-secondary">0</span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if comercio.incidencias %}
+                  <a class="text-body-sm font-semibold text-on-surface hover:underline" href="{% url 'incidencias' %}?comercio={{ comercio.nombre|urlencode }}">{{ comercio.incidencias }}</a>
+                {% else %}
+                  <span class="text-body-sm text-secondary">0</span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if comercio.en_curso %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-primary-container text-on-primary-container font-bold border border-primary-container">{% t comercio.en_curso.get_status_display %} · {% t comercio.en_curso.get_runner_display %}</span>
+                {% elif comercio.desactualizados %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t 'Desactualizado' %}</span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-bold">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">check_circle</span>{% t 'Al día' %}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap text-right">
+                {% if comercio.en_curso %}
+                  <span class="bg-surface-container text-secondary px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold">{% t 'Ejecutando…' %}</span>
+                {% elif en_el_servidor or en_github %}
+                  <a class="inline-flex items-center gap-1 bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" href="#ejecutar-{{ comercio.id }}">
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">play_arrow</span>{% t 'Ejecutar ahora' %}
+                  </a>
+                {% else %}
+                  <span class="text-body-sm text-secondary">{% t 'Sin opciones configuradas' %}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="p-8 text-center">
+      <p class="text-body-md font-body-md text-secondary">{% t 'Ningún comercio tiene precios que se obtengan por web scraping.' %}</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- HISTORIAL -->
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/40">
+    <h2 class="font-headline-md text-headline-md font-bold text-on-surface">{% t 'Ejecuciones manuales' %}</h2>
+    <div class="text-body-sm font-body-sm text-secondary flex items-center gap-1">
+      <span>{% t 'Ordenar por:' %}</span>
+      <span class="font-semibold text-on-surface">{% t 'Más recientes' %}</span>
+    </div>
+  </div>
+  {% if ejecuciones %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+            <th class="py-3 px-4">{% t 'ID y fecha' %}</th>
+            <th class="py-3 px-4">{% t 'Comercio' %}</th>
+            <th class="py-3 px-4">{% t 'Dónde' %}</th>
+            <th class="py-3 px-4">{% t 'Pedida por' %}</th>
+            <th class="py-3 px-4">{% t 'Estado' %}</th>
+            <th class="py-3 px-4 min-w-[16rem]">{% t 'Resultado' %}</th>
+            <th class="py-3 px-4 text-right">{% t 'Detalle' %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+          {% for ejecucion in ejecuciones %}
+            <tr class="hover:bg-surface-container-low/50 transition-colors align-top">
+              <td class="py-4 px-4 whitespace-nowrap">
+                <span class="font-price-row text-xs text-on-surface font-bold tracking-tight">#EJ-{{ ejecucion.pk }}</span>
+                <div class="text-body-sm font-body-sm text-secondary mt-0.5">{{ ejecucion.created_at|date:"d/m/Y H:i" }}</div>
+              </td>
+              <td class="py-4 px-4">
+                <div class="font-semibold text-on-surface">{{ ejecucion.store_name }}</div>
+                <div class="text-[11px] text-secondary mt-0.5">
+                  {% t 'Hasta {minutos} min' minutos=ejecucion.minutes %}{% if ejecucion.all_prices %} · {% t 'todos los precios' %}{% endif %}{% if ejecucion.dry_run %} · {% t 'modo de prueba' %}{% endif %}
+                </div>
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                <span class="inline-flex items-center gap-1 text-[11px] font-label-badge px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">
+                  <span class="material-symbols-outlined text-xs" aria-hidden="true">{% if ejecucion.runner == 'github' %}cloud{% else %}dns{% endif %}</span>{% t ejecucion.get_runner_display %}
+                </span>
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap text-body-sm">{{ ejecucion.requested_by.email|default:"—" }}</td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if ejecucion.status == 'finished' %}
+                  <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-bold">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">check_circle</span>{% t ejecucion.get_status_display %}
+                  </span>
+                {% elif ejecucion.status == 'failed' or ejecucion.status == 'interrupted' %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t ejecucion.get_status_display %}</span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-primary-container text-on-primary-container font-bold border border-primary-container">
+                    <span class="w-1.5 h-1.5 rounded-full bg-on-primary-container animate-pulse"></span>{% t ejecucion.get_status_display %}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 text-body-sm">
+                {% if ejecucion.summary %}{% t ejecucion.summary %}{% elif ejecucion.is_active %}<span class="text-secondary">{% t 'Todavía no termina.' %}</span>{% else %}—{% endif %}
+                {% if ejecucion.finished_at and ejecucion.started_at %}
+                  <div class="text-[11px] text-secondary mt-0.5">{% t 'Tardó {tiempo}' tiempo=ejecucion.started_at|timesince:ejecucion.finished_at %}</div>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap text-right">
+                <div class="inline-flex items-center gap-1">
+                  {% if ejecucion.output %}
+                    <a class="bg-surface-container-low hover:bg-surface-container border border-outline-variant text-on-surface px-3 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" href="#salida-{{ ejecucion.pk }}">{% t 'Ver la salida' %}</a>
+                  {% endif %}
+                  {% if ejecucion.github_url %}
+                    <a class="inline-flex items-center gap-1 bg-surface-container-low hover:bg-surface-container border border-outline-variant text-on-surface px-3 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" href="{{ ejecucion.github_url }}" target="_blank" rel="noopener noreferrer">
+                      {% t 'Ver en GitHub' %}<span class="material-symbols-outlined text-[14px]" aria-hidden="true">open_in_new</span>
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="p-8 text-center">
+      <p class="text-body-md font-body-md text-secondary">{% t 'Todavía no se ha pedido ninguna ejecución manual.' %}</p>
+    </div>
+  {% endif %}
+</div>
+
+{% for comercio in comercios %}
+  {% if not comercio.en_curso %}
+  <!-- VENTANA PARA EJECUTAR -->
+  <div id="ejecutar-{{ comercio.id }}" class="hidden target:flex fixed inset-0 z-50 items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-ejecutar-{{ comercio.id }}">
+    <a class="absolute inset-0 cursor-default" href="#cerrar" tabindex="-1" aria-hidden="true"></a>
+    <form class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" method="post" action="{% url 'ejecutar_obtencion' %}">
+      {% csrf_token %}
+      <input type="hidden" name="comercio" value="{{ comercio.id }}">
+      <div class="p-6 pb-4 border-b border-surface-container flex items-start gap-4">
+        <div class="w-12 h-12 rounded-full bg-primary-container/30 text-on-surface flex items-center justify-center shrink-0 border border-outline-variant">
+          <span class="material-symbols-outlined text-[28px]" aria-hidden="true">cloud_sync</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <h2 id="titulo-ejecutar-{{ comercio.id }}" class="text-headline-md font-headline-md text-on-surface">{% t 'Obtener los datos de {comercio}' comercio=comercio.nombre %}</h2>
+            <a class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors flex" href="#cerrar" title="{% t 'Cerrar ventana' %}" aria-label="{% t 'Cerrar ventana' %}">
+              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+            </a>
+          </div>
+          <p class="text-body-md font-body-md text-secondary mt-1 leading-relaxed">{% t 'Se revisa en la página de la tienda cada precio de este comercio, igual que en la actualización de cada hora. Si algo falla, queda una incidencia.' %}</p>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-5 overflow-y-auto">
+        <fieldset class="space-y-2">
+          <legend class="block text-body-sm font-headline-md font-bold text-on-surface mb-1.5">{% t '¿Dónde ejecutarla?' %}</legend>
+          <label class="flex items-start gap-3 rounded-xl border border-outline-variant p-3 has-[:checked]:border-on-surface has-[:checked]:bg-surface-container-low {% if en_el_servidor %}cursor-pointer{% else %}opacity-50{% endif %}">
+            <input class="mt-1 w-4 h-4 accent-on-surface" type="radio" name="donde" value="server"{% if en_el_servidor %} checked{% else %} disabled{% endif %}>
+            <span class="text-body-sm">
+              <span class="font-semibold text-on-surface flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">dns</span>{% t 'Servidor de PricePeek' %}</span>
+              <span class="block text-secondary">{% t 'Empieza de inmediato y se ve la salida mientras avanza. Si el servidor se reinicia, la ejecución se corta.' %}</span>
+              {% if not en_el_servidor %}<span class="block text-error">{% t 'Desactivado en este servidor (OBTENCION_EN_EL_SERVIDOR).' %}</span>{% endif %}
+            </span>
+          </label>
+          <label class="flex items-start gap-3 rounded-xl border border-outline-variant p-3 has-[:checked]:border-on-surface has-[:checked]:bg-surface-container-low {% if en_github %}cursor-pointer{% else %}opacity-50{% endif %}">
+            <input class="mt-1 w-4 h-4 accent-on-surface" type="radio" name="donde" value="github"{% if en_github %}{% if not en_el_servidor %} checked{% endif %}{% else %} disabled{% endif %}>
+            <span class="text-body-sm">
+              <span class="font-semibold text-on-surface flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">cloud</span>GitHub Actions</span>
+              <span class="block text-secondary">{% t 'Corre en GitHub, en el mismo workflow de la actualización de cada hora. Puede tardar un par de minutos en empezar.' %}</span>
+              {% if not en_github %}<span class="block text-error">{% t 'Falta configurar GITHUB_ACTIONS_TOKEN y GITHUB_REPOSITORIO en el servidor.' %}</span>{% endif %}
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="space-y-1.5">
+          <label class="block text-body-sm font-headline-md font-bold text-on-surface" for="minutos-{{ comercio.id }}">{% t 'Tiempo máximo' %}</label>
+          <select class="w-full sm:w-auto bg-surface-container-lowest border border-outline-variant rounded-xl pl-4 pr-10 py-2.5 text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface" id="minutos-{{ comercio.id }}" name="minutos">
+            {% for valor in minutos %}
+              <option value="{{ valor }}"{% if valor == minutos_por_defecto %} selected{% endif %}>{% t '{minutos} minutos' minutos=valor %}</option>
+            {% endfor %}
+          </select>
+          <p class="text-body-sm text-secondary">{% t 'Lo que no alcance a revisarse queda para la actualización de cada hora.' %}</p>
+        </div>
+
+        <div class="space-y-3">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <span class="flex items-center h-5"><input class="w-4 h-4 rounded border-outline-variant accent-on-surface" type="checkbox" name="todos" checked></span>
+            <span class="text-body-sm">
+              <span class="font-medium text-on-surface">{% t 'Revisar todos los precios del comercio' %}</span>
+              <span class="block text-secondary">{% t 'También los que se revisaron hace poco. Sin marcar, solo los que ya tocaba revisar.' %}</span>
+            </span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer">
+            <span class="flex items-center h-5"><input class="w-4 h-4 rounded border-outline-variant accent-on-surface" type="checkbox" name="prueba"></span>
+            <span class="text-body-sm">
+              <span class="font-medium text-on-surface">{% t 'Modo de prueba' %}</span>
+              <span class="block text-secondary">{% t 'Muestra lo que cambiaría sin guardar precios ni incidencias.' %}</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="p-6 py-4 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-1.5 text-secondary text-body-sm">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">schedule</span>
+          <span>{% t '{precios} precios por revisar' precios=comercio.precios %}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <a class="px-5 py-2 rounded-full border border-outline-variant text-on-surface font-headline-md font-bold text-body-md hover:bg-surface-container transition-colors" href="#cerrar">{% t 'Cancelar' %}</a>
+          <button class="px-5 py-2 rounded-full bg-primary-container text-on-primary-container font-headline-md font-bold text-body-md hover:brightness-95 transition-colors flex items-center gap-2 shadow-sm" type="submit">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">play_arrow</span>{% t 'Ejecutar ahora' %}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+{% endfor %}
+
+{% for ejecucion in ejecuciones %}
+  {% if ejecucion.output %}
+  <!-- VENTANA CON LA SALIDA -->
+  <div id="salida-{{ ejecucion.pk }}" class="hidden target:flex fixed inset-0 z-50 items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-salida-{{ ejecucion.pk }}">
+    <a class="absolute inset-0 cursor-default" href="#cerrar" tabindex="-1" aria-hidden="true"></a>
+    <div class="relative w-full max-w-3xl bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-6 pb-4 border-b border-surface-container flex items-center justify-between gap-2">
+        <h2 id="titulo-salida-{{ ejecucion.pk }}" class="text-headline-md font-headline-md text-on-surface">#EJ-{{ ejecucion.pk }} · {{ ejecucion.store_name }}</h2>
+        <a class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors flex" href="#cerrar" title="{% t 'Cerrar ventana' %}" aria-label="{% t 'Cerrar ventana' %}">
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </a>
+      </div>
+      <pre class="p-6 overflow-auto text-xs font-mono text-on-surface bg-surface-container-low whitespace-pre-wrap break-words">{{ ejecucion.output }}</pre>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+  {% if hay_en_curso %}
+    <script>
+      // Mientras haya ejecuciones en curso, la página se actualiza sola (salvo con una ventana abierta).
+      setInterval(function () {
+        if (!/^#(ejecutar|salida)-/.test(window.location.hash)) window.location.reload();
+      }, 10000);
+    </script>
+  {% endif %}
+{% endblock %}

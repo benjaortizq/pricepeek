@@ -17,6 +17,9 @@
 # no guarda nada).
 
 name: Actualizar precios
+# Las corridas que pide el panel de administración (Obtención de datos) llevan su número de
+# solicitud en el nombre: así el panel encuentra la corrida y muestra cómo va.
+run-name: "${{ inputs.solicitud && format('Ejecución manual #{0}: {1}', inputs.solicitud, inputs.tienda || 'todas las tiendas') || 'Actualizar precios' }}"
 
 on:
   schedule:
@@ -33,6 +36,13 @@ on:
         description: Modo de prueba (no guarda nada)
         type: boolean
         default: false
+      todos:
+        description: Revisar también los precios revisados hace poco
+        type: boolean
+        default: false
+      solicitud:
+        description: Número de la ejecución manual pedida desde el panel de administración (vacío si se corre desde aquí)
+        required: false
 
 # Si la corrida anterior todavía no termina, la nueva espera en vez de revisar los mismos precios a la vez.
 concurrency:
@@ -78,8 +88,9 @@ jobs:
           MINUTOS: ${{ inputs.minutos || vars.PRECIOS_MINUTOS || '20' }}
           TIENDA: ${{ inputs.tienda }}
           MODO_DE_PRUEBA: ${{ inputs.dry_run && '--dry-run' || '' }}
+          TODOS: ${{ inputs.todos && '--todos' || '' }}
         # Las entradas van por variables de entorno (no dentro del script) para que no se puedan inyectar comandos.
-        run: python manage.py actualizar_precios --minutos "$MINUTOS" ${TIENDA:+--tienda "$TIENDA"} $MODO_DE_PRUEBA
+        run: python manage.py actualizar_precios --minutos "$MINUTOS" ${TIENDA:+--tienda "$TIENDA"} $MODO_DE_PRUEBA $TODOS
 
       # Revisar alertas en la misma corrida reduce el retraso desde que se guarda una baja a unos minutos.
       - name: Enviar alertas de baja de precio

@@ -1,0 +1,19 @@
+{% load site_i18n %}
+{% for message in messages %}
+  {% if message.tags == "error" %}
+    <div role="alert" class="flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
+      <span class="material-symbols-outlined text-[20px] text-error">error</span>
+      <p>{% t message %}</p>
+    </div>
+  {% elif message.tags == "success" %}
+    <div role="status" class="flex items-start gap-3 rounded-xl border border-tertiary/30 bg-tertiary/10 p-3.5 text-body-md text-on-surface">
+      <span class="material-symbols-outlined text-[20px] text-tertiary">check_circle</span>
+      <p>{% t message %}</p>
+    </div>
+  {% else %}
+    <div role="status" class="flex items-start gap-3 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3.5 text-body-md text-on-surface">
+      <span class="material-symbols-outlined text-[20px] text-secondary">info</span>
+      <p>{% t message %}</p>
+    </div>
+  {% endif %}
+{% endfor %}

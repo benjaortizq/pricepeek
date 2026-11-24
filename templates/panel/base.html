@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load site_i18n panel %}
+{% comment %}
+  Esqueleto del panel de administración, según frontend/html/admin-panel-moderacion.html:
+  barra lateral fija, barra superior, migas de pan y encabezado de la página, y el pie con la
+  política de neutralidad. Cada pantalla llena los bloques migas, titulo_pagina, descripcion,
+  acciones y content.
+{% endcomment %}
+
+{% block cuerpo %}
+{% pendientes_del_panel as pendientes %}
+{% with actual=request.resolver_match.url_name %}
+<!-- BARRA LATERAL -->
+<aside class="hidden lg:flex fixed top-0 left-0 h-screen w-64 flex-col justify-between bg-surface-container-lowest border-r border-outline-variant z-40 shrink-0">
+  <div class="p-4 flex flex-col gap-6">
+    <div class="px-2 pt-1 flex items-center justify-between">
+      <a class="flex items-center gap-2.5" href="{% url 'inicio_administrador' %}">
+        <div class="w-9 h-9 rounded-xl bg-on-surface flex items-center justify-center text-primary-container font-headline-md text-headline-md font-bold shadow-sm">
+          <span class="text-primary-container">P</span>
+        </div>
+        <div>
+          <div class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight flex items-center gap-1 leading-none">
+            PricePeek
+            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+          </div>
+          <span class="font-body-sm text-body-sm text-secondary font-medium tracking-tight mt-0.5 block">{% t 'Panel de Moderación CR' %}</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="px-2">
+      <a class="w-full bg-primary-container text-on-primary-container font-label-badge text-label-badge py-2 px-3 rounded-full flex items-center justify-center gap-2 hover:brightness-95 active:scale-[0.98] transition-all duration-150 border border-outline-variant/30" href="{% url 'resenas_reportadas' %}">
+        <span class="material-symbols-outlined text-base" aria-hidden="true">security_update_good</span>
+        <span>{% t 'Revisar reportes' %}</span>
+        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] bg-on-surface text-surface-container-lowest font-label-badge">{{ pendientes.resenas }}</span>
+      </a>
+    </div>
+
+    <nav class="flex flex-col gap-1" aria-label="{% t 'Panel de administración' %}">
+      {% include "panel/enlace_lateral.html" with url_name="inicio_administrador" icono="dashboard" texto="Resumen" activo_si="inicio_administrador" %}
+      {% include "panel/enlace_lateral.html" with url_name="clientes" icono="group" texto="Clientes" activo_si="clientes detalle_cliente" %}
+      {% include "panel/enlace_lateral.html" with url_name="resenas_reportadas" icono="rate_review" texto="Reseñas reportadas" activo_si="resenas_reportadas" contador=pendientes.resenas %}
+      {% include "panel/enlace_lateral.html" with url_name="incidencias" icono="sync_problem" texto="Incidencias de datos" activo_si="incidencias" contador=pendientes.incidencias %}
+      {% include "panel/enlace_lateral.html" with url_name="obtencion_de_datos" icono="cloud_sync" texto="Obtención de datos" activo_si="obtencion_de_datos" contador=pendientes.ejecuciones %}
+    </nav>
+  </div>
+
+  <div class="p-4 border-t border-outline-variant/60 flex flex-col gap-2">
+    <div class="p-3 bg-surface-container-low rounded-xl border border-outline-variant/40 flex items-center gap-3 mb-2">
+      <div class="relative">
+        <span class="w-8 h-8 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface font-semibold text-body-sm uppercase">{{ user.first_name|default:user.email|slice:":1" }}</span>
+        <span class="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-tertiary ring-2 ring-surface-container-lowest"></span>
+      </div>
+      <div class="overflow-hidden">
+        <p class="font-body-md text-body-md font-semibold text-on-surface truncate">{{ user.get_full_name|default:user.email }}</p>
+        <p class="font-body-sm text-body-sm text-secondary truncate flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+          {% t 'Administrador' %}
+        </p>
+      </div>
+    </div>
+    <a class="text-secondary flex items-center gap-3 px-3 py-2 rounded-lg hover:text-on-surface hover:bg-surface-container-low transition-colors duration-150 font-body-md text-body-md" href="{% url 'editar_perfil' %}">
+      <span class="material-symbols-outlined text-lg" aria-hidden="true">settings</span>
+      <span>{% t 'Mi perfil' %}</span>
+    </a>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button class="w-full text-secondary hover:text-error flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-error-container/40 transition-colors duration-150 font-body-md text-body-md" type="submit">
+        <span class="material-symbols-outlined text-lg" aria-hidden="true">logout</span>
+        <span>{% t 'Cerrar sesión' %}</span>
+      </button>
+    </form>
+  </div>
+</aside>
+
+<div class="lg:ml-64 flex flex-col flex-grow min-w-0">
+  <!-- BARRA SUPERIOR -->
+  <header class="sticky top-0 z-30 w-full bg-surface-container-lowest border-b border-outline-variant">
+    <div class="flex justify-between items-center w-full px-4 sm:px-8 py-3.5 gap-4">
+      <a class="lg:hidden font-headline-md text-headline-md font-bold text-on-surface tracking-tight flex items-center gap-1 shrink-0" href="{% url 'inicio_administrador' %}">
+        PricePeek <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+      </a>
+      <form class="w-full max-w-lg relative hidden sm:block" action="{% url 'buscar_productos' %}" method="get" role="search">
+        <div class="flex items-center bg-surface-container-low rounded-full border border-outline-variant px-3.5 py-1.5 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-on-surface transition-all">
+          <span class="material-symbols-outlined text-secondary mr-2 text-lg" aria-hidden="true">search</span>
+          <input class="bg-transparent border-none text-on-surface placeholder:text-secondary text-body-md font-body-md focus:outline-none w-full p-0 focus:ring-0" name="q" placeholder="{% t 'Buscar producto o marca...' %}" type="search" aria-label="{% t 'Buscar producto o marca' %}">
+        </div>
+      </form>
+      <div class="flex items-center gap-2 sm:gap-4 ml-auto">
+        {% include "componentes/selector_idioma.html" %}
+        <form class="lg:hidden" method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="p-2 rounded-full text-secondary hover:text-on-surface hover:bg-surface-container transition-colors flex items-center" title="{% t 'Cerrar sesión' %}" aria-label="{% t 'Cerrar sesión' %}" type="submit">
+            <span class="material-symbols-outlined text-xl" aria-hidden="true">logout</span>
+          </button>
+        </form>
+      </div>
+    </div>
+    {# En pantallas angostas la barra lateral no cabe: sus enlaces pasan aquí. #}
+    <nav class="lg:hidden flex gap-1.5 overflow-x-auto px-4 pb-3" aria-label="{% t 'Panel de administración' %}">
+      {% include "panel/enlace_movil.html" with url_name="inicio_administrador" texto="Resumen" activo_si="inicio_administrador" %}
+      {% include "panel/enlace_movil.html" with url_name="clientes" texto="Clientes" activo_si="clientes detalle_cliente" %}
+      {% include "panel/enlace_movil.html" with url_name="resenas_reportadas" texto="Reseñas reportadas" activo_si="resenas_reportadas" contador=pendientes.resenas %}
+      {% include "panel/enlace_movil.html" with url_name="incidencias" texto="Incidencias de datos" activo_si="incidencias" contador=pendientes.incidencias %}
+      {% include "panel/enlace_movil.html" with url_name="obtencion_de_datos" texto="Obtención de datos" activo_si="obtencion_de_datos" contador=pendientes.ejecuciones %}
+    </nav>
+  </header>
+
+  <!-- CONTENIDO -->
+  <main class="flex-1 w-full max-w-[1400px] p-4 sm:p-8 flex flex-col gap-6">
+    {% if messages %}
+      <div class="space-y-2">{% include "componentes/mensajes.html" %}</div>
+    {% endif %}
+
+    <div>
+      <nav class="flex flex-wrap items-center gap-2 font-body-sm text-body-sm text-secondary mb-2" aria-label="{% t 'Ruta de navegación' %}">
+        <a class="hover:text-on-surface transition-colors" href="{% url 'inicio_administrador' %}">PricePeek Admin</a>
+        {% block migas %}{% endblock %}
+      </nav>
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="min-w-0">
+          <h1 class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight break-words">{% block titulo_pagina %}{% endblock %}</h1>
+          <p class="font-body-md text-body-md text-secondary mt-1 max-w-3xl">{% block descripcion %}{% endblock %}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0">{% block acciones %}{% endblock %}</div>
+      </div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <!-- POLÍTICA DE NEUTRALIDAD -->
+    <div class="mt-2 border-t border-outline-variant pt-6 pb-12 flex items-start gap-3 max-w-4xl text-secondary">
+      <span class="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5" aria-hidden="true">policy</span>
+      <p class="text-body-sm font-body-sm leading-relaxed">
+        <strong class="text-on-surface font-semibold">{% t 'Política de Neutralidad e Imparcialidad PricePeek Costa Rica:' %}</strong>
+        {% t 'ninguna decisión de moderación puede favorecer a un comercio. Cada resolución queda registrada con quién la tomó y cuándo.' %}
+      </p>
+    </div>
+  </main>
+</div>
+{% endwith %}
+{% endblock %}

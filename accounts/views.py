@@ -10,12 +10,18 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Max, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from core.panel import indicador, inicio_de_hoy, pestanas, plural
+from ingestion.models import Incident
+from ingestion.resolucion import EXTRACCION_FALLIDA
+from ingestion.views import ICONOS
 from products.busqueda import buscar_productos, con_imagen
 from products.popularidad import mas_populares
-from reviews.models import ReviewReport
+from reviews.indicadores import resumen_de_moderacion
+from reviews.models import ReviewReport, Reviews
 
 from .decorators import role_required
 from .forms import (
@@ -81,9 +87,127 @@ def inicio_empresa(request):
     return mostrar_inicio(request, "Panel de empresa")
 
 
+ELEMENTOS_EN_LA_COLA = 10
+
+
+def resenas_en_la_cola(limite):
+    """Las reseñas con reportes pendientes, la de reporte más reciente primero."""
+    pendientes = (
+        ReviewReport.objects.filter(status=ReviewReport.Status.PENDING)
+        .values("review_id")
+        .annotate(reportes=Count("id"), fecha=Max("created_at"))
+        .order_by("-fecha")[:limite]
+    )
+    grupos = {grupo["review_id"]: grupo for grupo in pendientes}
+    resenas = Reviews.objects.select_related("variant__product", "user").filter(pk__in=list(grupos))
+    motivos = {}
+    for review_id, motivo in (
+        ReviewReport.objects.filter(status=ReviewReport.Status.PENDING, review_id__in=list(grupos))
+        .order_by("created_at")
+        .values_list("review_id", "reason")
+    ):
+        motivos.setdefault(review_id, motivo)
+    return [
+        {
+            "tipo": "resena",
+            "resena": resena,
+            "reportes": grupos[resena.pk]["reportes"],
+            "fecha": grupos[resena.pk]["fecha"],
+            "motivo": motivos.get(resena.pk, ""),
+        }
+        for resena in resenas
+    ]
+
+
+def incidencias_en_la_cola(limite):
+    pendientes = Incident.objects.filter(kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING)
+    return [
+        {"tipo": "incidencia", "incidencia": incidencia, "fecha": incidencia.created_at, "icono": ICONOS.get(incidencia.kind, "report")}
+        for incidencia in pendientes.order_by("-created_at")[:limite]
+    ]
+
+
 @role_required(User.Role.ADMIN)
 def inicio_administrador(request):
-    return mostrar_inicio(request, "Panel de administración")
+    """Resumen del panel de moderación (frontend/html/admin-panel-moderacion.html): lo que espera
+    revisión, de las reseñas reportadas y de la obtención de datos, en una sola cola."""
+    moderacion = resumen_de_moderacion()
+    incidencias_pendientes = Incident.objects.filter(
+        kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING
+    )
+    total_incidencias = incidencias_pendientes.count()
+    total_resenas = moderacion["en_cola"]
+
+    cola = request.GET.get("cola", "")
+    if cola not in ("", "resenas", "datos"):
+        cola = ""
+    elementos = []
+    if cola in ("", "resenas"):
+        elementos += resenas_en_la_cola(ELEMENTOS_EN_LA_COLA)
+    if cola in ("", "datos"):
+        elementos += incidencias_en_la_cola(ELEMENTOS_EN_LA_COLA)
+    elementos = sorted(elementos, key=lambda elemento: elemento["fecha"], reverse=True)[:ELEMENTOS_EN_LA_COLA]
+    en_la_cola = {"": total_resenas + total_incidencias, "resenas": total_resenas, "datos": total_incidencias}[cola]
+
+    hoy = moderacion["reportes_hoy"] + incidencias_pendientes.filter(created_at__gte=inicio_de_hoy()).count()
+    tiempo = moderacion["tiempo_promedio"] or ("—", "")
+    tasa = moderacion["tasa_eliminacion"]
+    clientes = User.objects.filter(role=User.Role.CLIENT)
+    suspendidas = clientes.filter(is_active=False).count()
+    return render(
+        request,
+        "accounts/panel_administrador.html",
+        {
+            "elementos": elementos,
+            "cola": cola,
+            "en_la_cola": en_la_cola,
+            "kpis": [
+                indicador(
+                    "Pendientes de revisión",
+                    total_resenas + total_incidencias,
+                    unidad="casos",
+                    insignia=f"+{hoy} hoy",
+                    tono="alerta" if hoy else "",
+                    icono="arrow_upward" if hoy else "",
+                    pie_izq=plural(total_resenas, "reseña reportada", "reseñas reportadas"),
+                    pie_der=plural(total_incidencias, "extracción fallida", "extracciones fallidas"),
+                    destacada=True,
+                ),
+                indicador(
+                    "Tiempo prom. resolución",
+                    tiempo[0],
+                    unidad=tiempo[1],
+                    insignia="Reseñas",
+                    pie_izq="Últimos 30 días" if moderacion["tiempo_promedio"] else "Sin datos",
+                ),
+                indicador(
+                    "Tasa de eliminación",
+                    "—" if tasa is None else tasa,
+                    unidad="" if tasa is None else "%",
+                    insignia="Últimos 30 días",
+                    pie_izq=plural(moderacion["eliminadas_30"], "reseña eliminada", "reseñas eliminadas"),
+                    pie_der=plural(moderacion["mantenidas_30"], "reseña mantenida", "reseñas mantenidas"),
+                ),
+                indicador(
+                    "Cuentas suspendidas",
+                    suspendidas,
+                    insignia="Clientes",
+                    tono="marca",
+                    pie_izq=plural(clientes.count(), "cliente registrado", "clientes registrados"),
+                ),
+            ],
+            "pestanas": pestanas(
+                reverse("inicio_administrador"),
+                "cola",
+                [
+                    ("", "Todos los pendientes", total_resenas + total_incidencias),
+                    ("resenas", "Reseñas reportadas", total_resenas),
+                    ("datos", "Extracciones fallidas", total_incidencias),
+                ],
+                cola,
+            ),
+        },
+    )
 
 
 # --- Suspensión de cuentas de clientes (RF-42) ---
@@ -122,6 +246,10 @@ def clientes(request):
     pagina = Paginator(lista.order_by("-infracciones", "email"), CLIENTES_POR_PAGINA).get_page(
         request.GET.get("pagina")
     )
+    todos = clientes_con_infracciones()
+    total = todos.count()
+    activas = todos.filter(is_active=True).count()
+    reiterados = todos.filter(infracciones__gte=INFRACCIONES_REITERADAS).count()
     return render(
         request,
         "accounts/clientes.html",
@@ -130,6 +258,31 @@ def clientes(request):
             "busqueda": busqueda,
             "estado": estado,
             "reiteradas": INFRACCIONES_REITERADAS,
+            "kpis": [
+                indicador("Clientes registrados", total, pie_izq="Cuentas de cliente", destacada=True),
+                indicador("Cuentas activas", activas, insignia="Pueden usar el sitio", tono="bien", icono="check_circle"),
+                indicador(
+                    "Cuentas suspendidas",
+                    total - activas,
+                    insignia="Sin acceso" if total - activas else "",
+                    tono="alerta",
+                    icono="block",
+                    pie_izq="Hasta que un administrador las reactive",
+                ),
+                indicador(
+                    "Incumplen de forma reiterada",
+                    reiterados,
+                    pie_izq=f"Desde {INFRACCIONES_REITERADAS} reseñas eliminadas",
+                ),
+            ],
+            "pestanas": pestanas(
+                reverse("clientes"),
+                "estado",
+                [("", "Todas las cuentas", total), ("activas", "Activas", activas), ("suspendidas", "Suspendidas", total - activas)],
+                estado,
+                conservar={"q": busqueda},
+            ),
+            "total_texto": plural(pagina.paginator.count, "cliente", "clientes"),
         },
     )
 

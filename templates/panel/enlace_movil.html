@@ -1,0 +1,10 @@
+{% load site_i18n %}{# Los enlaces de la barra lateral, como pestañas, en pantallas donde no cabe. #}
+{% if actual in activo_si.split %}
+  <a class="bg-on-surface text-surface-container-lowest rounded-full px-4 py-1.5 font-label-badge text-label-badge flex items-center gap-2 shrink-0" href="{% url url_name %}" aria-current="page">
+    <span>{% t texto %}</span>{% if contador %}<span class="bg-surface-container-lowest/20 rounded-full px-1.5">{{ contador }}</span>{% endif %}
+  </a>
+{% else %}
+  <a class="bg-surface-container-lowest hover:bg-surface-container text-secondary hover:text-on-surface border border-outline-variant rounded-full px-4 py-1.5 font-label-badge text-label-badge flex items-center gap-2 shrink-0 transition-colors" href="{% url url_name %}">
+    <span>{% t texto %}</span>{% if contador %}<span class="bg-surface-container-high rounded-full px-1.5 text-on-surface">{{ contador }}</span>{% endif %}
+  </a>
+{% endif %}

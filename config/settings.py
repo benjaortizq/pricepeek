@@ -26,7 +26,9 @@ load_dotenv(BASE_DIR / ".env", override=True)  # el .env manda sobre variables v
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG") == "True"
-ALLOWED_HOSTS = []
+# Separados por comas. Vacío = solo localhost (con DEBUG). Para probar desde el celular en la
+# misma red: ALLOWED_HOSTS=localhost,127.0.0.1,<IP de la computadora> y runserver 0.0.0.0:8000
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()]
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # Application definition

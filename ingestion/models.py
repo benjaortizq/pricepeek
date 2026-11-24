@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -6,6 +7,11 @@ class Incident(models.Model):
 
     GTIN_MAX_LENGTH = 64
     NAME_MAX_LENGTH = 255
+    RESOLUTION_MAX_LENGTH = 255
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        RESOLVED = "resolved", "Resuelta"
 
     class Kind(models.TextChoices):
         INVALID_BARCODE = "invalid_barcode", "Código de barras inválido"
@@ -22,7 +28,26 @@ class Incident(models.Model):
     # Tal como llegó de la fuente: puede estar vacío o ser basura, por eso no es una FK.
     gtin = models.CharField("código de barras recibido", max_length=GTIN_MAX_LENGTH, blank=True)
     reason = models.TextField("motivo")
+    # Los campos nuevos llevan db_default para que el código que ya está corriendo (el
+    # actualizar_precios de cada hora) pueda seguir guardando incidencias antes de actualizarse.
+
+    # Lo que se leyó de la tienda, para resolverla sin volver a descargar la página: el precio
+    # nuevo de un cambio sospechoso o los códigos de barras que publica la tienda.
+    details = models.JSONField("datos leídos de la tienda", default=dict, db_default={}, blank=True)
     created_at = models.DateTimeField("fecha", auto_now_add=True)
+    status = models.CharField(
+        "estado", max_length=20, choices=Status.choices, default=Status.PENDING, db_default=Status.PENDING
+    )
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="resuelta por",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    resolved_at = models.DateTimeField("resuelta el", null=True, blank=True)
+    resolution = models.CharField("qué se hizo", max_length=RESOLUTION_MAX_LENGTH, blank=True, db_default="")
 
     class Meta:
         ordering = ["-created_at"]
@@ -31,6 +56,24 @@ class Incident(models.Model):
 
     def __str__(self):
         return f"{self.get_kind_display()}: {self.product_name or self.gtin or 'sin datos'}"
+
+    def _partes_del_motivo(self):
+        # La obtención y la actualización de precios anotan la página de la tienda en la última línea.
+        texto, _, ultima = self.reason.strip().rpartition("\n")
+        ultima = ultima.strip()
+        if texto and ultima.startswith(("http://", "https://")):
+            return texto.strip(), ultima
+        return self.reason.strip(), ""
+
+    @property
+    def motivo(self):
+        """El motivo sin la dirección de la página de la tienda."""
+        return self._partes_del_motivo()[0]
+
+    @property
+    def enlace(self):
+        """La página de la tienda donde ocurrió la incidencia, si quedó anotada en el motivo."""
+        return self._partes_del_motivo()[1]
 
 
 class StoreProduct(models.Model):

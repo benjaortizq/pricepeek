@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load site_i18n precios %}
+
+{% block title %}{% t 'Registro de incidencias' %}{% endblock %}
+
+{% block content %}
+{% url 'incidencias' as url_incidencias %}
+{% t 'Producto sin nombre' as sin_nombre %}
+{% t 'Comercio desconocido' as sin_comercio %}
+<div class="w-full max-w-5xl mx-auto px-margin md:px-margin-desktop py-space-xl">
+  <div class="mb-space-lg">
+    <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">{% t 'Registro de incidencias' %}</h1>
+    <p class="mt-1 text-body-md font-body-md text-secondary">{% t 'Revise las extracciones de datos que fallaron y los productos que quedaron fuera de la comparación por no tener un código de barras válido.' %}</p>
+  </div>
+
+  <nav class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-space-md" aria-label="{% t 'Registros de incidencias' %}">
+    <a class="flex items-center gap-3 p-4 rounded-2xl border transition-colors {% if registro == 'fallidas' %}bg-primary-container border-primary text-on-primary-container{% else %}bg-surface-container-lowest border-outline-variant text-secondary hover:border-on-surface{% endif %}" href="{{ url_incidencias }}?registro=fallidas"{% if registro == 'fallidas' %} aria-current="page"{% endif %}>
+      <span class="material-symbols-outlined">sync_problem</span>
+      <span class="flex-grow min-w-0">
+        <span class="block font-bold text-body-md">{% t 'Extracciones fallidas' %}</span>
+        <span class="block text-body-sm">{% t 'Páginas que no se pudieron leer o precios que no se guardaron' %}</span>
+      </span>
+      <span class="text-right shrink-0">
+        <span class="block text-headline-md font-headline-md tabular-nums">{{ totales.fallidas }}</span>
+        <span class="block text-[11px] font-semibold uppercase tracking-wider">{% t 'pendientes' %}</span>
+      </span>
+    </a>
+    <a class="flex items-center gap-3 p-4 rounded-2xl border transition-colors {% if registro == 'excluidos' %}bg-primary-container border-primary text-on-primary-container{% else %}bg-surface-container-lowest border-outline-variant text-secondary hover:border-on-surface{% endif %}" href="{{ url_incidencias }}?registro=excluidos"{% if registro == 'excluidos' %} aria-current="page"{% endif %}>
+      <span class="material-symbols-outlined">barcode</span>
+      <span class="flex-grow min-w-0">
+        <span class="block font-bold text-body-md">{% t 'Productos excluidos' %}</span>
+        <span class="block text-body-sm">{% t 'Quedaron fuera de la comparación por no tener un código válido' %}</span>
+      </span>
+      <span class="text-headline-md font-headline-md tabular-nums">{{ totales.excluidos }}</span>
+    </a>
+  </nav>
+
+  <form class="tarjeta p-3 flex flex-col lg:flex-row gap-3 focus-within:border-on-surface transition-colors" method="get" role="search">
+    <input type="hidden" name="registro" value="{{ registro }}">
+    <div class="flex items-center gap-2 pl-2 flex-grow min-w-0">
+      <span class="material-symbols-outlined text-secondary">search</span>
+      <input class="flex-grow min-w-0 bg-transparent border-0 text-body-md font-body-md text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="{% t 'Producto, código o motivo' %}" type="search" value="{{ busqueda }}" aria-label="{% t 'Buscar por producto, código de barras o motivo' %}">
+    </div>
+    <div class="flex flex-col sm:flex-row gap-2">
+      <select class="rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="comercio" aria-label="{% t 'Comercio' %}">
+        <option value="">{% t 'Todos los comercios' %}</option>
+        {% for nombre in comercios %}
+          <option value="{{ nombre }}"{% if nombre == comercio %} selected{% endif %}>{{ nombre }}</option>
+        {% endfor %}
+      </select>
+      {% if registro == 'fallidas' %}
+        <select class="rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="estado" aria-label="{% t 'Estado' %}">
+          <option value="">{% t 'Pendientes' %}</option>
+          <option value="resueltas"{% if estado == "resueltas" %} selected{% endif %}>{% t 'Resueltas' %}</option>
+          <option value="todas"{% if estado == "todas" %} selected{% endif %}>{% t 'Pendientes y resueltas' %}</option>
+        </select>
+        <select class="rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="tipo" aria-label="{% t 'Tipo de incidencia' %}">
+          <option value="">{% t 'Todos los tipos' %}</option>
+          {% for valor, nombre, total in tipos %}
+            <option value="{{ valor }}"{% if valor == tipo %} selected{% endif %}>{% t nombre %} ({{ total }})</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+      <select class="rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="periodo" aria-label="{% t 'Periodo' %}">
+        <option value="">{% t 'Cualquier fecha' %}</option>
+        {% for valor, nombre in periodos %}
+          <option value="{{ valor }}"{% if valor == periodo %} selected{% endif %}>{% t nombre %}</option>
+        {% endfor %}
+      </select>
+      <button class="px-5 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-md transition-colors" type="submit">{% t 'Filtrar' %}</button>
+    </div>
+  </form>
+
+  <p class="mt-space-md mb-3 text-body-md font-body-md text-secondary">
+    {% if pagina.paginator.count == 1 %}{% t '1 incidencia' %}{% else %}{% t '{total} incidencias' total=pagina.paginator.count %}{% endif %}
+    {% if hay_filtros %}· <a class="font-semibold text-on-surface hover:underline" href="{{ url_incidencias }}?registro={{ registro }}">{% t 'Limpiar filtros' %}</a>{% endif %}
+  </p>
+
+  {% if pagina.object_list %}
+    <ul class="tarjeta divide-y divide-outline-variant/40">
+      {% for incidencia in pagina.object_list %}
+        <li class="p-4 flex gap-3">
+          <span class="material-symbols-outlined text-secondary mt-0.5 shrink-0" aria-hidden="true">{{ incidencia.icono }}</span>
+          <div class="min-w-0 flex-grow">
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <p class="font-semibold text-on-surface break-words min-w-0">{{ incidencia.product_name|default:sin_nombre }}</p>
+              <time class="text-body-sm font-body-sm text-secondary shrink-0" datetime="{{ incidencia.created_at|date:'c' }}">{{ incidencia.created_at|date:"d/m/Y H:i" }}</time>
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-body-sm font-body-sm">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full {% if incidencia.kind == 'suspicious_price' or incidencia.kind == 'barcode_mismatch' %}bg-error-container/40 text-on-error-container{% else %}bg-surface-container-low text-on-surface{% endif %} font-semibold">{% t incidencia.get_kind_display %}</span>
+              <span class="text-secondary">{{ incidencia.store_name|default:sin_comercio }}</span>
+              <span class="text-secondary">·</span>
+              <span class="text-secondary">{% if registro == 'excluidos' %}{% t 'Código recibido:' %}{% else %}{% t 'Código en el catálogo:' %}{% endif %}</span>
+              {% if incidencia.gtin %}
+                <code class="px-1.5 py-0.5 rounded bg-surface-container-low text-on-surface font-price-row tracking-wide break-all">{{ incidencia.gtin }}</code>
+              {% else %}
+                <span class="italic text-secondary">{% t 'ninguno' %}</span>
+              {% endif %}
+              {% if incidencia.status == 'resolved' and registro == 'fallidas' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/10 text-on-surface font-semibold">
+                  <span class="material-symbols-outlined text-[16px] text-tertiary" aria-hidden="true">check_circle</span>{% t 'Resuelta' %}
+                </span>
+              {% endif %}
+            </div>
+            <p class="mt-2 text-body-sm font-body-sm text-on-surface whitespace-pre-line break-words">{{ incidencia.motivo }}</p>
+
+            {% if incidencia.kind == 'suspicious_price' and incidencia.details.precio_final %}
+              <div class="mt-2 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-surface-container-low px-3 py-2 text-body-sm font-body-sm">
+                <span class="text-secondary">{% t 'Guardado' %} <span class="font-price-row text-on-surface">₡{{ incidencia.details.precio_antes|miles }}</span></span>
+                <span class="material-symbols-outlined text-[18px] text-secondary" aria-hidden="true">arrow_forward</span>
+                <span class="text-secondary">{% t 'En la tienda' %} <span class="font-price-row font-bold text-on-surface">₡{{ incidencia.details.precio_final|miles }}</span></span>
+              </div>
+            {% elif incidencia.codigos_tienda %}
+              <div class="mt-2 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-surface-container-low px-3 py-2 text-body-sm font-body-sm">
+                <span class="text-secondary">{% t 'En la tienda' %}
+                  {% for codigo in incidencia.codigos_tienda %}<code class="font-price-row font-bold text-on-surface">{{ codigo }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+                </span>
+                <span class="text-secondary">{% t 'En el catálogo' %} <code class="font-price-row text-on-surface">{{ incidencia.gtin }}</code></span>
+              </div>
+            {% endif %}
+
+            {% if incidencia.enlace %}
+              <div>
+                <a class="mt-1 inline-flex items-center gap-1 text-body-sm font-body-sm font-semibold text-on-surface hover:underline" href="{{ incidencia.enlace }}" target="_blank" rel="noopener noreferrer">
+                  {% t 'Ver la página en la tienda' %}<span class="material-symbols-outlined text-[16px]" aria-hidden="true">open_in_new</span>
+                </a>
+              </div>
+            {% endif %}
+
+            {% if incidencia.status == 'resolved' and registro == 'fallidas' %}
+              <p class="mt-2 text-body-sm font-body-sm text-secondary">
+                {% t incidencia.resolution %}
+                {% if incidencia.resolved_by %}· {{ incidencia.resolved_by.get_full_name|default:incidencia.resolved_by.email }}{% endif %}
+                {% if incidencia.resolved_at %}· {{ incidencia.resolved_at|date:"d/m/Y H:i" }}{% endif %}
+              </p>
+            {% endif %}
+
+            {% if incidencia.acciones %}
+              {% url 'resolver_incidencia' incidencia.pk as url_resolver %}
+              <div class="mt-3 space-y-2">
+                <form class="flex flex-wrap gap-2" method="post" action="{{ url_resolver }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                  {% for accion in incidencia.acciones %}
+                    {% if accion == 'aceptar_precio' %}
+                      <button class="px-4 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-sm inline-flex items-center gap-1.5 transition-colors" type="submit" name="accion" value="aceptar_precio" onclick="return confirm('{% t '¿Guardar el precio nuevo? Se mostrará en la comparación.' %}')">
+                        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">check</span>{% t 'Aceptar el precio nuevo' %}
+                      </button>
+                    {% elif accion == 'aceptar_codigo' %}
+                      <button class="px-4 py-2 rounded-full bg-primary-container hover:brightness-90 text-on-primary-container font-bold text-body-sm inline-flex items-center gap-1.5 transition-colors" type="submit" name="accion" value="aceptar_codigo" title="{% t 'La página sí es este producto aunque la tienda use otro código' %}" onclick="return confirm('{% t '¿Aceptar el código de la tienda para este producto?' %}')">
+                        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">barcode</span>{% t 'Aceptar el código de la tienda' %}
+                      </button>
+                    {% elif accion == 'revisar' %}
+                      <button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface font-semibold text-body-sm inline-flex items-center gap-1.5 hover:bg-surface-container-low transition-colors" type="submit" name="accion" value="revisar">
+                        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">refresh</span>{% t 'Volver a revisar ahora' %}
+                      </button>
+                    {% elif accion == 'descartar' %}
+                      <button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface font-semibold text-body-sm inline-flex items-center gap-1.5 hover:bg-surface-container-low transition-colors" type="submit" name="accion" value="descartar">
+                        {% if incidencia.kind == 'suspicious_price' %}
+                          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">undo</span>{% t 'Mantener el precio guardado' %}
+                        {% else %}
+                          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">done</span>{% t 'Marcar como revisada' %}
+                        {% endif %}
+                      </button>
+                    {% endif %}
+                  {% endfor %}
+                </form>
+                {% if 'enlace' in incidencia.acciones %}
+                  <details class="group">
+                    <summary class="inline-flex items-center gap-1 cursor-pointer text-body-sm font-body-sm font-semibold text-on-surface hover:underline list-none [&::-webkit-details-marker]:hidden">
+                      <span class="material-symbols-outlined text-[18px]" aria-hidden="true">link</span>{% t 'Cambiar el enlace' %}
+                      <span class="material-symbols-outlined text-[18px] transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+                    </summary>
+                    <form class="mt-2 flex flex-col sm:flex-row gap-2" method="post" action="{{ url_resolver }}">
+                      {% csrf_token %}
+                      <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                      <input type="hidden" name="accion" value="enlace">
+                      <input class="flex-grow min-w-0 rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-sm font-body-sm text-on-surface focus:border-on-surface focus:ring-0" type="url" name="url" required value="{{ incidencia.enlace }}" aria-label="{% t 'Enlace nuevo del producto en la tienda' %}">
+                      <button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface font-semibold text-body-sm hover:bg-surface-container-low transition-colors" type="submit">{% t 'Revisar y guardar' %}</button>
+                    </form>
+                    <p class="mt-1 text-body-sm font-body-sm text-secondary">{% t 'Se revisa la página nueva antes de guardarla.' %}</p>
+                  </details>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if pagina.has_other_pages %}
+      <nav class="mt-space-lg flex items-center justify-center gap-3" aria-label="{% t 'Páginas de incidencias' %}">
+        {% if pagina.has_previous %}
+          <a class="boton-secundario" href="{% querystring pagina=pagina.previous_page_number %}"><span class="material-symbols-outlined text-[18px]">arrow_back</span>{% t 'Anterior' %}</a>
+        {% endif %}
+        <span class="text-body-md font-body-md text-secondary">{% t 'Página {pagina} de {total}' pagina=pagina.number total=pagina.paginator.num_pages %}</span>
+        {% if pagina.has_next %}
+          <a class="boton-secundario" href="{% querystring pagina=pagina.next_page_number %}">{% t 'Siguiente' %}<span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="tarjeta p-8 text-center">
+      <span class="material-symbols-outlined text-[32px] text-tertiary" aria-hidden="true">task_alt</span>
+      <p class="mt-2 text-body-md font-body-md text-secondary">
+        {% if hay_filtros %}
+          {% t 'No hay incidencias que coincidan con los filtros.' %}
+        {% elif registro == 'excluidos' %}
+          {% t 'No se ha excluido ningún producto por código de barras inválido.' %}
+        {% else %}
+          {% t 'No hay extracciones fallidas pendientes de revisar.' %}
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

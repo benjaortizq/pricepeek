@@ -69,6 +69,10 @@ class PrecioNoEncontrado(ErrorExtraccion):
 class CodigoDistinto(ErrorExtraccion):
     """El producto de la página tiene otro código de barras que el guardado."""
 
+    def __init__(self, mensaje, codigos=()):
+        super().__init__(mensaje)
+        self.codigos = tuple(codigos)  # los que publica la tienda en esa página
+
 
 class ClienteHttp:
     """Descarga páginas con pausa entre peticiones, timeout y reintentos.

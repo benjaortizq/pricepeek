@@ -6,6 +6,7 @@
 # Configuración, en GitHub: Settings › Secrets and variables › Actions
 #   Secrets (los mismos valores del .env):
 #     SECRET_KEY, DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+#     EMAIL_HOST_USER, EMAIL_HOST_PASSWORD (para entregar las alertas por SMTP)
 #     DB_HOST tiene que ser el pooler de Supabase (…pooler.supabase.com): las máquinas de GitHub no
 #     tienen IPv6, y la conexión directa (db.….supabase.co) solo funciona por IPv6.
 #   Variables (opcionales):
@@ -53,8 +54,12 @@ jobs:
       DB_HOST: ${{ secrets.DB_HOST }}
       DB_PORT: ${{ secrets.DB_PORT }}
       PRECIOS_FRECUENCIA_HORAS: ${{ vars.PRECIOS_FRECUENCIA_HORAS || '1' }}
-      # settings.py los exige, pero actualizar_precios no manda correos ni guarda archivos.
-      EMAIL_HOST_USER: no-se-usa
+      EMAIL_HOST_USER: ${{ secrets.EMAIL_HOST_USER }}
+      EMAIL_HOST_PASSWORD: ${{ secrets.EMAIL_HOST_PASSWORD }}
+      EMAIL_HOST: ${{ vars.EMAIL_HOST || 'smtp.gmail.com' }}
+      EMAIL_PORT: ${{ vars.EMAIL_PORT || '587' }}
+      DEFAULT_FROM_EMAIL: ${{ vars.DEFAULT_FROM_EMAIL || 'PricePeek <no-reply@pricepeek.local>' }}
+      SITE_URL: ${{ vars.SITE_URL || 'http://127.0.0.1:8000' }}
       SUPABASE_STORAGE_BUCKET: no-se-usa
       PYTHONUNBUFFERED: "1" # que el avance se vea mientras corre
     steps:
@@ -75,3 +80,8 @@ jobs:
           MODO_DE_PRUEBA: ${{ inputs.dry_run && '--dry-run' || '' }}
         # Las entradas van por variables de entorno (no dentro del script) para que no se puedan inyectar comandos.
         run: python manage.py actualizar_precios --minutos "$MINUTOS" ${TIENDA:+--tienda "$TIENDA"} $MODO_DE_PRUEBA
+
+      # Revisar alertas en la misma corrida reduce el retraso desde que se guarda una baja a unos minutos.
+      - name: Enviar alertas de baja de precio
+        if: always()
+        run: python manage.py enviar_alertas_de_precio

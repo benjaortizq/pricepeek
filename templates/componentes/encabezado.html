@@ -12,10 +12,12 @@
         <span class="w-2.5 h-2.5 rounded-full bg-primary-container inline-block"></span>
         <span class="text-body-sm font-body-sm text-secondary ml-1.5 font-medium tracking-normal hidden lg:inline">Costa Rica</span>
       </a>
+      {% if not sin_busqueda_en_encabezado %}
       <form class="hidden lg:flex items-center bg-surface-container-low rounded-full px-space-md py-1.5 border border-outline-variant/40 w-56 lg:w-72 focus-within:bg-surface-container-lowest focus-within:border-on-surface transition-all" action="{% url 'buscar_productos' %}" method="get" role="search">
         <span class="material-symbols-outlined text-secondary text-[20px] mr-2">search</span>
         <input class="bg-transparent border-0 text-body-sm font-body-sm text-on-surface placeholder:text-secondary focus:ring-0 p-0 w-full outline-none" name="q" placeholder="{% t 'Buscar producto o marca...' %}" type="search" value="{{ request.GET.q|default:'' }}" aria-label="{% t 'Buscar producto o marca' %}">
       </form>
+      {% endif %}{# en el inicio no va: tiene su propio buscador grande (frontend/html/index.html) #}
     </div>
 
     {% if user.is_authenticated %}

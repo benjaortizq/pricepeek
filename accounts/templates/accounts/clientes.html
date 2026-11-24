@@ -64,13 +64,13 @@
               <td class="py-4 px-4 whitespace-nowrap">
                 {% if cliente.infracciones >= reiteradas %}
                   <div class="text-body-sm text-on-surface font-medium flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-error text-sm" aria-hidden="true">warning</span>{{ cliente.infracciones }} reseña{{ cliente.infracciones|pluralize }} eliminada{{ cliente.infracciones|pluralize }}
+                    <span class="material-symbols-outlined text-error text-sm" aria-hidden="true">warning</span>{% if cliente.infracciones == 1 %}{% t '1 reseña eliminada' %}{% else %}{% t '{n} reseñas eliminadas' n=cliente.infracciones %}{% endif %}
                   </div>
                   <div class="inline-flex items-center gap-1 font-label-badge text-label-badge text-error mt-0.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-error"></span>{% t 'Reiterado' %}
                   </div>
                 {% elif cliente.infracciones %}
-                  <div class="text-body-sm text-on-surface font-medium">{{ cliente.infracciones }} reseña{{ cliente.infracciones|pluralize }} eliminada{{ cliente.infracciones|pluralize }}</div>
+                  <div class="text-body-sm text-on-surface font-medium">{% if cliente.infracciones == 1 %}{% t '1 reseña eliminada' %}{% else %}{% t '{n} reseñas eliminadas' n=cliente.infracciones %}{% endif %}</div>
                 {% else %}
                   <span class="text-body-sm text-secondary">{% t 'Ninguna' %}</span>
                 {% endif %}

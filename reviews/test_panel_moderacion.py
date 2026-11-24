@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.templatetags.panel import estrellas, pendientes_del_panel
+from core.translations import translate_text
 from ingestion.models import Incident
 
 from .models import ReviewReport, Reviews
@@ -145,6 +146,19 @@ class PanelEnInglesTests(PanelBase):
                 respuesta = self.client.get(reverse(nombre))
                 self.assertContains(respuesta, texto)
                 self.assertContains(respuesta, "CR Moderation Panel")
+
+
+    def test_el_historial_del_cliente_y_el_resultado_de_las_ejecuciones(self):
+        self.client.cookies["django_language"] = "en"
+        respuesta = self.client.get(reverse("detalle_cliente", args=[self.otro_cliente.pk]))
+        self.assertContains(respuesta, "This customer has no reviews deleted by moderation.")
+        self.assertContains(respuesta, "For example: repeatedly posted offensive reviews.")
+        self.assertNotContains(respuesta, "Por ejemplo")
+        resumen = "120 revisados · 3 actualizados · 117 sin cambios · 0 con fallo · 0 incidencias"
+        self.assertEqual(
+            translate_text(resumen, language="en"),
+            "120 checked · 3 updated · 117 unchanged · 0 failed · 0 incidents",
+        )
 
 
 class ElAutorBorraSuResenaTests(PanelBase):

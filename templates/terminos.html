@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load site_i18n %}
+
+{% block title %}{% t 'Términos y condiciones' %}{% endblock %}
+
+{% block content %}
+<section class="w-full max-w-4xl mx-auto px-margin md:px-margin-desktop py-space-xl">
+  <header class="mb-space-xl">
+    <p class="text-label-md font-label-md uppercase tracking-wider text-secondary">PricePeek Costa Rica</p>
+    <h1 class="mt-2 text-display-sm font-display-sm font-extrabold text-on-surface">{% t 'Términos y condiciones' %}</h1>
+    <p class="mt-3 text-body-md font-body-md text-secondary">{% t 'Última actualización: 24 de noviembre de 2026' %}</p>
+  </header>
+
+  <div class="tarjeta p-space-lg md:p-space-xl space-y-space-lg text-body-md font-body-md leading-relaxed">
+    <p>{% t 'Gracias por usar PricePeek. Estos términos describen las reglas básicas para acceder y utilizar la plataforma, sus herramientas de comparación de precios y las funciones asociadas a una cuenta. Al navegar por el sitio o crear una cuenta, usted acepta estas condiciones.' %}</p>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '1. Sobre PricePeek' %}</h2>
+      <p class="mt-2">{% t 'PricePeek es un servicio que reúne información de productos y precios publicados por comercios para facilitar su consulta y comparación. PricePeek no vende productos, no procesa pagos, no gestiona entregas y no representa a los comercios que aparecen en la plataforma.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '2. Información de precios y comercios' %}</h2>
+      <p class="mt-2">{% t 'Los precios, la disponibilidad, las características, las imágenes y las promociones pueden cambiar y podrían contener errores o estar desactualizados. La información se presenta con fines orientativos y no constituye una oferta de venta ni garantiza que un producto esté disponible al precio mostrado.' %}</p>
+      <p class="mt-2">{% t 'Antes de comprar, confirme el precio final, los impuestos, los costos de envío, las condiciones de la promoción y la disponibilidad directamente con el comercio. Cualquier compra se realiza entre usted y el comercio, conforme a las condiciones de ese comercio.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '3. Cuenta y seguridad' %}</h2>
+      <p class="mt-2">{% t 'Al crear una cuenta, usted se compromete a proporcionar información correcta, mantenerla actualizada y proteger sus credenciales. Las acciones realizadas desde su cuenta se atribuirán a usted. Si sospecha que alguien accedió a ella sin autorización, cambie su contraseña y comuníquelo al equipo del proyecto.' %}</p>
+      <p class="mt-2">{% t 'Puede solicitar la eliminación de su cuenta desde las opciones disponibles en su perfil. PricePeek puede limitar o suspender cuentas que incumplan estos términos o afecten el funcionamiento seguro de la plataforma.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '4. Lista de deseos y alertas' %}</h2>
+      <p class="mt-2">{% t 'La lista de deseos permite guardar productos y, cuando la función esté disponible, configurar un precio objetivo, comercio o alerta. Las alertas dependen de que PricePeek reciba y procese información actualizada; por ello, no se garantiza que sean inmediatas, que se envíen para cada cambio o que el precio siga vigente cuando usted las reciba.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '5. Reseñas, fotos y reportes' %}</h2>
+      <p class="mt-2">{% t 'Usted es responsable del contenido que publique. Las reseñas y fotografías deben ser pertinentes, respetuosas y basadas en una experiencia legítima. No publique contenido ilegal, engañoso, discriminatorio, difamatorio, invasivo de la privacidad, promocional no solicitado ni que infrinja derechos de terceros.' %}</p>
+      <p class="mt-2">{% t 'Al publicar contenido, usted conserva sus derechos y concede a PricePeek permiso gratuito, no exclusivo y limitado para alojarlo, mostrarlo y reproducirlo dentro de la plataforma con el fin de prestar sus funciones. Puede editar o eliminar sus reseñas desde las opciones disponibles. PricePeek podrá revisar reportes y retirar contenido que incumpla estas condiciones.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '6. Uso permitido' %}</h2>
+      <p class="mt-2">{% t 'Usted acepta no interferir con la plataforma, intentar acceder a cuentas o sistemas ajenos, introducir código dañino, extraer información de forma automatizada que perjudique el servicio, ni utilizar PricePeek para infringir la ley o los derechos de otras personas.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '7. Disponibilidad y responsabilidad' %}</h2>
+      <p class="mt-2">{% t 'PricePeek se ofrece como herramienta informativa y puede modificarse, interrumpirse o dejar de estar disponible. En la medida permitida para este proyecto académico, PricePeek no garantiza que el servicio sea continuo o libre de errores y no responde por compras, pérdidas, daños o desacuerdos derivados de información de terceros o de transacciones con comercios.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t '8. Cambios y aceptación' %}</h2>
+      <p class="mt-2">{% t 'Estos términos pueden actualizarse para reflejar cambios en el proyecto o sus funciones. La versión vigente se publicará en esta página e indicará su fecha de actualización. Si continúa utilizando PricePeek después de un cambio, se entenderá que acepta la versión actualizada.' %}</p>
+    </section>
+
+    <p class="border-t border-outline-variant/60 pt-space-md text-body-sm font-body-sm text-secondary">{% t 'Este texto se preparó como parte de un proyecto universitario y sirve únicamente como contenido de demostración de PricePeek.' %}</p>
+  </div>
+</section>
+{% endblock %}

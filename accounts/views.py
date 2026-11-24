@@ -20,8 +20,9 @@ from core.panel import indicador, inicio_de_hoy, pestanas, plural
 from ingestion.models import Incident
 from ingestion.resolucion import EXTRACCION_FALLIDA
 from ingestion.views import ICONOS
-from products.busqueda import buscar_productos, con_imagen
-from products.models import ProductView
+from products.busqueda import buscar_productos
+from products.models import Products
+from products.ofertas import categorias_del_inicio, mejores_ofertas, ultima_verificacion
 from products.popularidad import mas_populares
 from reviews.indicadores import resumen_de_moderacion
 from reviews.models import ReviewPhoto, ReviewReport, Reviews
@@ -98,17 +99,31 @@ def panel(request):
     return redirect("inicio_cliente")
 
 
-PRODUCTOS_EN_INICIO = 12
+PRODUCTOS_EN_INICIO = 5  # las búsquedas rápidas debajo del buscador, como en el diseño
 
 
 def mostrar_inicio(request, titulo):
-    # Los más vistos de la semana primero; si nadie ha visto nada todavía, quedan por nombre.
-    productos = con_imagen(mas_populares(buscar_productos(""))[:PRODUCTOS_EN_INICIO])
+    """El inicio según frontend/html/index.html: búsqueda, categorías y mejores ofertas del día."""
+    # Las búsquedas rápidas del buscador: los más vistos de la semana primero; si nadie ha visto
+    # nada todavía, quedan por nombre.
+    productos = list(mas_populares(buscar_productos(""))[:PRODUCTOS_EN_INICIO])
     hay_populares = bool(productos) and productos[0].popularidad > 0
+    ofertas = mejores_ofertas()
     return render(
         request,
         "accounts/mainpage.html",
-        {"titulo": titulo, "productos": productos, "hay_populares": hay_populares},
+        {
+            "titulo": titulo,
+            "productos": productos,
+            "hay_populares": hay_populares,
+            "categorias": categorias_del_inicio(),
+            "total_productos": Products.objects.count(),
+            "ofertas": ofertas,
+            "ultima_verificacion": ultima_verificacion(ofertas),
+            "hoy": timezone.localdate(),
+            # El buscador grande del inicio reemplaza al del encabezado.
+            "sin_busqueda_en_encabezado": True,
+        },
     )
 
 

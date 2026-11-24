@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
@@ -169,6 +170,9 @@ def detalle_producto(request, pk):
     )
     variantes = ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
     precios = list(_consulta_precios_detalle(producto.pk))
+    limite_precio_antiguo = timezone.now() - timedelta(hours=48)
+    for precio in precios:
+        precio.desactualizado = precio.updated_at < limite_precio_antiguo
     grupos_precios = agrupar_precios_por_gtin(variantes, precios)
 
     resenas = (

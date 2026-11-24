@@ -18,7 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 
 from . import vista_previa
 
@@ -26,6 +26,11 @@ urlpatterns = [
     path("", RedirectView.as_view(pattern_name="panel"), name="inicio"),
     path("admin/", admin.site.urls),
     path("i18n/", include("django.conf.urls.i18n")),
+    path(
+        "terminos-y-condiciones/",
+        TemplateView.as_view(template_name="terminos.html"),
+        name="terminos",
+    ),
     path("accounts/", include("accounts.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("products/", include("products.urls")),

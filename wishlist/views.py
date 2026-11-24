@@ -8,6 +8,7 @@ from accounts.decorators import role_required
 from products.models import ProductImages, ProductVariants, Products, Prices
 
 from .models import WishlistItem
+from .totales import totales_por_tienda
 
 
 @role_required("client")
@@ -49,7 +50,8 @@ def lista_deseos(request):
                 (item.variant.gtin, item.currency_id)
             )
 
-    return render(request, "wishlist/lista.html", {"items": items})
+    comparativas = totales_por_tienda(items) if items else []
+    return render(request, "wishlist/lista.html", {"items": items, "comparativas": comparativas})
 
 
 @role_required("client")

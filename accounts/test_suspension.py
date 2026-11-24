@@ -157,6 +157,25 @@ class SuspenderClienteTests(SuspensionBase):
                 self.assertContains(respuesta, "Indique el motivo de la suspensión")
                 self.assertTrue(self.recargar(self.cliente).is_active)
 
+    def test_el_mensaje_de_suspension_se_traduce_al_ingles(self):
+        self.client.cookies["django_language"] = "en"
+        self.client.force_login(self.admin)
+
+        respuesta = self.suspender(self.cliente, "Spam reiterado en reseñas.")
+
+        self.assertContains(
+            respuesta,
+            "The account for infractor@example.com was suspended.",
+        )
+
+    def test_el_error_del_formulario_se_traduce_al_ingles(self):
+        self.client.cookies["django_language"] = "en"
+        self.client.force_login(self.admin)
+
+        respuesta = self.suspender(self.cliente, "")
+
+        self.assertContains(respuesta, "Enter a reason for the suspension.")
+
     def test_rechaza_un_motivo_de_mas_de_500_caracteres(self):
         self.client.force_login(self.admin)
         self.suspender(self.cliente, "a" * 501)

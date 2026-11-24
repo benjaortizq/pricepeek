@@ -7,6 +7,8 @@ from django.contrib.auth.forms import (
 )
 from django.utils import timezone
 
+from core.translations import translate_text_lazy
+
 from .models import User
 
 
@@ -40,7 +42,7 @@ class IniciarSesionForm(AuthenticationForm):
 
 class SuspenderClienteForm(forms.Form):
     motivo = forms.CharField(
-        label="Motivo de la suspensión",
+        label=translate_text_lazy("Motivo de la suspensión"),
         max_length=500,
         widget=forms.Textarea(attrs={"rows": 3}),
         error_messages={"required": "Indique el motivo de la suspensión."},
@@ -48,8 +50,8 @@ class SuspenderClienteForm(forms.Form):
 
 
 class RegistroClienteForm(UserCreationForm):
-    first_name = forms.CharField(label="Nombre", max_length=150)
-    email = forms.EmailField(label="Correo electrónico")
+    first_name = forms.CharField(label=translate_text_lazy("Nombre"), max_length=150)
+    email = forms.EmailField(label=translate_text_lazy("Correo electrónico"))
 
     class Meta:
         model = User
@@ -84,7 +86,7 @@ class EliminarCuentaForm(forms.Form):
     """Confirmación con la contraseña actual antes de eliminar la cuenta (RF-05)."""
 
     password = forms.CharField(
-        label="Contraseña actual",
+        label=translate_text_lazy("Contraseña actual"),
         strip=False,
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
     )
@@ -106,14 +108,14 @@ class CambioContrasenaForm(PasswordChangeForm):
 
 class CodigoCambioContrasenaForm(forms.Form):
     codigo = forms.CharField(
-        label="Código de verificación",
+        label=translate_text_lazy("Código de verificación"),
         max_length=6,
         widget=forms.TextInput(attrs={"autocomplete": "one-time-code", "inputmode": "numeric"}),
     )
 
 
 class EditarNombreForm(forms.ModelForm):
-    first_name = forms.CharField(label="Nombre", max_length=150)
+    first_name = forms.CharField(label=translate_text_lazy("Nombre"), max_length=150)
 
     class Meta:
         model = User
@@ -124,7 +126,8 @@ class AlertasPrecioForm(forms.ModelForm):
     """Interruptor de las alertas de baja de precio (RF-24)."""
 
     active_alerts = forms.BooleanField(
-        label="Recibir alertas de baja de precio por correo", required=False
+        label=translate_text_lazy("Recibir alertas de baja de precio por correo"),
+        required=False,
     )
 
     class Meta:
@@ -140,7 +143,7 @@ def correo_en_uso(email, user):
 class NuevoCorreoForm(forms.Form):
     """Paso 1 del cambio de correo: verificar que el correo nuevo esté libre."""
 
-    email = forms.EmailField(label="Correo electrónico nuevo")
+    email = forms.EmailField(label=translate_text_lazy("Correo electrónico nuevo"))
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -159,7 +162,7 @@ class ConfirmarCorreoForm(forms.Form):
     """Paso 2 del cambio de correo: confirmar con la contraseña actual."""
 
     password = forms.CharField(
-        label="Contraseña actual",
+        label=translate_text_lazy("Contraseña actual"),
         strip=False,
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
     )

@@ -14,7 +14,7 @@ star_label = lazy(_star_label, str)
 
 class ReviewForm(forms.Form):
     rating = forms.IntegerField(
-        label="Calificación",
+        label=translate_text_lazy("Calificación"),
         min_value=1,
         max_value=5,
         widget=forms.RadioSelect(
@@ -22,19 +22,19 @@ class ReviewForm(forms.Form):
         ),
     )
     content = forms.CharField(
-        label="Comentario",
+        label=translate_text_lazy("Comentario"),
         min_length=1,
         widget=forms.Textarea(attrs={"rows": 4}),
     )
     photo = forms.ImageField(
-        label="Foto (opcional)",
+        label=translate_text_lazy("Foto (opcional)"),
         required=False,
     )
 
 
 class ReviewReportForm(forms.Form):
     reason = forms.CharField(
-        label="Motivo del reporte",
+        label=translate_text_lazy("Motivo del reporte"),
         max_length=500,
         widget=forms.Textarea(attrs={"rows": 3}),
     )
@@ -50,8 +50,12 @@ class ModerationForm(forms.Form):
             (DELETE, translate_text_lazy("Eliminar")),
         ]
     )
-    note = forms.CharField(label="Motivo de la decisión", required=False, max_length=500)
-    suspend = forms.BooleanField(label="Suspender al autor", required=False)
+    note = forms.CharField(
+        label=translate_text_lazy("Motivo de la decisión"), required=False, max_length=500
+    )
+    suspend = forms.BooleanField(
+        label=translate_text_lazy("Suspender al autor"), required=False
+    )
 
     def clean(self):
         datos = super().clean()

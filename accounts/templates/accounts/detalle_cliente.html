@@ -39,10 +39,12 @@
     <div class="p-4 border-b border-outline-variant bg-surface-container-low/40">
       <h2 id="titulo-incumplimientos" class="font-headline-md text-headline-md font-bold text-on-surface">{% t 'Incumplimientos de las políticas' %}</h2>
       <p class="mt-1 text-body-sm font-body-sm text-secondary">
-        {% if infracciones %}
-          {{ infracciones|length }} reseña{{ infracciones|length|pluralize }} de este cliente {{ infracciones|length|pluralize:"fue,fueron" }} eliminada{{ infracciones|length|pluralize }} por moderación.
+        {% if infracciones|length == 1 %}
+          {% t '1 reseña de este cliente fue eliminada por moderación.' %}
+        {% elif infracciones %}
+          {% t '{n} reseñas de este cliente fueron eliminadas por moderación.' n=infracciones|length %}
         {% else %}
-          Este cliente no tiene reseñas eliminadas por moderación.
+          {% t 'Este cliente no tiene reseñas eliminadas por moderación.' %}
         {% endif %}
       </p>
     </div>
@@ -78,22 +80,22 @@
     {% if cliente.is_active %}
       <span id="titulo-veredicto" class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Suspender cuenta' %}</span>
       <p class="text-body-sm text-secondary mb-4">
-        El cliente no podrá iniciar sesión, publicar reseñas ni usar su lista de deseos hasta que un administrador reactive la cuenta. Sus sesiones abiertas se cierran de inmediato.
+        {% t 'El cliente no podrá iniciar sesión, publicar reseñas ni usar su lista de deseos hasta que un administrador reactive la cuenta. Sus sesiones abiertas se cierran de inmediato.' %}
       </p>
       {% if reiteradas %}
         <div class="mb-4 flex items-start gap-2 text-body-sm text-error bg-error-container/40 p-2.5 rounded-lg border border-error/20">
           <span class="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">warning</span>
-          <span>Este cliente ha incumplido las políticas de uso de forma reiterada.</span>
+          <span>{% t 'Este cliente ha incumplido las políticas de uso de forma reiterada.' %}</span>
         </div>
       {% endif %}
       <form method="post" action="{% url 'suspender_cliente' cliente.pk %}">
         {% csrf_token %}
         <label class="block text-body-sm font-bold text-on-surface mb-1.5" for="{{ form.motivo.id_for_label }}">{% t form.motivo.label %} <span class="text-error">*</span></label>
-        <textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors resize-none" id="{{ form.motivo.id_for_label }}" name="{{ form.motivo.html_name }}" rows="3" maxlength="500" required placeholder="Por ejemplo: publicó reseñas ofensivas de forma reiterada.">{{ form.motivo.value|default:"" }}</textarea>
+        <textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors resize-none" id="{{ form.motivo.id_for_label }}" name="{{ form.motivo.html_name }}" rows="3" maxlength="500" required placeholder="{% t 'Por ejemplo: publicó reseñas ofensivas de forma reiterada.' %}">{{ form.motivo.value|default:"" }}</textarea>
         {% for error in form.motivo.errors %}
           <p class="mt-1 flex items-center gap-1 text-body-sm font-body-sm text-error"><span class="material-symbols-outlined text-[16px]" aria-hidden="true">error</span>{% t error %}</p>
         {% endfor %}
-        <button class="mt-4 w-full px-5 py-2 rounded-full bg-error text-on-error font-bold text-body-md hover:brightness-95 transition-colors flex items-center justify-center gap-2 shadow-sm" type="submit" onclick="return confirm('¿Suspender la cuenta de {{ cliente.email|escapejs }}?')">
+        <button class="mt-4 w-full px-5 py-2 rounded-full bg-error text-on-error font-bold text-body-md hover:brightness-95 transition-colors flex items-center justify-center gap-2 shadow-sm" type="submit" onclick="return confirm('{% t '¿Suspender la cuenta de {correo}?' correo=cliente.email|escapejs %}')">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">block</span>{% t 'Suspender cuenta' %}
         </button>
       </form>
@@ -114,12 +116,13 @@
         {% endif %}
         <div class="text-body-sm">
           <span class="text-secondary">{% t 'Motivo:' %}</span>
-          <p class="mt-1 text-on-surface italic">{{ cliente.suspension_reason|default:"No se registró un motivo." }}</p>
+          {% t 'No se registró un motivo.' as sin_motivo %}
+          <p class="mt-1 text-on-surface italic">{{ cliente.suspension_reason|default:sin_motivo }}</p>
         </div>
       </div>
       <form class="mt-6" method="post" action="{% url 'reactivar_cliente' cliente.pk %}">
         {% csrf_token %}
-        <button class="w-full bg-primary-container hover:brightness-95 text-on-primary-container font-body-md text-body-md font-bold py-2 px-3 rounded-full transition-colors active:scale-[0.98] flex items-center justify-center gap-2" type="submit" onclick="return confirm('¿Reactivar la cuenta de {{ cliente.email|escapejs }}?')">
+        <button class="w-full bg-primary-container hover:brightness-95 text-on-primary-container font-body-md text-body-md font-bold py-2 px-3 rounded-full transition-colors active:scale-[0.98] flex items-center justify-center gap-2" type="submit" onclick="return confirm('{% t '¿Reactivar la cuenta de {correo}?' correo=cliente.email|escapejs %}')">
           <span class="material-symbols-outlined text-[18px]" aria-hidden="true">lock_open</span>{% t 'Reactivar cuenta' %}
         </button>
       </form>

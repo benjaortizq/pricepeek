@@ -193,9 +193,9 @@
               <div class="flex justify-between items-center gap-3 text-body-sm">
                 <span class="text-secondary shrink-0">{% t 'Historial' %}</span>
                 {% if seleccionado.infracciones %}
-                  <span class="font-label-badge text-label-badge text-error bg-error-container/40 px-2 py-0.5 rounded-full text-right">Le eliminaron {{ seleccionado.infracciones }} reseña{{ seleccionado.infracciones|pluralize }} antes</span>
+                  <span class="font-label-badge text-label-badge text-error bg-error-container/40 px-2 py-0.5 rounded-full text-right">{% if seleccionado.infracciones == 1 %}{% t 'Le eliminaron 1 reseña antes' %}{% else %}{% t 'Le eliminaron {n} reseñas antes' n=seleccionado.infracciones %}{% endif %}</span>
                 {% else %}
-                  <span class="font-label-badge text-label-badge text-tertiary bg-tertiary-container/30 px-2 py-0.5 rounded-full">Sin reseñas eliminadas antes</span>
+                  <span class="font-label-badge text-label-badge text-tertiary bg-tertiary-container/30 px-2 py-0.5 rounded-full">{% t 'Sin reseñas eliminadas antes' %}</span>
                 {% endif %}
               </div>
             {% endif %}

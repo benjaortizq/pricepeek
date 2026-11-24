@@ -198,6 +198,10 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panel"
 LOGOUT_REDIRECT_URL = "login"
 
+# Mantiene la sesión activa mientras haya actividad y la vence tras 30 minutos sin solicitudes.
+SESSION_COOKIE_AGE = 30 * 60
+SESSION_SAVE_EVERY_REQUEST = True
+
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 24 horas
 PASSWORD_CHANGE_CODE_TIMEOUT = 60 * 10  # el código para confirmar el cambio vale 10 minutos
 PASSWORD_CHANGE_CODE_MAX_ATTEMPTS = 5

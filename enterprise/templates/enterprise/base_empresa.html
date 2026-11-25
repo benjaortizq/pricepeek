@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static site_i18n enterprise_tags %}
+
+{% block content %}
+<div class="w-full max-w-[1440px] mx-auto px-margin md:px-margin-desktop py-space-lg">
+  <div class="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-space-lg items-start">
+    <aside class="lg:sticky lg:top-20 bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-4 shadow-sm">
+      <div class="flex items-center gap-3 px-1 pb-4 border-b border-outline-variant/50">
+        <span class="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-[22px]">storefront</span>
+        </span>
+        <div class="min-w-0">
+          <p class="font-headline-md font-extrabold tracking-tight">PricePeek</p>
+          <p class="text-body-sm text-secondary">{% t 'Portal de empresas' %}</p>
+        </div>
+      </div>
+
+      <a href="{% url 'enterprise:editar_tienda' %}" class="group mt-4 block cursor-pointer p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest transition-colors" aria-label="{% t 'Editar información de la tienda' %}">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+          <p class="font-bold truncate">{{ store.name|clean_text }}</p>
+          <span class="ml-auto material-symbols-outlined text-[19px] text-secondary opacity-70 group-hover:text-primary group-hover:opacity-100 transition-colors" aria-hidden="true">edit</span>
+        </div>
+        <p class="mt-1 text-body-sm text-secondary">{% t 'Tienda asignada' %}</p>
+      </a>
+
+      <nav class="mt-4 grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-1 gap-1.5" aria-label="{% t 'Navegación de empresa' %}">
+        {% with actual=request.resolver_match.url_name %}
+          {% url 'enterprise:panel' as url_panel %}
+          {% url 'enterprise:catalogo' as url_catalogo %}
+          {% url 'enterprise:nuevo_producto' as url_nuevo %}
+          {% url 'enterprise:cargar_csv' as url_csv %}
+          {% if actual == "panel" %}
+            <a class="flex items-center gap-2 px-3 py-2.5 rounded-full bg-primary-container text-on-primary-container font-bold" href="{{ url_panel }}"><span class="material-symbols-outlined text-[19px]">dashboard</span>{% t 'Resumen' %}</a>
+          {% else %}
+            <a class="flex items-center gap-2 px-3 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-low" href="{{ url_panel }}"><span class="material-symbols-outlined text-[19px]">dashboard</span>{% t 'Resumen' %}</a>
+          {% endif %}
+          {% if actual == "catalogo" or actual == "detalle_producto" or actual == "editar_producto" %}
+            <a class="flex items-center gap-2 px-3 py-2.5 rounded-full bg-primary-container text-on-primary-container font-bold" href="{{ url_catalogo }}"><span class="material-symbols-outlined text-[19px]">inventory_2</span>{% t 'Productos' %}</a>
+          {% else %}
+            <a class="flex items-center gap-2 px-3 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-low" href="{{ url_catalogo }}"><span class="material-symbols-outlined text-[19px]">inventory_2</span>{% t 'Productos' %}</a>
+          {% endif %}
+          <a class="flex items-center gap-2 px-3 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-low" href="{{ url_nuevo }}"><span class="material-symbols-outlined text-[19px]">add</span>{% t 'Agregar' %}</a>
+          <a class="flex items-center gap-2 px-3 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-low" href="{{ url_csv }}"><span class="material-symbols-outlined text-[19px]">upload_file</span>{% t 'CSV' %}</a>
+          <form method="post" action="{% url 'enterprise:reporte_pdf' %}" class="contents">
+            {% csrf_token %}
+            <button class="flex items-center gap-2 px-3 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-low w-full text-left" type="submit"><span class="material-symbols-outlined text-[19px]">picture_as_pdf</span>{% t 'Reporte PDF' %}</button>
+          </form>
+        {% endwith %}
+      </nav>
+    </aside>
+
+    <section class="min-w-0">
+      {% block empresa_content %}{% endblock %}
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script src="{% static 'enterprise/enterprise.js' %}"></script>
+{% endblock %}

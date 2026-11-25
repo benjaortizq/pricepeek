@@ -1,0 +1,74 @@
+{% extends "enterprise/base_empresa.html" %}
+{% load site_i18n enterprise_tags %}
+
+{% block title %}{% if modo == "editar" %}{% t 'Editar precio' %}{% else %}{% t 'Agregar producto' %}{% endif %}{% endblock %}
+
+{% block empresa_content %}
+<a class="inline-flex items-center gap-1 text-body-sm font-semibold text-secondary hover:text-on-surface" href="{% if modo == 'editar' %}{% url 'enterprise:detalle_producto' price_id=precio.pk %}{% else %}{% url 'enterprise:catalogo' %}{% endif %}"><span class="material-symbols-outlined text-[18px]">arrow_back</span>{% t 'Volver al catálogo' %}</a>
+<div class="mt-3 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+  <div>
+    <h1 class="text-headline-lg font-headline-lg tracking-tight">{% if modo == "editar" %}{% t 'Editar precio del producto' %}{% else %}{% t 'Agregar producto al catálogo' %}{% endif %}</h1>
+    <p class="mt-2 text-secondary">{% if modo == "editar" %}{% t 'Solo se modificará el precio de su tienda.' %}{% else %}{% t 'Un GTIN existente solo agregará su precio. Un GTIN nuevo también creará el producto mínimo y su variante.' %}{% endif %}</p>
+  </div>
+</div>
+
+{% if form.non_field_errors %}
+<div class="mt-5 rounded-xl border border-error/30 bg-error-container/40 p-4 text-error">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+{% endif %}
+
+<form method="post" class="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-space-md items-start">
+  {% csrf_token %}
+
+  {% if modo == "editar" %}
+  <section class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <h2 class="text-headline-md font-headline-md">{% t 'Producto' %}</h2>
+    <dl class="mt-4 space-y-3 text-body-md">
+      <div><dt class="text-secondary">{% t 'Nombre' %}</dt><dd class="font-bold">{{ precio.gtin.product.name }}</dd></div>
+      <div><dt class="text-secondary">{% t 'Variante' %}</dt><dd>{{ precio.gtin.name }}</dd></div>
+      <div><dt class="text-secondary">{% t 'Código de barras' %}</dt><dd class="font-mono">{{ precio.gtin_id }}</dd></div>
+      <div><dt class="text-secondary">{% t 'Marca' %}</dt><dd>{{ precio.gtin.product.brand.name }}</dd></div>
+      <div><dt class="text-secondary">{% t 'Categoría' %}</dt><dd>{{ precio.gtin.product.category.name }}</dd></div>
+    </dl>
+    <div class="mt-5 rounded-xl bg-surface-container-low p-4 text-body-sm text-secondary">{% t 'Los datos canónicos son compartidos y no se modificarán desde este formulario.' %}</div>
+  </section>
+  {% else %}
+  <section class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">inventory_2</span><h2 class="text-headline-md font-headline-md">{% t 'Datos del producto' %}</h2></div>
+    <p class="mt-2 text-body-sm text-secondary">{% t 'Los datos del producto solo se usan si el GTIN no existe en el catálogo.' %}</p>
+    <div class="mt-5 space-y-4">
+      {% for field in campos_producto %}
+      <div>
+        <label class="block font-semibold mb-1.5" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <span class="text-error">*</span>{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="mt-1 text-body-sm text-secondary">{{ field.help_text }}</p>{% endif %}
+        {% for error in field.errors %}<p class="mt-1 text-body-sm text-error">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <div class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary">local_offer</span><h2 class="text-headline-md font-headline-md">{% t 'Precio y disponibilidad' %}</h2></div>
+    <div class="mt-5 space-y-4">
+      {% for field in campos_precio %}
+      <div>
+        <label class="block font-semibold mb-1.5" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="mt-1 text-body-sm text-secondary">{{ field.help_text }}</p>{% endif %}
+        {% for error in field.errors %}<p class="mt-1 text-body-sm text-error">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+      <label class="flex items-start gap-3 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3">
+        {{ form.is_available }}
+        <span><span class="font-semibold">{{ form.is_available.label }}</span><span class="block text-body-sm text-secondary">{% t 'Si el precio está vacío o es negativo, la oferta se guardará como no disponible.' %}</span></span>
+      </label>
+      {% if form.precio_invalido %}<p class="rounded-xl border border-primary/30 bg-primary-fixed-dim/30 p-3 text-body-sm">{% t 'El precio se quitará y el producto se marcará como no disponible.' %}</p>{% endif %}
+    </div>
+    <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <a class="px-5 py-2.5 rounded-full border border-outline-variant font-semibold" href="{% if modo == 'editar' %}{% url 'enterprise:detalle_producto' price_id=precio.pk %}{% else %}{% url 'enterprise:catalogo' %}{% endif %}">{% t 'Cancelar' %}</a>
+      <button class="px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container font-bold" type="submit">{% if modo == "editar" %}{% t 'Guardar cambios' %}{% else %}{% t 'Agregar producto' %}{% endif %}</button>
+    </div>
+  </section>
+</form>
+{% endblock %}

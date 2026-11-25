@@ -107,6 +107,7 @@ class Stores(models.Model):
     name = models.CharField()
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
+    description = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False

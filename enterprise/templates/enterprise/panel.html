@@ -1,0 +1,89 @@
+{% extends "enterprise/base_empresa.html" %}
+{% load site_i18n enterprise_tags %}
+
+{% block title %}{% t 'Panel de empresa' %}{% endblock %}
+
+{% block empresa_content %}
+<div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-space-lg">
+  <div>
+    <p class="text-body-sm font-semibold text-secondary">{% t 'PricePeek Business' %}</p>
+    <h1 class="text-headline-lg font-headline-lg tracking-tight mt-1">{% t 'Tablero de competitividad' %}</h1>
+    <p class="mt-2 text-secondary">{% t 'Compare el precio final de su tienda con las mejores ofertas disponibles para el mismo GTIN.' %}</p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary-container font-bold" href="{% url 'enterprise:nuevo_producto' %}">
+      <span class="material-symbols-outlined text-[19px]">add</span>{% t 'Agregar producto' %}
+    </a>
+    <a class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-outline-variant hover:bg-surface-container-low font-semibold" href="{% url 'enterprise:cargar_csv' %}">
+      <span class="material-symbols-outlined text-[19px]">upload_file</span>{% t 'Cargar CSV' %}
+    </a>
+  </div>
+</div>
+
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md" aria-label="{% t 'Indicadores del catálogo' %}">
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <div class="flex items-center justify-between text-secondary"><span class="font-semibold">{% t 'Productos' %}</span><span class="material-symbols-outlined">inventory_2</span></div>
+    <p class="mt-3 text-display-mobile font-headline-lg font-extrabold">{{ estadisticas.total }}</p>
+    <p class="mt-2 text-body-sm text-secondary">{% t 'Filas de precio de su tienda' %}</p>
+  </article>
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <div class="flex items-center justify-between text-secondary"><span class="font-semibold">{% t 'Disponibles' %}</span><span class="material-symbols-outlined text-tertiary">check_circle</span></div>
+    <p class="mt-3 text-display-mobile font-headline-lg font-extrabold">{{ estadisticas.activos }}</p>
+    <p class="mt-2 text-body-sm text-secondary">{% t 'Ofertas activas' %}</p>
+  </article>
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <div class="flex items-center justify-between text-secondary"><span class="font-semibold">{% t 'Requieren atención' %}</span><span class="material-symbols-outlined text-error">notification_important</span></div>
+    <p class="mt-3 text-display-mobile font-headline-lg font-extrabold">{{ estadisticas.requieren_atencion }}</p>
+    <p class="mt-2 text-body-sm text-secondary">{% t 'Precio, disponibilidad o actualización' %}</p>
+  </article>
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5">
+    <div class="flex items-center justify-between text-secondary"><span class="font-semibold">{% t 'Sin cambios' %}</span><span class="material-symbols-outlined text-primary">history</span></div>
+    <p class="mt-3 text-display-mobile font-headline-lg font-extrabold">{{ estadisticas.sin_cambios }}</p>
+    <p class="mt-2 text-body-sm text-secondary">{% t 'Sin cambios desde hace {dias} días o más' dias=stale_price_days %}</p>
+  </article>
+</section>
+
+<section class="mt-space-lg grid grid-cols-1 xl:grid-cols-2 gap-space-md">
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <h2 class="text-headline-md font-headline-md">{% t 'Competitividad de precios' %}</h2>
+        <p class="mt-1 text-body-sm text-secondary">{% t 'Clasificación según el precio final después del descuento.' %}</p>
+      </div>
+      <span class="material-symbols-outlined text-primary text-[28px]">trophy</span>
+    </div>
+    <div class="mt-6 space-y-4">
+      <div>
+        <div class="flex justify-between text-body-sm"><span class="font-semibold text-tertiary">{% t 'Más barato' %}</span><strong>{{ estadisticas.verde }}</strong></div>
+        <div class="mt-1.5 h-2.5 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-tertiary" style="width: {% if estadisticas.total %}{{ estadisticas.verde|percent_of:estadisticas.total }}%{% else %}0{% endif %}"></div></div>
+      </div>
+      <div>
+        <div class="flex justify-between text-body-sm"><span class="font-semibold text-primary">{% t 'Empate con el mínimo' %}</span><strong>{{ estadisticas.amarillo }}</strong></div>
+        <div class="mt-1.5 h-2.5 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary-container" style="width: {% if estadisticas.total %}{{ estadisticas.amarillo|percent_of:estadisticas.total }}%{% else %}0{% endif %}"></div></div>
+      </div>
+      <div>
+        <div class="flex justify-between text-body-sm"><span class="font-semibold text-error">{% t 'Por encima del mercado' %}</span><strong>{{ estadisticas.rojo }}</strong></div>
+        <div class="mt-1.5 h-2.5 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-error" style="width: {% if estadisticas.total %}{{ estadisticas.rojo|percent_of:estadisticas.total }}%{% else %}0{% endif %}"></div></div>
+      </div>
+      <div>
+        <div class="flex justify-between text-body-sm"><span class="font-semibold text-secondary">{% t 'Sin referencia' %}</span><strong>{{ estadisticas.neutro }}</strong></div>
+        <div class="mt-1.5 h-2.5 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-secondary" style="width: {% if estadisticas.total %}{{ estadisticas.neutro|percent_of:estadisticas.total }}%{% else %}0{% endif %}"></div></div>
+      </div>
+    </div>
+  </article>
+
+  <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
+    <h2 class="text-headline-md font-headline-md">{% t 'Acciones rápidas' %}</h2>
+    <p class="mt-1 text-body-sm text-secondary">{% t 'Mantenga su catálogo actualizado y competitivo.' %}</p>
+    <div class="mt-5 grid gap-3 sm:grid-cols-2">
+      <a class="flex items-center gap-3 rounded-xl border border-outline-variant/60 p-4 hover:bg-surface-container-low" href="{% url 'enterprise:catalogo' %}"><span class="material-symbols-outlined text-primary">search</span><span><strong class="block">{% t 'Revisar catálogo' %}</strong><span class="text-body-sm text-secondary">{% t 'Buscar y filtrar precios' %}</span></span></a>
+      <a class="flex items-center gap-3 rounded-xl border border-outline-variant/60 p-4 hover:bg-surface-container-low" href="{% url 'enterprise:nuevo_producto' %}"><span class="material-symbols-outlined text-tertiary">add_circle</span><span><strong class="block">{% t 'Agregar un GTIN' %}</strong><span class="text-body-sm text-secondary">{% t 'Alta individual' %}</span></span></a>
+      <a class="flex items-center gap-3 rounded-xl border border-outline-variant/60 p-4 hover:bg-surface-container-low" href="{% url 'enterprise:cargar_csv' %}"><span class="material-symbols-outlined text-primary">upload_file</span><span><strong class="block">{% t 'Importar precios' %}</strong><span class="text-body-sm text-secondary">{% t 'Carga masiva CSV' %}</span></span></a>
+      <form method="post" action="{% url 'enterprise:reporte_pdf' %}" class="contents">
+        {% csrf_token %}
+        <button class="w-full flex items-center gap-3 rounded-xl border border-outline-variant/60 p-4 hover:bg-surface-container-low text-left" type="submit"><span class="material-symbols-outlined text-error">picture_as_pdf</span><span><strong class="block">{% t 'Descargar reporte' %}</strong><span class="text-body-sm text-secondary">{% t 'Resumen PDF' %}</span></span></button>
+      </form>
+    </div>
+  </article>
+</section>
+{% endblock %}

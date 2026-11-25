@@ -14,6 +14,9 @@ class Brands(models.Model):
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
 
+    def __str__(self):
+        return self.name
+
     class Meta:
         managed = False
         db_table = 'brands'
@@ -24,6 +27,9 @@ class Categories(models.Model):
     name = models.CharField()
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         managed = False

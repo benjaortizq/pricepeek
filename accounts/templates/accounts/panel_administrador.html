@@ -1,0 +1,186 @@
+{% extends "panel/base.html" %}
+{% load site_i18n %}
+{# Diseño: frontend/html/admin-panel-moderacion.html (encabezado, tarjetas, cola de revisión y pie). #}
+
+{% block title %}{% t 'Panel de administración' %}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span>{% t 'Moderación' %}</span>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Cola de revisión' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Centro de Moderación y Control de Calidad' %}{% endblock %}
+{% block descripcion %}{% t 'Reseñas reportadas por la comunidad y fallas en la obtención de precios de los comercios de Costa Rica, en una sola cola de revisión.' %}{% endblock %}
+
+{% block acciones %}
+  <a class="bg-surface-container-lowest text-on-surface border border-outline-variant rounded-full px-4 py-2 font-body-md text-body-md font-semibold hover:bg-surface-container transition-colors flex items-center gap-2" href="{% url 'clientes' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">group</span><span>{% t 'Clientes' %}</span>
+  </a>
+  <a class="bg-surface-container-lowest text-on-surface border border-outline-variant rounded-full px-4 py-2 font-body-md text-body-md font-semibold hover:bg-surface-container transition-colors flex items-center gap-2" href="{% url 'incidencias' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">sync_problem</span><span>{% t 'Incidencias de datos' %}</span>
+  </a>
+  <a class="bg-primary-container text-on-primary-container rounded-full px-5 py-2 font-body-md text-body-md font-bold hover:brightness-95 active:scale-[0.98] transition-all flex items-center gap-2 shadow-sm" href="{% url 'resenas_reportadas' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">done_all</span><span>{% t 'Revisar reportes' %}</span>
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% for kpi in kpis %}{% include "panel/kpi.html" %}{% endfor %}
+</div>
+
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-low/40">
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      {% for pestana in pestanas %}{% include "panel/pestana.html" %}{% endfor %}
+    </div>
+    <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+      <div class="text-body-sm font-body-sm text-secondary flex items-center gap-1 mr-2">
+        <span>{% t 'Ordenar por:' %}</span>
+        <span class="font-semibold text-on-surface">{% t 'Más recientes' %}</span>
+      </div>
+      <a class="p-1.5 rounded-lg border border-outline-variant text-secondary hover:text-on-surface hover:bg-surface-container transition-colors flex" href="{{ request.get_full_path }}" title="{% t 'Actualizar la lista' %}" aria-label="{% t 'Actualizar la lista' %}">
+        <span class="material-symbols-outlined text-base" aria-hidden="true">refresh</span>
+      </a>
+    </div>
+  </div>
+
+  {% if elementos %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary">
+            <th class="py-3 px-4">{% t 'Tipo e ID' %}</th>
+            <th class="py-3 px-4">{% t 'Elemento reportado y comercio' %}</th>
+            <th class="py-3 px-4">{% t 'Origen' %}</th>
+            <th class="py-3 px-4 min-w-[16rem]">{% t 'Motivo / alerta detectada' %}</th>
+            <th class="py-3 px-4">{% t 'Fecha' %}</th>
+            <th class="py-3 px-4">{% t 'Estado' %}</th>
+            <th class="py-3 px-4 text-right">{% t 'Acciones' %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+          {% for elemento in elementos %}
+            {% if elemento.tipo == "resena" %}
+              {% with resena=elemento.resena %}
+              {% url 'resenas_reportadas' as url_resenas %}
+              <tr class="hover:bg-surface-container-low/50 transition-colors">
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 text-[11px] font-label-badge px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">rate_review</span>{% t 'Reseña' %}
+                  </span>
+                  <div class="font-price-row text-xs text-secondary mt-1 font-mono">#REV-{{ resena.pk }}</div>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="font-semibold text-on-surface">{{ resena.variant.product.name }}</div>
+                  <div class="text-body-sm text-secondary flex items-center gap-1 mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>{{ resena.variant.name }}
+                  </div>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <div class="font-medium text-on-surface">{{ resena.user.email }}</div>
+                  <div class="text-body-sm text-secondary flex items-center gap-1 mt-0.5">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">person_outline</span>{% t 'Autor de la reseña' %}
+                  </div>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="text-body-sm text-on-surface-variant font-medium flex items-start gap-1.5">
+                    <span class="material-symbols-outlined text-primary text-sm shrink-0 mt-0.5" aria-hidden="true">flag</span>
+                    <span class="line-clamp-2">{{ elemento.motivo }}</span>
+                  </div>
+                  <div class="text-[11px] text-secondary mt-0.5">{{ elemento.reportes }} {% if elemento.reportes == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}</div>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <div class="text-on-surface text-body-sm font-medium">{% t 'Hace {tiempo}' tiempo=elemento.fecha|timesince %}</div>
+                  <div class="text-[11px] text-secondary mt-0.5">{{ elemento.fecha|date:"d/m/Y H:i" }}</div>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-primary-container text-on-primary-container font-bold border border-primary-container">{% t 'En revisión' %}</span>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <a class="p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex" href="{{ url_resenas }}?revisar={{ resena.pk }}#inspeccion" title="{% t 'Inspeccionar la reseña' %}" aria-label="{% t 'Inspeccionar la reseña' %} #REV-{{ resena.pk }}">
+                      <span class="material-symbols-outlined text-lg" aria-hidden="true">visibility</span>
+                    </a>
+                    <a class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" href="{{ url_resenas }}?revisar={{ resena.pk }}#inspeccion">{% t 'Revisar' %}</a>
+                  </div>
+                </td>
+              </tr>
+              {% endwith %}
+            {% else %}
+              {% with incidencia=elemento.incidencia %}
+              {% url 'incidencias' as url_incidencias %}
+              <tr class="hover:bg-surface-container-low/50 transition-colors">
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 text-[11px] font-label-badge px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ elemento.icono }}</span>{% t 'Precio' %}
+                  </span>
+                  <div class="font-price-row text-xs text-secondary mt-1 font-mono">#INC-{{ incidencia.pk }}</div>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="font-semibold text-on-surface">{{ incidencia.product_name }}</div>
+                  <div class="text-body-sm text-secondary flex items-center gap-1 mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>{{ incidencia.store_name }}
+                    <span class="text-xs text-secondary/70">• {{ incidencia.gtin }}</span>
+                  </div>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <div class="font-medium text-on-surface">{% t 'Actualización de precios' %}</div>
+                  <div class="text-body-sm text-secondary flex items-center gap-1 mt-0.5">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">smart_toy</span>{% t 'Automática, cada hora' %}
+                  </div>
+                </td>
+                <td class="py-4 px-4">
+                  <div class="text-body-sm text-on-surface font-medium flex items-start gap-1.5">
+                    <span class="material-symbols-outlined {% if incidencia.kind == 'suspicious_price' or incidencia.kind == 'barcode_mismatch' %}text-error{% else %}text-secondary{% endif %} text-sm shrink-0 mt-0.5" aria-hidden="true">{% if incidencia.kind == 'suspicious_price' %}price_change{% else %}warning{% endif %}</span>
+                    <span>{% t incidencia.get_kind_display %}</span>
+                  </div>
+                  <div class="text-[11px] text-secondary mt-0.5 line-clamp-2">{{ incidencia.motivo }}</div>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  <div class="text-on-surface text-body-sm font-medium">{% t 'Hace {tiempo}' tiempo=elemento.fecha|timesince %}</div>
+                  <div class="text-[11px] text-secondary mt-0.5">{{ elemento.fecha|date:"d/m/Y H:i" }}</div>
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  {% if incidencia.kind == 'suspicious_price' or incidencia.kind == 'barcode_mismatch' %}
+                    <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t 'Por confirmar' %}</span>
+                  {% else %}
+                    <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-surface-container text-secondary font-bold">{% t 'Pendiente' %}</span>
+                  {% endif %}
+                </td>
+                <td class="py-4 px-4 whitespace-nowrap text-right">
+                  <div class="inline-flex items-center gap-1">
+                    {% if incidencia.enlace %}
+                      <a class="p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex" href="{{ incidencia.enlace }}" target="_blank" rel="noopener noreferrer" title="{% t 'Ver la página en la tienda' %}" aria-label="{% t 'Ver la página en la tienda' %}">
+                        <span class="material-symbols-outlined text-lg" aria-hidden="true">visibility</span>
+                      </a>
+                    {% endif %}
+                    <a class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" href="{{ url_incidencias }}?tipo={{ incidencia.kind }}&amp;q={{ incidencia.gtin|urlencode }}">{% t 'Revisar' %}</a>
+                  </div>
+                </td>
+              </tr>
+              {% endwith %}
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="p-4 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm text-secondary bg-surface-container-low/20">
+      <div>
+        {% t 'Mostrando' %} <span class="font-semibold text-on-surface">1 - {{ elementos|length }}</span> {% t 'de' %} <span class="font-semibold text-on-surface">{{ en_la_cola }}</span> {% t 'casos pendientes' %}
+      </div>
+      <div class="flex items-center gap-2">
+        <a class="px-3 py-1 bg-surface-container-lowest rounded-lg border border-outline-variant text-on-surface font-semibold text-xs hover:bg-surface-container transition-colors" href="{% url 'resenas_reportadas' %}">{% t 'Ver todas las reseñas reportadas' %}</a>
+        <a class="px-3 py-1 bg-surface-container-lowest rounded-lg border border-outline-variant text-on-surface font-semibold text-xs hover:bg-surface-container transition-colors" href="{% url 'incidencias' %}">{% t 'Ver todas las incidencias' %}</a>
+      </div>
+    </div>
+  {% else %}
+    <div class="p-8 text-center">
+      <span class="material-symbols-outlined text-[32px] text-tertiary" aria-hidden="true">task_alt</span>
+      <p class="mt-2 text-body-md font-body-md text-secondary">{% t 'No hay casos pendientes de revisión.' %}</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -16,8 +16,8 @@ AVISOS_A_MOSTRAR = 10
 
 @admin.register(Incident)
 class IncidentAdmin(admin.ModelAdmin):
-    list_display = ("created_at", "kind", "store_name", "product_name", "gtin")
-    list_filter = ("kind", "store_name")
+    list_display = ("created_at", "kind", "store_name", "product_name", "gtin", "status")
+    list_filter = ("status", "kind", "store_name")
     search_fields = ("product_name", "gtin", "store_name")
 
 

@@ -8,6 +8,7 @@ from accounts.decorators import role_required
 from products.models import ProductImages, ProductVariants, Products, Prices
 
 from .models import WishlistItem
+from .totales import totales_por_tienda
 
 
 @role_required("client")
@@ -49,7 +50,8 @@ def lista_deseos(request):
                 (item.variant.gtin, item.currency_id)
             )
 
-    return render(request, "wishlist/lista.html", {"items": items})
+    comparativas = totales_por_tienda(items) if items else []
+    return render(request, "wishlist/lista.html", {"items": items, "comparativas": comparativas})
 
 
 @role_required("client")
@@ -70,7 +72,7 @@ def agregar_a_lista_deseos(request, pk):
         else:
             messages.info(request, "Este producto ya está en tu lista de deseos.")
     else:
-        messages.error(request, "Este producto todavía no tiene una variante para guardar.")
+        messages.error(request, "No se pudo guardar este producto porque todavía no tiene una presentación disponible. Pruebe con otro producto o vuelva a intentarlo cuando tenga una variante.")
 
     siguiente = request.POST.get("next", "")
     if not url_has_allowed_host_and_scheme(siguiente, allowed_hosts={request.get_host()}):

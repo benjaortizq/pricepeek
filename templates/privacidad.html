@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load site_i18n %}
+
+{% block title %}{% t 'Política de privacidad' %}{% endblock %}
+
+{% block content %}
+<section class="w-full max-w-4xl mx-auto px-margin md:px-margin-desktop py-space-xl">
+  <header class="mb-space-xl">
+    <p class="text-label-md font-label-md uppercase tracking-wider text-secondary">PricePeek Costa Rica</p>
+    <h1 class="mt-2 text-display-sm font-display-sm font-extrabold text-on-surface">{% t 'Política de privacidad' %}</h1>
+    <p class="mt-3 text-body-md font-body-md text-secondary">{% t 'Última actualización: 24 de noviembre de 2026' %} · {% t 'Versión 1.0' %}</p>
+  </header>
+
+  <div class="tarjeta p-space-lg md:p-space-xl space-y-space-lg text-body-md font-body-md leading-relaxed">
+    <p>{% t 'Esta política explica qué datos trata PricePeek, para qué los usa y qué opciones tiene usted. El tratamiento se limita a los fines descritos aquí y a las funciones que usted elija utilizar.' %}</p>
+    <p>{% t 'El aviso se presenta conforme a la Ley N.º 8968, Protección de la Persona frente al Tratamiento de sus Datos Personales, y explica las finalidades, el uso y las personas que pueden consultar la información.' %}</p>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Responsable y base de datos' %}</h2>
+      <p class="mt-2">{% t 'Responsable declarado para esta demostración: Grupo TheFunGang, proyecto académico del Instituto Tecnológico de Costa Rica. Domicilio institucional de referencia: Campus Tecnológico Central Cartago, Cartago, calle 15, avenida 14, 1 km al sur de la Basílica de los Ángeles.' %}</p>
+      <p class="mt-2">{% t 'PricePeek mantiene bases de datos de cuentas, listas de deseos, alertas, reseñas y reportes para operar la aplicación. Esta página y el consentimiento se muestran por separado de otros acuerdos.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Datos y finalidades' %}</h2>
+      <p class="mt-2">{% t 'Para registrar y proteger su cuenta tratamos su nombre, correo electrónico y contraseña (guardada de forma protegida). Usamos el nombre para identificar su perfil dentro de su cuenta; el correo se usa para iniciar sesión, recuperar o cambiar la contraseña y enviar las alertas que usted active.' %}</p>
+      <p class="mt-2">{% t 'También registramos fechas de acceso y cambios de contraseña para proteger la cuenta y mantener su funcionamiento.' %}</p>
+      <p class="mt-2">{% t 'Si usted usa esas funciones, también tratamos los productos guardados, precios objetivo, comercios seleccionados, configuración de alertas, reseñas, calificaciones, fotos opcionales y reportes. Estos datos permiten prestar las funciones solicitadas, mantener la seguridad y moderar contenido.' %}</p>
+      <p class="mt-2">{% t 'Cuando inicia sesión, registramos los productos que consulta y la hora aproximada para calcular cuáles son populares. No registramos visitas de personas que navegan sin iniciar sesión.' %}</p>
+      <p class="mt-2">{% t 'El nombre, correo, contraseña y aceptación de esta política son necesarios para crear una cuenta. La lista de deseos, las alertas, las reseñas y las fotos son opcionales. Puede desactivar las alertas en su perfil.' %}</p>
+      <p class="mt-2">{% t 'Sin su consentimiento no podemos crear una cuenta, pero puede consultar el catálogo público sin registrarse.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Quién puede consultar los datos' %}</h2>
+      <p class="mt-2">{% t 'El equipo autorizado del proyecto puede consultar los datos para administrar la aplicación y moderar reseñas. Proveedores técnicos que alojan la base de datos, envían correos o almacenan fotos podrían procesar los datos necesarios para esas tareas. No vendemos datos personales ni los compartimos con comercios para publicidad.' %}</p>
+      <p class="mt-2">{% t 'Las reseñas, calificaciones y fotos que usted publique pueden mostrarse públicamente. La aplicación no muestra su correo ni vincula públicamente su nombre de cuenta con la reseña; el contenido que usted escriba o fotografíe sí puede identificarle, así que evite incluir información personal que no quiera divulgar.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Conservación y seguridad' %}</h2>
+      <p class="mt-2">{% t 'Conservamos los datos mientras la cuenta esté activa y sean necesarios para las finalidades indicadas. Al eliminar su cuenta, borramos sus datos de perfil, lista de deseos, reseñas y fotos asociadas. Mantenemos un registro mínimo de la versión y fecha del consentimiento y su retiro, sin vincularlo a una cuenta identificable.' %}</p>
+      <p class="mt-2">{% t 'Aplicamos controles de acceso, protección de contraseñas, conexiones seguras a la base de datos y medidas técnicas para reducir el riesgo de acceso, pérdida o alteración no autorizados. Ningún sistema puede garantizar seguridad absoluta.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Cookies y almacenamiento local' %}</h2>
+      <p class="mt-2">{% t 'Usamos cookies técnicas de sesión y protección contra solicitudes falsificadas para iniciar sesión y proteger formularios. La preferencia de tema claro u oscuro se guarda en el navegador. No usamos cookies publicitarias ni registramos visitas anónimas a productos.' %}</p>
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Sus derechos y cómo ejercerlos' %}</h2>
+      <p class="mt-2">{% t 'Usted puede consultar y actualizar su nombre y correo desde su perfil, y descargar una copia de los datos de su cuenta. También puede editar o eliminar sus reseñas y solicitar la eliminación de su cuenta. Eliminar la cuenta retira el consentimiento para el tratamiento asociado al servicio y detiene las funciones que dependen de él.' %}</p>
+      {% if user.is_authenticated and user.role == 'client' %}
+        <p class="mt-3 flex flex-wrap gap-4">
+          <a class="font-semibold text-on-surface underline underline-offset-2" href="{% url 'descargar_datos_personales' %}">{% t 'Descargar mis datos' %}</a>
+          <a class="font-semibold text-on-surface underline underline-offset-2" href="{% url 'editar_perfil' %}">{% t 'Ir a mi perfil' %}</a>
+          <a class="font-semibold text-on-surface underline underline-offset-2" href="{% url 'eliminar_cuenta' %}">{% t 'Eliminar mi cuenta o retirar el consentimiento' %}</a>
+        </p>
+      {% else %}
+        <p class="mt-2">{% t 'Para acceder, actualizar o eliminar los datos de una cuenta, inicie sesión y use las opciones de perfil y eliminación de cuenta.' %}</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2 class="text-headline-md font-headline-md font-bold">{% t 'Cambios a esta política' %}</h2>
+      <p class="mt-2">{% t 'Si cambia la finalidad o el uso de los datos, PricePeek actualizará esta política y solicitará un nuevo consentimiento cuando corresponda. La versión y fecha vigentes aparecen al inicio de esta página.' %}</p>
+    </section>
+
+    <p class="border-t border-outline-variant/60 pt-space-md text-body-sm font-body-sm text-secondary">{% t 'PricePeek es un proyecto universitario de demostración. Antes de usarlo en un servicio real, confirme quién es la persona física o jurídica legalmente responsable y verifique las prácticas de sus proveedores de alojamiento, correo y almacenamiento.' %}</p>
+  </div>
+</section>
+{% endblock %}

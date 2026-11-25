@@ -1,0 +1,12 @@
+{% load site_i18n %}{# Pestaña de filtro de la tabla (frontend/html/admin-panel-moderacion.html, «Filter Tabs»); pestana: de core.panel.pestanas. #}
+{% if pestana.activa %}
+  <a class="bg-on-surface text-surface-container-lowest rounded-full px-4 py-1.5 font-label-badge text-label-badge transition-colors flex items-center gap-2 shrink-0" href="{{ pestana.url }}" aria-current="page">
+    <span>{% t pestana.texto %}</span>
+    <span class="bg-surface-container-lowest/20 text-surface-container-lowest rounded-full px-1.5">{{ pestana.cantidad }}</span>
+  </a>
+{% else %}
+  <a class="bg-surface-container-lowest hover:bg-surface-container text-secondary hover:text-on-surface border border-outline-variant rounded-full px-4 py-1.5 font-label-badge text-label-badge transition-colors flex items-center gap-2 shrink-0" href="{{ pestana.url }}">
+    <span>{% t pestana.texto %}</span>
+    <span class="bg-surface-container-high rounded-full px-1.5 text-on-surface">{{ pestana.cantidad }}</span>
+  </a>
+{% endif %}

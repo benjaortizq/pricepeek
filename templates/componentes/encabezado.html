@@ -3,6 +3,7 @@
 {% t "Perfil" as texto_perfil %}
 {% t "Lista de deseos" as texto_lista_deseos %}
 {% t "Reseñas reportadas" as texto_resenas_reportadas %}
+{% t "Incidencias" as texto_incidencias %}
 <header class="w-full bg-surface-container-lowest border-b border-outline-variant/30 sticky top-0 z-50">
   <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop h-16 flex justify-between items-center gap-4">
     <div class="flex items-center gap-space-lg min-w-0">
@@ -11,10 +12,12 @@
         <span class="w-2.5 h-2.5 rounded-full bg-primary-container inline-block"></span>
         <span class="text-body-sm font-body-sm text-secondary ml-1.5 font-medium tracking-normal hidden lg:inline">Costa Rica</span>
       </a>
+      {% if not sin_busqueda_en_encabezado %}
       <form class="hidden lg:flex items-center bg-surface-container-low rounded-full px-space-md py-1.5 border border-outline-variant/40 w-56 lg:w-72 focus-within:bg-surface-container-lowest focus-within:border-on-surface transition-all" action="{% url 'buscar_productos' %}" method="get" role="search">
         <span class="material-symbols-outlined text-secondary text-[20px] mr-2">search</span>
         <input class="bg-transparent border-0 text-body-sm font-body-sm text-on-surface placeholder:text-secondary focus:ring-0 p-0 w-full outline-none" name="q" placeholder="{% t 'Buscar producto o marca...' %}" type="search" value="{{ request.GET.q|default:'' }}" aria-label="{% t 'Buscar producto o marca' %}">
       </form>
+      {% endif %}{# en el inicio no va: tiene su propio buscador grande (frontend/html/index.html) #}
     </div>
 
     {% if user.is_authenticated %}
@@ -58,6 +61,12 @@
             {% include "componentes/enlace_nav.html" with url=url_clientes texto="Clientes" activo=True %}
           {% else %}
             {% include "componentes/enlace_nav.html" with url=url_clientes texto="Clientes" %}
+          {% endif %}
+          {% url 'incidencias' as url_incidencias %}
+          {% if actual == "incidencias" %}
+            {% include "componentes/enlace_nav.html" with url=url_incidencias texto=texto_incidencias activo=True %}
+          {% else %}
+            {% include "componentes/enlace_nav.html" with url=url_incidencias texto=texto_incidencias %}
           {% endif %}
         {% endif %}
       </nav>

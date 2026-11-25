@@ -1,0 +1,72 @@
+{% load site_i18n panel %}
+{% comment %}
+  Ventana para eliminar una reseña (frontend/html/admin-modal-eliminar-resena.html); se abre con
+  el enlace #eliminar-<id>, sin JavaScript. Necesita resena, autor, politicas y url_eliminar;
+  numero_reportes y motivo_reporte son opcionales, y volver, la lista a la que se regresa.
+{% endcomment %}
+  <!-- VENTANA PARA ELIMINAR (frontend/html/admin-modal-eliminar-resena.html) -->
+  <div id="eliminar-{{ resena.pk }}" class="hidden target:flex fixed inset-0 z-50 items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-eliminar-{{ resena.pk }}">
+    <a class="absolute inset-0 cursor-default" href="#cerrar" tabindex="-1" aria-hidden="true"></a>
+    <form class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" method="post" action="{{ url_eliminar }}">
+      {% csrf_token %}
+      {% if volver %}<input type="hidden" name="volver" value="{{ volver }}">{% endif %}
+      <div class="p-6 pb-4 border-b border-surface-container flex items-start gap-4">
+        <div class="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center shrink-0 border border-error/20">
+          <span class="material-symbols-outlined text-[28px]" aria-hidden="true">warning</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <h2 id="titulo-eliminar-{{ resena.pk }}" class="text-headline-md font-headline-md text-on-surface">{% t '¿Eliminar esta reseña definitivamente?' %}</h2>
+            <a class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors flex" href="#cerrar" title="{% t 'Cerrar ventana' %}" aria-label="{% t 'Cerrar ventana' %}">
+              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+            </a>
+          </div>
+          <p class="text-body-md font-body-md text-secondary mt-1 leading-relaxed">{% t 'La reseña deja de mostrarse en PricePeek y la eliminación queda en el historial del autor como un incumplimiento de las políticas.' %}</p>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-5 overflow-y-auto">
+        <div class="bg-surface-container-low rounded-xl border border-outline-variant p-4 space-y-3">
+          <div class="flex flex-wrap items-center gap-2 text-body-sm pb-2.5 border-b border-surface-container">
+            <span class="font-price-row font-bold text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">#REV-{{ resena.pk }}</span>
+            <span class="font-headline-md font-bold text-on-surface">{{ resena.variant.product.name }}</span>
+            <span class="text-secondary">({{ resena.variant.name }})</span>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-body-sm min-w-0">
+              <span class="font-semibold text-on-surface">{% t 'Autor:' %}</span>
+              <span class="text-secondary font-mono break-all">{{ autor.email }}</span>
+            </div>
+            <div class="flex items-center gap-1 text-body-sm">
+              <span class="font-bold text-on-surface mr-1">{% t 'Calificación:' %}</span>
+              <span class="text-primary-container" aria-hidden="true">{{ resena.score|estrellas }}</span>
+              <span class="font-price-row font-bold text-secondary ml-1">{{ resena.score }}.0</span>
+            </div>
+          </div>
+          <div class="bg-surface-container-lowest p-3 rounded-lg border-l-4 border-error text-body-md text-on-surface italic break-words">"{{ resena.content }}"</div>
+          {% if numero_reportes %}
+            <div class="flex items-center gap-2 text-body-sm text-error bg-error-container/40 p-2.5 rounded-lg border border-error/20">
+              <span class="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">flag</span>
+              <span><strong>{{ numero_reportes }} {% if numero_reportes == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}:</strong> {{ motivo_reporte|truncatechars:140 }}</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {% include "reviews/campos_eliminacion.html" %}
+      </div>
+
+      <div class="p-6 py-4 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-1.5 text-secondary text-body-sm">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">lock</span>
+          <span>{% t 'No se puede deshacer' %}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <a class="px-5 py-2 rounded-full border border-outline-variant text-on-surface font-headline-md font-bold text-body-md hover:bg-surface-container transition-colors" href="#cerrar">{% t 'Cancelar' %}</a>
+          <button class="px-5 py-2 rounded-full bg-error text-on-error font-headline-md font-bold text-body-md hover:brightness-95 transition-colors flex items-center gap-2 shadow-sm" type="submit" name="action" value="delete">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">delete</span>
+            <span>{% t 'Eliminar definitivamente' %}</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>

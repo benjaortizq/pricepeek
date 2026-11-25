@@ -1,0 +1,270 @@
+{% extends "panel/base.html" %}
+{% load site_i18n precios %}
+{% comment %}
+  Diseño: frontend/html/admin-panel-moderacion.html (tarjetas, pestañas, tabla y pie) y
+  admin-modal-eliminar-resena.html (ventana para cambiar el enlace, que se abre con #enlace-<id>).
+{% endcomment %}
+
+{% block title %}{% t 'Registro de incidencias' %}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span>{% t 'Datos de los comercios' %}</span>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Incidencias de datos' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Registro de incidencias' %}{% endblock %}
+{% block descripcion %}{% t 'Revise las extracciones de datos que fallaron y los productos que quedaron fuera de la comparación por no tener un código de barras válido.' %}{% endblock %}
+
+{% block content %}
+{% url 'incidencias' as url_incidencias %}
+{% t 'Producto sin nombre' as sin_nombre %}
+{% t 'Comercio desconocido' as sin_comercio %}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% for kpi in kpis %}{% include "panel/kpi.html" %}{% endfor %}
+</div>
+
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col gap-4 bg-surface-container-low/40">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <nav class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0" aria-label="{% t 'Registros de incidencias' %}">
+        {% for pestana in pestanas %}{% include "panel/pestana.html" %}{% endfor %}
+      </nav>
+      <div class="text-body-sm font-body-sm text-secondary flex items-center gap-1">
+        <span>{% t 'Ordenar por:' %}</span>
+        <span class="font-semibold text-on-surface">{% t 'Más recientes' %}</span>
+      </div>
+    </div>
+
+    <form class="flex flex-col lg:flex-row lg:items-center gap-2" method="get" role="search">
+      <input type="hidden" name="registro" value="{{ registro }}">
+      <div class="flex items-center flex-grow min-w-0 bg-surface-container-lowest rounded-full border border-outline-variant px-3.5 py-1.5 focus-within:ring-2 focus-within:ring-on-surface transition-all">
+        <span class="material-symbols-outlined text-secondary mr-2 text-lg" aria-hidden="true">search</span>
+        <input class="bg-transparent border-none text-on-surface placeholder:text-secondary text-body-sm font-body-sm focus:outline-none w-full p-0 focus:ring-0" name="q" placeholder="{% t 'Producto, código o motivo' %}" type="search" value="{{ busqueda }}" aria-label="{% t 'Buscar por producto, código de barras o motivo' %}">
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {% if registro == 'fallidas' %}
+          <select class="rounded-full border border-outline-variant bg-surface-container-lowest pl-3.5 pr-8 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-on-surface focus:ring-0" name="estado" aria-label="{% t 'Estado' %}">
+            <option value="">{% t 'Pendientes' %}</option>
+            <option value="resueltas"{% if estado == "resueltas" %} selected{% endif %}>{% t 'Resueltas' %}</option>
+            <option value="todas"{% if estado == "todas" %} selected{% endif %}>{% t 'Pendientes y resueltas' %}</option>
+          </select>
+          <select class="rounded-full border border-outline-variant bg-surface-container-lowest pl-3.5 pr-8 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-on-surface focus:ring-0" name="tipo" aria-label="{% t 'Tipo de incidencia' %}">
+            <option value="">{% t 'Todos los tipos' %}</option>
+            {% for valor, nombre, total in tipos %}
+              <option value="{{ valor }}"{% if valor == tipo %} selected{% endif %}>{% t nombre %} ({{ total }})</option>
+            {% endfor %}
+          </select>
+        {% endif %}
+        <select class="rounded-full border border-outline-variant bg-surface-container-lowest pl-3.5 pr-8 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-on-surface focus:ring-0" name="comercio" aria-label="{% t 'Comercio' %}">
+          <option value="">{% t 'Todos los comercios' %}</option>
+          {% for nombre in comercios %}
+            <option value="{{ nombre }}"{% if nombre == comercio %} selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+        <select class="rounded-full border border-outline-variant bg-surface-container-lowest pl-3.5 pr-8 py-1.5 text-body-sm font-body-sm text-on-surface focus:border-on-surface focus:ring-0" name="periodo" aria-label="{% t 'Periodo' %}">
+          <option value="">{% t 'Cualquier fecha' %}</option>
+          {% for valor, nombre in periodos %}
+            <option value="{{ valor }}"{% if valor == periodo %} selected{% endif %}>{% t nombre %}</option>
+          {% endfor %}
+        </select>
+        <button class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors flex items-center gap-1" type="submit">
+          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">tune</span>{% t 'Filtrar' %}
+        </button>
+        {% if hay_filtros %}
+          <a class="text-body-sm font-semibold text-on-surface hover:underline whitespace-nowrap" href="{{ url_incidencias }}?registro={{ registro }}">{% t 'Limpiar filtros' %}</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if pagina.object_list %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+            <th class="py-3 px-4">{% t 'Tipo e ID' %}</th>
+            <th class="py-3 px-4">{% t 'Producto y comercio' %}</th>
+            <th class="py-3 px-4">{% if registro == 'excluidos' %}{% t 'Código recibido' %}{% else %}{% t 'Código de barras' %}{% endif %}</th>
+            <th class="py-3 px-4 min-w-[18rem]">{% t 'Motivo / alerta detectada' %}</th>
+            <th class="py-3 px-4">{% t 'Fecha' %}</th>
+            <th class="py-3 px-4">{% t 'Estado' %}</th>
+            {% if registro == 'fallidas' %}<th class="py-3 px-4 text-right">{% t 'Acciones' %}</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+          {% for incidencia in pagina.object_list %}
+            <tr class="hover:bg-surface-container-low/50 transition-colors align-top">
+              <td class="py-4 px-4 whitespace-nowrap">
+                <span class="inline-flex items-center gap-1 text-[11px] font-label-badge px-2 py-0.5 rounded-full {% if incidencia.kind == 'suspicious_price' or incidencia.kind == 'barcode_mismatch' %}bg-error-container text-on-error-container{% else %}bg-surface-container-high text-on-surface{% endif %} font-semibold">
+                  <span class="material-symbols-outlined text-xs" aria-hidden="true">{{ incidencia.icono }}</span>{% t incidencia.get_kind_display %}
+                </span>
+                <div class="font-price-row text-xs text-secondary mt-1 font-mono">#INC-{{ incidencia.pk }}</div>
+              </td>
+              <td class="py-4 px-4">
+                <div class="font-semibold text-on-surface break-words">{{ incidencia.product_name|default:sin_nombre }}</div>
+                <div class="text-body-sm text-secondary flex items-center gap-1 mt-0.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>{{ incidencia.store_name|default:sin_comercio }}
+                </div>
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap text-body-sm">
+                {% if incidencia.gtin %}
+                  <code class="font-price-row text-on-surface tracking-wide">{{ incidencia.gtin }}</code>
+                {% else %}
+                  <span class="italic text-secondary">{% t 'ninguno' %}</span>
+                {% endif %}
+                {% if incidencia.codigos_tienda %}
+                  <div class="text-[11px] text-secondary mt-0.5">{% t 'En la tienda' %}
+                    {% for codigo in incidencia.codigos_tienda %}<code class="font-price-row font-bold text-on-surface">{{ codigo }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+                  </div>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4">
+                <div class="text-body-sm text-on-surface font-medium flex items-start gap-1.5">
+                  <span class="material-symbols-outlined {% if incidencia.kind == 'suspicious_price' or incidencia.kind == 'barcode_mismatch' %}text-error{% else %}text-secondary{% endif %} text-sm shrink-0 mt-0.5" aria-hidden="true">{% if incidencia.kind == 'suspicious_price' %}price_change{% else %}warning{% endif %}</span>
+                  <span class="whitespace-pre-line break-words">{{ incidencia.motivo }}</span>
+                </div>
+                {% if incidencia.kind == 'suspicious_price' and incidencia.details.precio_final %}
+                  <div class="mt-1.5 inline-flex flex-wrap items-center gap-x-2 text-[11px] text-secondary">
+                    <span>{% t 'Guardado' %} <span class="font-price-row text-on-surface">₡{{ incidencia.details.precio_antes|miles }}</span></span>
+                    <span class="material-symbols-outlined text-[14px]" aria-hidden="true">arrow_forward</span>
+                    <span>{% t 'En la tienda' %} <span class="font-price-row font-bold text-on-surface">₡{{ incidencia.details.precio_final|miles }}</span></span>
+                  </div>
+                {% endif %}
+                {% if incidencia.enlace %}
+                  <div class="text-[11px] text-secondary mt-0.5">
+                    <a class="underline hover:text-on-surface inline-flex items-center gap-0.5" href="{{ incidencia.enlace }}" target="_blank" rel="noopener noreferrer">{% t 'Ver la página en la tienda' %}<span class="material-symbols-outlined text-[12px]" aria-hidden="true">open_in_new</span></a>
+                  </div>
+                {% endif %}
+                {% if incidencia.status == 'resolved' and registro == 'fallidas' %}
+                  <div class="text-[11px] text-secondary mt-1">
+                    {% t incidencia.resolution %}
+                    {% if incidencia.resolved_by %}· {{ incidencia.resolved_by.get_full_name|default:incidencia.resolved_by.email }}{% endif %}
+                    {% if incidencia.resolved_at %}· {{ incidencia.resolved_at|date:"d/m/Y H:i" }}{% endif %}
+                  </div>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                <time class="text-on-surface text-body-sm font-medium" datetime="{{ incidencia.created_at|date:'c' }}">{{ incidencia.created_at|date:"d/m/Y H:i" }}</time>
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if registro == 'excluidos' %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-bold border border-outline-variant">{% t 'Excluido' %}</span>
+                {% elif incidencia.status == 'resolved' %}
+                  <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-bold">
+                    <span class="material-symbols-outlined text-xs" aria-hidden="true">check_circle</span>{% t 'Resuelta' %}
+                  </span>
+                {% elif incidencia.kind == 'suspicious_price' or incidencia.kind == 'barcode_mismatch' %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-primary-container text-on-primary-container font-bold border border-primary-container">{% t 'Por confirmar' %}</span>
+                {% else %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-surface-container text-secondary font-bold">{% t 'Pendiente' %}</span>
+                {% endif %}
+              </td>
+              {% if registro == 'fallidas' %}
+                <td class="py-4 px-4 text-right">
+                  {% if incidencia.acciones %}
+                    <form class="inline-flex flex-wrap items-center justify-end gap-1" method="post" action="{% url 'resolver_incidencia' incidencia.pk %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                      {% if 'enlace' in incidencia.acciones %}
+                        <a class="p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex" href="#enlace-{{ incidencia.pk }}" title="{% t 'Cambiar el enlace' %}" aria-label="{% t 'Cambiar el enlace' %}">
+                          <span class="material-symbols-outlined text-lg" aria-hidden="true">link</span>
+                        </a>
+                      {% endif %}
+                      {% for accion in incidencia.acciones %}
+                        {% if accion == 'descartar' %}
+                          <button class="bg-surface-container-low hover:bg-surface-container border border-outline-variant text-on-surface px-3 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors whitespace-nowrap" type="submit" name="accion" value="descartar">
+                            {% if incidencia.kind == 'suspicious_price' %}{% t 'Mantener el precio guardado' %}{% else %}{% t 'Marcar como revisada' %}{% endif %}
+                          </button>
+                        {% elif accion == 'revisar' %}
+                          <button class="bg-surface-container-low hover:bg-surface-container border border-outline-variant text-on-surface px-3 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors inline-flex items-center gap-1 whitespace-nowrap" type="submit" name="accion" value="revisar">
+                            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">refresh</span>{% t 'Volver a revisar ahora' %}
+                          </button>
+                        {% elif accion == 'aceptar_precio' %}
+                          <button class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors whitespace-nowrap" type="submit" name="accion" value="aceptar_precio" onclick="return confirm('{% t '¿Guardar el precio nuevo? Se mostrará en la comparación.' %}')">
+                            {% t 'Aceptar el precio nuevo' %}
+                          </button>
+                        {% elif accion == 'aceptar_codigo' %}
+                          <button class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors whitespace-nowrap" type="submit" name="accion" value="aceptar_codigo" title="{% t 'La página sí es este producto aunque la tienda use otro código' %}" onclick="return confirm('{% t '¿Aceptar el código de la tienda para este producto?' %}')">
+                            {% t 'Aceptar el código de la tienda' %}
+                          </button>
+                        {% endif %}
+                      {% endfor %}
+                    </form>
+                  {% else %}
+                    <span class="text-body-sm text-secondary">—</span>
+                  {% endif %}
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "panel/paginacion.html" %}
+  {% else %}
+    <div class="p-8 text-center">
+      <span class="material-symbols-outlined text-[32px] text-tertiary" aria-hidden="true">task_alt</span>
+      <p class="mt-2 text-body-md font-body-md text-secondary">
+        {% if hay_filtros %}
+          {% t 'No hay incidencias que coincidan con los filtros.' %}
+        {% elif registro == 'excluidos' %}
+          {% t 'No se ha excluido ningún producto por código de barras inválido.' %}
+        {% else %}
+          {% t 'No hay extracciones fallidas pendientes de revisar.' %}
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+
+{% for incidencia in pagina.object_list %}
+  {% if 'enlace' in incidencia.acciones %}
+  <!-- VENTANA PARA CAMBIAR EL ENLACE -->
+  <div id="enlace-{{ incidencia.pk }}" class="hidden target:flex fixed inset-0 z-50 items-center justify-center p-4 bg-inverse-surface/40 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="titulo-enlace-{{ incidencia.pk }}">
+    <a class="absolute inset-0 cursor-default" href="#cerrar" tabindex="-1" aria-hidden="true"></a>
+    <form class="relative w-full max-w-2xl bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" method="post" action="{% url 'resolver_incidencia' incidencia.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+      <input type="hidden" name="accion" value="enlace">
+      <div class="p-6 pb-4 border-b border-surface-container flex items-start gap-4">
+        <div class="w-12 h-12 rounded-full bg-primary-container/30 text-on-surface flex items-center justify-center shrink-0 border border-outline-variant">
+          <span class="material-symbols-outlined text-[28px]" aria-hidden="true">link</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <h2 id="titulo-enlace-{{ incidencia.pk }}" class="text-headline-md font-headline-md text-on-surface">{% t 'Cambiar el enlace' %}</h2>
+            <a class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container transition-colors flex" href="#cerrar" title="{% t 'Cerrar ventana' %}" aria-label="{% t 'Cerrar ventana' %}">
+              <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+            </a>
+          </div>
+          <p class="text-body-md font-body-md text-secondary mt-1 leading-relaxed">{% t 'Se revisa la página nueva antes de guardarla.' %}</p>
+        </div>
+      </div>
+      <div class="p-6 space-y-5 overflow-y-auto">
+        <div class="bg-surface-container-low rounded-xl border border-outline-variant p-4 space-y-2">
+          <div class="flex flex-wrap items-center gap-2 text-body-sm">
+            <span class="font-price-row font-bold text-on-surface bg-surface-container-lowest px-2 py-0.5 rounded border border-outline-variant">#INC-{{ incidencia.pk }}</span>
+            <span class="font-headline-md font-bold text-on-surface">{{ incidencia.product_name|default:sin_nombre }}</span>
+            <span class="text-secondary">({{ incidencia.store_name|default:sin_comercio }})</span>
+          </div>
+          <div class="bg-surface-container-lowest p-3 rounded-lg border-l-4 border-error text-body-sm text-on-surface break-words">{{ incidencia.motivo }}</div>
+        </div>
+        <div class="space-y-1.5">
+          <label class="block text-body-sm font-headline-md font-bold text-on-surface" for="url-{{ incidencia.pk }}">{% t 'Enlace nuevo del producto en la tienda' %} <span class="text-error">*</span></label>
+          <input class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2.5 text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors" id="url-{{ incidencia.pk }}" type="url" name="url" required value="{{ incidencia.enlace }}">
+        </div>
+      </div>
+      <div class="p-6 py-4 bg-surface-container-low border-t border-outline-variant flex flex-wrap items-center justify-end gap-3">
+        <a class="px-5 py-2 rounded-full border border-outline-variant text-on-surface font-headline-md font-bold text-body-md hover:bg-surface-container transition-colors" href="#cerrar">{% t 'Cancelar' %}</a>
+        <button class="px-5 py-2 rounded-full bg-primary-container text-on-primary-container font-headline-md font-bold text-body-md hover:brightness-95 transition-colors flex items-center gap-2 shadow-sm" type="submit">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">check</span>{% t 'Revisar y guardar' %}
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+{% endfor %}
+{% endblock %}

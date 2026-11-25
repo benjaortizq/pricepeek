@@ -1,96 +1,142 @@
-{% extends "base.html" %}
+{% extends "panel/base.html" %}
 {% load site_i18n %}
+{# Diseño: frontend/html/admin-panel-moderacion.html (tabla y panel de inspección con el veredicto). #}
 
-{% block title %}Cliente {{ cliente.email }}{% endblock %}
+{% block title %}{% t 'Cliente' %} {{ cliente.email }}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <a class="hover:text-on-surface transition-colors" href="{% url 'clientes' %}">{% t 'Clientes' %}</a>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold break-all">{{ cliente.email }}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{{ cliente.get_full_name|default:cliente.email }}{% endblock %}
+{% block descripcion %}
+  <span class="break-all">{{ cliente.email }}</span>
+  · {% t 'Cliente desde' %} {{ cliente.date_joined|date:"d/m/Y" }}
+  {% if cliente.last_login %}· {% t 'Último ingreso' %} {{ cliente.last_login|date:"d/m/Y H:i" }}{% endif %}
+{% endblock %}
+
+{% block acciones %}
+  {% if cliente.is_active %}
+    <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-bold">
+      <span class="material-symbols-outlined text-xs" aria-hidden="true">check_circle</span>{% t 'Cuenta activa' %}
+    </span>
+  {% else %}
+    <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">
+      <span class="material-symbols-outlined text-xs" aria-hidden="true">block</span>{% t 'Cuenta suspendida' %}
+    </span>
+  {% endif %}
+  <a class="bg-surface-container-lowest text-on-surface border border-outline-variant rounded-full px-4 py-2 font-body-md text-body-md font-semibold hover:bg-surface-container transition-colors flex items-center gap-2" href="{% url 'clientes' %}">
+    <span class="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>{% t 'Clientes' %}
+  </a>
+{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-3xl mx-auto px-margin md:px-margin-desktop py-space-xl">
-  <a class="inline-flex items-center gap-1 text-body-md font-semibold text-on-surface hover:underline" href="{% url 'clientes' %}">
-    <span class="material-symbols-outlined text-[18px]">arrow_back</span>Clientes
-  </a>
-
-  <section class="tarjeta p-6 mt-space-md">
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div class="min-w-0">
-        <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight break-words">{{ cliente.get_full_name|default:cliente.email }}</h1>
-        <p class="mt-1 text-body-sm font-body-sm text-secondary break-all">{{ cliente.email }}</p>
-        <p class="text-body-sm font-body-sm text-secondary">
-          Cliente desde {{ cliente.date_joined|date:"d/m/Y" }}
-          {% if cliente.last_login %}· Último ingreso {{ cliente.last_login|date:"d/m/Y H:i" }}{% endif %}
-        </p>
-      </div>
-      {% if cliente.is_active %}
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary/10 text-on-surface text-body-sm font-semibold">
-          <span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>Cuenta activa
-        </span>
-      {% else %}
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error text-on-error text-body-sm font-semibold">
-          <span class="material-symbols-outlined text-[16px]">block</span>Cuenta suspendida
-        </span>
-      {% endif %}
-    </div>
-  </section>
-
-  <section class="tarjeta p-6 mt-space-md">
-    <h2 class="text-body-lg font-body-lg font-bold text-on-surface">Incumplimientos de las políticas</h2>
-    {% if infracciones %}
-      <p class="mt-1 text-body-md font-body-md text-secondary">
-        {{ infracciones|length }} reseña{{ infracciones|length|pluralize }} de este cliente {{ infracciones|length|pluralize:"fue,fueron" }} eliminada{{ infracciones|length|pluralize }} por moderación.
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+  <section class="lg:col-span-2 bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden" aria-labelledby="titulo-incumplimientos">
+    <div class="p-4 border-b border-outline-variant bg-surface-container-low/40">
+      <h2 id="titulo-incumplimientos" class="font-headline-md text-headline-md font-bold text-on-surface">{% t 'Incumplimientos de las políticas' %}</h2>
+      <p class="mt-1 text-body-sm font-body-sm text-secondary">
+        {% if infracciones|length == 1 %}
+          {% t '1 reseña de este cliente fue eliminada por moderación.' %}
+        {% elif infracciones %}
+          {% t '{n} reseñas de este cliente fueron eliminadas por moderación.' n=infracciones|length %}
+        {% else %}
+          {% t 'Este cliente no tiene reseñas eliminadas por moderación.' %}
+        {% endif %}
       </p>
-      <ul class="mt-3 space-y-2">
-        {% for infraccion in infracciones %}
-          <li class="rounded-xl bg-surface-container-low p-3 text-body-sm font-body-sm">
-            <p class="text-secondary">
-              Reseña eliminada{% if infraccion.fecha %} el {{ infraccion.fecha|date:"d/m/Y" }}{% endif %}
-              · {{ infraccion.reportes }} reporte{{ infraccion.reportes|pluralize }}
-            </p>
-            {% if infraccion.motivo %}<p class="mt-1 text-on-surface">{{ infraccion.motivo }}</p>{% endif %}
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="mt-1 text-body-md font-body-md text-secondary">Este cliente no tiene reseñas eliminadas por moderación.</p>
+    </div>
+    {% if infracciones %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+              <th class="py-3 px-4">{% t 'Fecha' %}</th>
+              <th class="py-3 px-4">{% t 'Producto' %}</th>
+              <th class="py-3 px-4">{% t 'Política incumplida' %}</th>
+              <th class="py-3 px-4 min-w-[14rem]">{% t 'Motivo de la eliminación' %}</th>
+              <th class="py-3 px-4">{% t 'Reportes' %}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+            {% for infraccion in infracciones %}
+              <tr class="hover:bg-surface-container-low/50 transition-colors align-top">
+                <td class="py-4 px-4 whitespace-nowrap text-body-sm">
+                  {{ infraccion.deleted_at|date:"d/m/Y" }}
+                  {% if infraccion.deleted_by %}<div class="text-[11px] text-secondary mt-0.5 break-all">{{ infraccion.deleted_by.email }}</div>{% endif %}
+                </td>
+                <td class="py-4 px-4 text-body-sm">{{ infraccion.product_name|default:"—" }}</td>
+                <td class="py-4 px-4 text-body-sm">
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t infraccion.get_policy_display %}</span>
+                </td>
+                <td class="py-4 px-4 text-body-sm whitespace-pre-line break-words">{{ infraccion.reason }}</td>
+                <td class="py-4 px-4 whitespace-nowrap">
+                  {% if infraccion.reports %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container/40 text-error text-label-badge font-label-badge border border-error/20">
+                      <span class="material-symbols-outlined text-[12px]" aria-hidden="true">flag</span>{{ infraccion.reports }} {% if infraccion.reports == 1 %}{% t 'reporte' %}{% else %}{% t 'reportes' %}{% endif %}
+                    </span>
+                  {% else %}
+                    <span class="text-body-sm text-secondary">{% t 'Sin reportes' %}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% endif %}
   </section>
 
-  <section class="tarjeta p-6 mt-space-md">
+  <section class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant" aria-labelledby="titulo-veredicto">
     {% if cliente.is_active %}
-      <h2 class="text-body-lg font-body-lg font-bold text-on-surface">Suspender cuenta</h2>
-      <p class="mt-1 text-body-md font-body-md text-secondary">
-        El cliente no podrá iniciar sesión, publicar reseñas ni usar su lista de deseos hasta que un administrador reactive la cuenta. Sus sesiones abiertas se cierran de inmediato.
+      <span id="titulo-veredicto" class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Suspender cuenta' %}</span>
+      <p class="text-body-sm text-secondary mb-4">
+        {% t 'El cliente no podrá iniciar sesión, publicar reseñas ni usar su lista de deseos hasta que un administrador reactive la cuenta. Sus sesiones abiertas se cierran de inmediato.' %}
       </p>
       {% if reiteradas %}
-        <div class="mt-3 flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
-          <span class="material-symbols-outlined text-[20px] text-error">warning</span>
-          <p>Este cliente ha incumplido las políticas de uso de forma reiterada.</p>
+        <div class="mb-4 flex items-start gap-2 text-body-sm text-error bg-error-container/40 p-2.5 rounded-lg border border-error/20">
+          <span class="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">warning</span>
+          <span>{% t 'Este cliente ha incumplido las políticas de uso de forma reiterada.' %}</span>
         </div>
       {% endif %}
-      <form class="mt-4 space-y-3" method="post" action="{% url 'suspender_cliente' cliente.pk %}">
+      <form method="post" action="{% url 'suspender_cliente' cliente.pk %}">
         {% csrf_token %}
-        <label class="block text-body-sm font-body-sm font-semibold text-on-surface" for="{{ form.motivo.id_for_label }}">{% t form.motivo.label %}</label>
-        <textarea class="w-full rounded-xl bg-surface-container-low border border-outline-variant/50 px-4 py-3 text-body-md focus:border-on-surface focus:ring-0" id="{{ form.motivo.id_for_label }}" name="{{ form.motivo.html_name }}" rows="3" maxlength="500" required placeholder="Por ejemplo: publicó reseñas ofensivas de forma reiterada.">{{ form.motivo.value|default:"" }}</textarea>
+        <label class="block text-body-sm font-bold text-on-surface mb-1.5" for="{{ form.motivo.id_for_label }}">{% t form.motivo.label %} <span class="text-error">*</span></label>
+        <textarea class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-3 text-body-md text-on-surface placeholder:text-secondary focus:outline-none focus:ring-1 focus:ring-on-surface focus:border-on-surface transition-colors resize-none" id="{{ form.motivo.id_for_label }}" name="{{ form.motivo.html_name }}" rows="3" maxlength="500" required placeholder="{% t 'Por ejemplo: publicó reseñas ofensivas de forma reiterada.' %}">{{ form.motivo.value|default:"" }}</textarea>
         {% for error in form.motivo.errors %}
-          <p class="flex items-center gap-1 text-body-sm font-body-sm text-error"><span class="material-symbols-outlined text-[16px]">error</span>{% t error %}</p>
+          <p class="mt-1 flex items-center gap-1 text-body-sm font-body-sm text-error"><span class="material-symbols-outlined text-[16px]" aria-hidden="true">error</span>{% t error %}</p>
         {% endfor %}
-        <button class="px-5 py-2.5 rounded-full bg-error hover:bg-[#93000a] text-on-error font-semibold text-body-md transition-colors inline-flex items-center gap-2" type="submit" onclick="return confirm('¿Suspender la cuenta de {{ cliente.email|escapejs }}?')">
-          <span class="material-symbols-outlined text-[18px]">block</span>Suspender cuenta
+        <button class="mt-4 w-full px-5 py-2 rounded-full bg-error text-on-error font-bold text-body-md hover:brightness-95 transition-colors flex items-center justify-center gap-2 shadow-sm" type="submit" onclick="return confirm('{% t '¿Suspender la cuenta de {correo}?' correo=cliente.email|escapejs %}')">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">block</span>{% t 'Suspender cuenta' %}
         </button>
       </form>
     {% else %}
-      <h2 class="text-body-lg font-body-lg font-bold text-on-surface">Suspensión</h2>
-      <dl class="mt-2 space-y-1 text-body-md font-body-md">
+      <span id="titulo-veredicto" class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Suspensión' %}</span>
+      <div class="space-y-2.5">
         {% if cliente.suspended_at %}
-          <div><dt class="inline text-secondary">Desde:</dt> <dd class="inline text-on-surface">{{ cliente.suspended_at|date:"d/m/Y H:i" }}</dd></div>
+          <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+            <span class="text-secondary">{% t 'Desde:' %}</span>
+            <span class="font-semibold text-on-surface">{{ cliente.suspended_at|date:"d/m/Y H:i" }}</span>
+          </div>
         {% endif %}
         {% if cliente.suspended_by %}
-          <div><dt class="inline text-secondary">Suspendida por:</dt> <dd class="inline text-on-surface">{{ cliente.suspended_by.email }}</dd></div>
+          <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+            <span class="text-secondary">{% t 'Suspendida por:' %}</span>
+            <span class="font-semibold text-on-surface break-all text-right">{{ cliente.suspended_by.email }}</span>
+          </div>
         {% endif %}
-        <div><dt class="inline text-secondary">Motivo:</dt> <dd class="inline text-on-surface">{{ cliente.suspension_reason|default:"No se registró un motivo." }}</dd></div>
-      </dl>
-      <form class="mt-4" method="post" action="{% url 'reactivar_cliente' cliente.pk %}">
+        <div class="text-body-sm">
+          <span class="text-secondary">{% t 'Motivo:' %}</span>
+          {% t 'No se registró un motivo.' as sin_motivo %}
+          <p class="mt-1 text-on-surface italic">{{ cliente.suspension_reason|default:sin_motivo }}</p>
+        </div>
+      </div>
+      <form class="mt-6" method="post" action="{% url 'reactivar_cliente' cliente.pk %}">
         {% csrf_token %}
-        <button class="boton-secundario" type="submit" onclick="return confirm('¿Reactivar la cuenta de {{ cliente.email|escapejs }}?')">
-          <span class="material-symbols-outlined text-[18px]">lock_open</span>Reactivar cuenta
+        <button class="w-full bg-primary-container hover:brightness-95 text-on-primary-container font-body-md text-body-md font-bold py-2 px-3 rounded-full transition-colors active:scale-[0.98] flex items-center justify-center gap-2" type="submit" onclick="return confirm('{% t '¿Reactivar la cuenta de {correo}?' correo=cliente.email|escapejs %}')">
+          <span class="material-symbols-outlined text-[18px]" aria-hidden="true">lock_open</span>{% t 'Reactivar cuenta' %}
         </button>
       </form>
     {% endif %}

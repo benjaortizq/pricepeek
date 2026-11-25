@@ -135,7 +135,9 @@ class Command(BaseCommand):
                 f"{plural(faltan, 'precio')} para la próxima vez, los menos vistos y revisados hace menos."
             )
         if conteo["incidencias"] and guardar:
-            self.stdout.write("Las incidencias se pueden ver en el admin de Django, en Ingestion › Incidencias.")
+            self.stdout.write(
+                "Las incidencias se revisan y resuelven en el panel de administración, en «Incidencias de datos»."
+            )
 
     def _presentar(self, precios, pausa, minutos):
         """Cuántos precios se van a revisar, de qué tiendas, en qué orden y cuánto se tardaría."""

@@ -77,24 +77,14 @@
   {% block head %}{% endblock %}
 </head>
 <body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-full flex flex-col transition-colors duration-200 selection:bg-primary-container selection:text-on-primary-container">
+  {# El panel de administración cambia este bloque por su propio esqueleto (templates/panel/base.html). #}
+  {% block cuerpo %}
   {% include "componentes/encabezado.html" %}
 
   <main class="flex-grow w-full">
     {% if messages %}
       <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop pt-space-lg space-y-2">
-        {% for message in messages %}
-          {% if message.tags == "error" %}
-            <div class="flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
-              <span class="material-symbols-outlined text-[20px] text-error">error</span>
-              <p>{% t message %}</p>
-            </div>
-          {% else %}
-            <div class="flex items-start gap-3 rounded-xl border border-tertiary/30 bg-tertiary/10 p-3.5 text-body-md text-on-surface">
-              <span class="material-symbols-outlined text-[20px] text-tertiary">check_circle</span>
-              <p>{% t message %}</p>
-            </div>
-          {% endif %}
-        {% endfor %}
+        {% include "componentes/mensajes.html" %}
       </div>
     {% endif %}
 
@@ -102,6 +92,7 @@
   </main>
 
   {% include "componentes/pie.html" %}
+  {% endblock %}
 
   <button
     id="theme-toggle"

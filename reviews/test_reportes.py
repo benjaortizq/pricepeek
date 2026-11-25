@@ -7,7 +7,7 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import ReviewPhoto, ReviewReport, Reviews
+from .models import ReviewDeletion, ReviewPhoto, ReviewReport, Reviews
 from products.models import (
     Brands,
     Categories,
@@ -243,9 +243,8 @@ class ListaDeResenasReportadasTests(ReportesBase):
         self.assertContains(respuesta, url_historial)
 
         for review_id in (900, 901):  # reseñas del mismo autor eliminadas en el pasado
-            ReviewReport.objects.create(
-                review_id=review_id, reporter=self.otro_cliente, review_author=self.autor,
-                reason="Spam.", status=ReviewReport.Status.DELETED,
+            ReviewDeletion.objects.create(
+                review_id=review_id, author=self.autor, policy=ReviewDeletion.Policy.PROMOTIONAL, reason="Spam."
             )
         self.assertContains(self.client.get(self.url), "Le eliminaron 2 reseñas antes")
 
@@ -266,7 +265,24 @@ class ModerarResenaTests(ReportesBase):
         self.client.force_login(self.admin)
 
     def decidir(self, **datos):
+        if datos.get("action") == "delete":
+            datos.setdefault("policy", ReviewDeletion.Policy.DISRESPECTFUL)
         return self.client.post(self.url, datos, follow=True)
+
+    def test_eliminar_exige_la_politica_que_incumple(self):
+        respuesta = self.decidir(action="delete", note="Lenguaje ofensivo.", policy="")
+        self.assertContains(respuesta, "Elija la política de uso que incumple la reseña.")
+        self.assertTrue(Reviews.objects.filter(pk=self.resena.pk).exists())
+        self.assertFalse(ReviewDeletion.objects.exists())
+
+    def test_eliminar_registra_la_politica_y_la_razon(self):
+        self.decidir(action="delete", note="Lenguaje ofensivo.", policy=ReviewDeletion.Policy.DEFAMATORY)
+        registro = ReviewDeletion.objects.get()
+        self.assertEqual(
+            (registro.review_id, registro.author, registro.deleted_by, registro.policy, registro.reason, registro.reports),
+            (self.resena.pk, self.autor, self.admin, ReviewDeletion.Policy.DEFAMATORY, "Lenguaje ofensivo.", 2),
+        )
+        self.assertEqual((registro.content, registro.score), ("Contenido ofensivo.", 1))
 
     def test_mantener_deja_la_resena_y_resuelve_los_reportes(self):
         respuesta = self.decidir(action="keep", note="No incumple las políticas.")
@@ -328,7 +344,8 @@ class ModerarResenaTests(ReportesBase):
         )
         ReviewReport.objects.create(review_id=resena.pk, reporter=self.reportante, reason="Spam.")
         url = reverse("moderar_resena", kwargs={"review_id": resena.pk})
-        self.client.post(url, {"action": "delete", "note": "Spam.", "suspend": "on"})
+        self.client.post(url, {"action": "delete", "note": "Spam.", "policy": "promocional", "suspend": "on"})
+        self.assertFalse(Reviews.objects.filter(pk=resena.pk).exists())
         self.assertTrue(get_user_model().objects.get(pk=self.empresa.pk).is_active)
 
     @override_settings(STORAGES=ALMACENAMIENTO_EN_MEMORIA)

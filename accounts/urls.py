@@ -9,6 +9,11 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(authentication_form=IniciarSesionForm), name="login"),
     path("register/", views.registro, name="register"),
     path(
+        "consentimiento-privacidad/",
+        views.consentimiento_privacidad,
+        name="consentimiento_privacidad",
+    ),
+    path(
         "reset/<uidb64>/<token>/",
         auth_views.PasswordResetConfirmView.as_view(
             form_class=RestablecerContrasenaForm,
@@ -24,6 +29,7 @@ urlpatterns = [
         name="password_change_confirm",
     ),
     path("perfil/", views.editar_perfil, name="editar_perfil"),
+    path("mis-datos/", views.descargar_datos_personales, name="descargar_datos_personales"),
     path("perfil/verificar-correo/", views.verificar_correo, name="verificar_correo"),
     path("eliminar-cuenta/", views.eliminar_cuenta, name="eliminar_cuenta"),
     path("panel/", views.panel, name="panel"),

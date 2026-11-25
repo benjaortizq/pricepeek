@@ -94,7 +94,8 @@ def elegir_oferta(ofertas, gtin, aceptados=()):
     reportados = sorted({codigo for oferta in ofertas for codigo in oferta.gtins})
     if reportados:
         raise CodigoDistinto(
-            f"La página es del código {', '.join(reportados)}, pero el precio guardado es del {gtin}."
+            f"La página es del código {', '.join(reportados)}, pero el precio guardado es del {gtin}.",
+            codigos=reportados,
         )
     if len(ofertas) == 1:
         return ofertas[0]
@@ -138,8 +139,12 @@ def cambios_para(precio, oferta):
     }
 
 
-def revisar(precio, http, guardar=True):
-    """Revisa una fila de prices (con id_store y gtin cargados). Con guardar=False no escribe nada."""
+def revisar(precio, http, guardar=True, permitir_cambio_grande=False):
+    """Revisa una fila de prices (con id_store y gtin cargados). Con guardar=False no escribe nada.
+
+    Con permitir_cambio_grande=True se guarda el precio aunque cambie más de CAMBIO_SOSPECHOSO:
+    es para cuando el administrador ya confirmó que el cambio es real.
+    """
     extractor = extractor_para(precio.product_web_url)
     if extractor is None:
         return Revision(precio, NO_SOPORTADA)
@@ -154,37 +159,51 @@ def revisar(precio, http, guardar=True):
         return revision
     except ErrorExtraccion as error:
         tipo = next(t for clase, t in TIPOS_DE_INCIDENCIA if isinstance(error, clase))
-        return Revision(precio, FALLO, incidencia=_incidencia(precio, tipo, error, guardar))
+        detalles = {"codigos": list(error.codigos)} if isinstance(error, CodigoDistinto) else {}
+        return Revision(precio, FALLO, incidencia=_incidencia(precio, tipo, error, guardar, detalles))
     except Exception as error:  # un formato inesperado no debe detener la revisión de las demás
         motivo = f"Error inesperado al leer la página ({error.__class__.__name__}: {error})."
         return Revision(precio, FALLO, incidencia=_incidencia(precio, Incident.Kind.PRICE_NOT_FOUND, motivo, guardar))
 
-    if es_sospechoso(precio, oferta):
+    if not permitir_cambio_grande and es_sospechoso(precio, oferta):
         motivo = (
             f"El precio final pasaría de {precio_final_guardado(precio)} a {oferta.precio_final} colones. "
             "No se guardó para que alguien lo revise."
         )
-        return Revision(precio, FALLO, incidencia=_incidencia(precio, Incident.Kind.SUSPICIOUS_PRICE, motivo, guardar))
+        detalles = {
+            "precio_antes": precio_final_guardado(precio),
+            "precio_lista": oferta.precio_lista,
+            "precio_final": oferta.precio_final,
+            "disponible": oferta.disponible,
+        }
+        incidencia = _incidencia(precio, Incident.Kind.SUSPICIOUS_PRICE, motivo, guardar, detalles)
+        return Revision(precio, FALLO, incidencia=incidencia)
 
     return _aplicar(precio, oferta, guardar)
+
+
+def guardar_cambios(precio, cambios):
+    """Escribe los cambios en prices. updated_at queda como la última vez que se verificó el
+    precio, aunque no haya cambiado."""
+    nuevos = {campo: despues for campo, (_, despues) in cambios.items()}
+    Prices.objects.filter(pk=precio.pk).update(updated_at=timezone.now(), **nuevos)
 
 
 def _aplicar(precio, oferta, guardar):
     cambios = cambios_para(precio, oferta)
     if guardar:
-        # updated_at queda como la última vez que se verificó el precio, aunque no haya cambiado.
-        nuevos = {campo: despues for campo, (_, despues) in cambios.items()}
-        Prices.objects.filter(pk=precio.pk).update(updated_at=timezone.now(), **nuevos)
+        guardar_cambios(precio, cambios)
     return Revision(precio, ACTUALIZADO if cambios else SIN_CAMBIOS, cambios)
 
 
-def _incidencia(precio, tipo, motivo, guardar):
+def _incidencia(precio, tipo, motivo, guardar, detalles=None):
     incidencia = Incident(
         kind=tipo,
         store_name=precio.id_store.name.strip()[: Incident.NAME_MAX_LENGTH],
         product_name=precio.gtin.name[: Incident.NAME_MAX_LENGTH],
         gtin=str(precio.gtin_id)[: Incident.GTIN_MAX_LENGTH],
         reason=f"{motivo}\n{precio.product_web_url}",
+        details=detalles or {},
     )
     if guardar:
         incidencia.save()

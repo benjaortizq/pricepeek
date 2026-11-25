@@ -1,83 +1,101 @@
-{% extends "base.html" %}
+{% extends "panel/base.html" %}
+{% load site_i18n %}
+{# Diseño: frontend/html/admin-panel-moderacion.html (tarjetas, pestañas y tabla). #}
 
-{% block title %}Clientes{% endblock %}
+{% block title %}{% t 'Clientes' %}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span>{% t 'Usuarios' %}</span>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Clientes' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Clientes' %}{% endblock %}
+{% block descripcion %}{% t 'Revise el historial de cada cliente y suspenda las cuentas que incumplen de forma reiterada las políticas de uso.' %}{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-5xl mx-auto px-margin md:px-margin-desktop py-space-xl">
-  <div class="mb-space-lg">
-    <h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">Clientes</h1>
-    <p class="mt-1 text-body-md font-body-md text-secondary">Revise el historial de cada cliente y suspenda las cuentas que incumplen de forma reiterada las políticas de uso.</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% for kpi in kpis %}{% include "panel/kpi.html" %}{% endfor %}
+</div>
+
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+  <div class="p-4 border-b border-outline-variant flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-surface-container-low/40">
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      {% for pestana in pestanas %}{% include "panel/pestana.html" %}{% endfor %}
+    </div>
+    <form class="flex items-center gap-2 w-full lg:w-auto" method="get" role="search">
+      {% if estado %}<input type="hidden" name="estado" value="{{ estado }}">{% endif %}
+      <div class="flex items-center flex-grow lg:w-72 bg-surface-container-lowest rounded-full border border-outline-variant px-3.5 py-1.5 focus-within:ring-2 focus-within:ring-on-surface transition-all">
+        <span class="material-symbols-outlined text-secondary mr-2 text-lg" aria-hidden="true">search</span>
+        <input class="bg-transparent border-none text-on-surface placeholder:text-secondary text-body-sm font-body-sm focus:outline-none w-full p-0 focus:ring-0" name="q" placeholder="{% t 'Buscar por nombre o correo' %}" type="search" value="{{ busqueda }}" aria-label="{% t 'Buscar cliente por nombre o correo' %}">
+      </div>
+      <button class="bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" type="submit">{% t 'Buscar' %}</button>
+      {% if busqueda or estado %}
+        <a class="text-body-sm font-semibold text-on-surface hover:underline whitespace-nowrap" href="{% url 'clientes' %}">{% t 'Limpiar filtros' %}</a>
+      {% endif %}
+    </form>
   </div>
 
-  <form class="tarjeta p-3 flex flex-col sm:flex-row gap-3 focus-within:border-on-surface transition-colors" method="get" role="search">
-    <div class="flex items-center gap-2 pl-2 flex-grow">
-      <span class="material-symbols-outlined text-secondary">search</span>
-      <input class="flex-grow bg-transparent border-0 text-body-md font-body-md text-on-surface placeholder:text-secondary focus:ring-0 p-0 outline-none" name="q" placeholder="Buscar por nombre o correo" type="search" value="{{ busqueda }}" aria-label="Buscar cliente por nombre o correo">
-    </div>
-    <div class="flex gap-2">
-      <select class="flex-grow rounded-full border border-outline-variant bg-surface-container-lowest px-4 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="estado" aria-label="Estado de la cuenta">
-        <option value="">Todas las cuentas</option>
-        <option value="activas"{% if estado == "activas" %} selected{% endif %}>Activas</option>
-        <option value="suspendidas"{% if estado == "suspendidas" %} selected{% endif %}>Suspendidas</option>
-      </select>
-      <button class="px-5 py-2 rounded-full bg-primary-container hover:bg-[#E0A41C] text-[#111111] font-bold text-body-md transition-colors" type="submit">Buscar</button>
-    </div>
-  </form>
-
-  <p class="mt-space-md mb-3 text-body-md font-body-md text-secondary">
-    {{ pagina.paginator.count }} cliente{{ pagina.paginator.count|pluralize }}
-    {% if busqueda or estado %}· <a class="font-semibold text-on-surface hover:underline" href="{% url 'clientes' %}">Limpiar filtros</a>{% endif %}
-  </p>
-
   {% if pagina.object_list %}
-    <ul class="tarjeta divide-y divide-outline-variant/40">
-      {% for cliente in pagina.object_list %}
-        <li>
-          <a class="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface-container-low transition-colors first:rounded-t-2xl last:rounded-b-2xl" href="{% url 'detalle_cliente' cliente.pk %}">
-            <div class="min-w-0">
-              <p class="font-semibold text-on-surface truncate">{{ cliente.get_full_name|default:cliente.email }}</p>
-              <p class="text-body-sm font-body-sm text-secondary truncate">{{ cliente.email }} · Cliente desde {{ cliente.date_joined|date:"d/m/Y" }}</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-              {% if cliente.infracciones >= reiteradas %}
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error-container/40 text-on-error-container text-body-sm font-semibold">
-                  <span class="material-symbols-outlined text-[16px]">warning</span>{{ cliente.infracciones }} reseña{{ cliente.infracciones|pluralize }} eliminada{{ cliente.infracciones|pluralize }}
-                </span>
-              {% elif cliente.infracciones %}
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-low text-secondary text-body-sm font-semibold">
-                  {{ cliente.infracciones }} reseña{{ cliente.infracciones|pluralize }} eliminada{{ cliente.infracciones|pluralize }}
-                </span>
-              {% endif %}
-              {% if cliente.is_active %}
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary/10 text-on-surface text-body-sm font-semibold">
-                  <span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>Activa
-                </span>
-              {% else %}
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-error text-on-error text-body-sm font-semibold">
-                  <span class="material-symbols-outlined text-[16px]">block</span>Suspendida
-                </span>
-              {% endif %}
-              <span class="material-symbols-outlined text-secondary">chevron_right</span>
-            </div>
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-
-    {% if pagina.has_other_pages %}
-      <nav class="mt-space-lg flex items-center justify-center gap-3" aria-label="Páginas de clientes">
-        {% if pagina.has_previous %}
-          <a class="boton-secundario" href="{% querystring pagina=pagina.previous_page_number %}"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Anterior</a>
-        {% endif %}
-        <span class="text-body-md font-body-md text-secondary">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
-        {% if pagina.has_next %}
-          <a class="boton-secundario" href="{% querystring pagina=pagina.next_page_number %}">Siguiente<span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
-        {% endif %}
-      </nav>
-    {% endif %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+            <th class="py-3 px-4">{% t 'Cliente' %}</th>
+            <th class="py-3 px-4">{% t 'Cliente desde' %}</th>
+            <th class="py-3 px-4">{% t 'Último ingreso' %}</th>
+            <th class="py-3 px-4">{% t 'Infracciones' %}</th>
+            <th class="py-3 px-4">{% t 'Estado' %}</th>
+            <th class="py-3 px-4 text-right">{% t 'Acciones' %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant/50 font-body-md text-body-md text-on-surface">
+          {% for cliente in pagina.object_list %}
+            <tr class="hover:bg-surface-container-low/50 transition-colors">
+              <td class="py-4 px-4">
+                <div class="font-semibold text-on-surface break-words">{{ cliente.get_full_name|default:cliente.email }}</div>
+                <div class="text-body-sm text-secondary flex items-center gap-1 mt-0.5 break-all">
+                  <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>{{ cliente.email }}
+                </div>
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap text-body-sm">{{ cliente.date_joined|date:"d/m/Y" }}</td>
+              <td class="py-4 px-4 whitespace-nowrap text-body-sm text-secondary">{{ cliente.last_login|date:"d/m/Y H:i"|default:"—" }}</td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if cliente.infracciones >= reiteradas %}
+                  <div class="text-body-sm text-on-surface font-medium flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-error text-sm" aria-hidden="true">warning</span>{% if cliente.infracciones == 1 %}{% t '1 reseña eliminada' %}{% else %}{% t '{n} reseñas eliminadas' n=cliente.infracciones %}{% endif %}
+                  </div>
+                  <div class="inline-flex items-center gap-1 font-label-badge text-label-badge text-error mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-error"></span>{% t 'Reiterado' %}
+                  </div>
+                {% elif cliente.infracciones %}
+                  <div class="text-body-sm text-on-surface font-medium">{% if cliente.infracciones == 1 %}{% t '1 reseña eliminada' %}{% else %}{% t '{n} reseñas eliminadas' n=cliente.infracciones %}{% endif %}</div>
+                {% else %}
+                  <span class="text-body-sm text-secondary">{% t 'Ninguna' %}</span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap">
+                {% if cliente.is_active %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-surface-container text-secondary font-bold">{% t 'Activa' %}</span>
+                {% else %}
+                  <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">{% t 'Suspendida' %}</span>
+                {% endif %}
+              </td>
+              <td class="py-4 px-4 whitespace-nowrap text-right">
+                <a class="inline-flex items-center gap-1 bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full font-body-sm text-body-sm font-semibold transition-colors" href="{% url 'detalle_cliente' cliente.pk %}">
+                  <span class="material-symbols-outlined text-[16px]" aria-hidden="true">visibility</span>{% t 'Ver historial' %}
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "panel/paginacion.html" %}
   {% else %}
-    <div class="tarjeta p-8 text-center">
-      <p class="text-body-md font-body-md text-secondary">No hay clientes que coincidan con la búsqueda.</p>
+    <div class="p-8 text-center">
+      <p class="text-body-md font-body-md text-secondary">{% t 'No hay clientes que coincidan con la búsqueda.' %}</p>
     </div>
   {% endif %}
 </div>

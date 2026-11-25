@@ -8,6 +8,8 @@
 {% block title %}{% t titulo %}{% endblock %}
 
 {% block content %}
+<div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop py-space-xl"></div>
+
 <!-- 1. BÚSQUEDA -->
 <section class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop pt-12 md:pt-20 pb-12">
   <div class="max-w-4xl mx-auto text-center">
@@ -37,10 +39,6 @@
         <a class="boton-secundario" href="{% url 'enterprise:catalogo' %}"><span class="material-symbols-outlined text-[18px]">inventory_2</span>{% t 'Ver catálogo' %}</a>
       </div>
     {% endif %}
-    {% if user.role == "admin" %}
-      <div class="mt-6 flex flex-wrap justify-center gap-2">
-        <a class="boton-secundario" href="{% url 'resenas_reportadas' %}"><span class="material-symbols-outlined text-[18px]">flag</span>Reseñas reportadas</a>
-        <a class="boton-secundario" href="{% url 'clientes' %}"><span class="material-symbols-outlined text-[18px]">group</span>Clientes</a>
 
     {% if productos %}
       <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-body-sm font-body-sm">

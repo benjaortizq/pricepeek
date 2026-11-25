@@ -73,6 +73,11 @@
             <img src="{{ producto.brand.logo_url }}" alt="" class="w-8 h-8 rounded-full object-contain border border-outline-variant/50 bg-surface-container-lowest">
           {% endif %}
           <span class="text-body-md font-body-md text-secondary">{% t 'Marca:' %} <strong class="text-on-surface"><a class="hover:underline" href="{% url 'detalle_marca' producto.brand.slug %}">{{ producto.brand.name }}</a></strong></span>
+          {% if user.is_authenticated and user.role == "admin" %}
+            <a class="ml-auto inline-flex items-center gap-1 bg-on-surface hover:opacity-90 text-surface-container-lowest px-3.5 py-1.5 rounded-full text-body-sm font-semibold transition-colors" href="{% url 'editar_producto' producto.pk %}">
+              <span class="material-symbols-outlined text-[16px]" aria-hidden="true">edit</span>{% t 'Editar producto' %}
+            </a>
+          {% endif %}
         </div>
         {% if variantes or not user.is_authenticated %}
           {% t 'Añadir a mi lista de deseos' as texto_agregar %}

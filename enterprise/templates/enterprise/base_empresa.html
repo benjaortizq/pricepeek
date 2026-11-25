@@ -15,13 +15,14 @@
         </div>
       </div>
 
-      <div class="mt-4 p-3 rounded-xl bg-surface-container-low border border-outline-variant/40">
+      <a href="{% url 'enterprise:editar_tienda' %}" class="group mt-4 block cursor-pointer p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest transition-colors" aria-label="{% t 'Editar información de la tienda' %}">
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
           <p class="font-bold truncate">{{ store.name|clean_text }}</p>
+          <span class="ml-auto material-symbols-outlined text-[19px] text-secondary opacity-70 group-hover:text-primary group-hover:opacity-100 transition-colors" aria-hidden="true">edit</span>
         </div>
         <p class="mt-1 text-body-sm text-secondary">{% t 'Tienda asignada' %}</p>
-      </div>
+      </a>
 
       <nav class="mt-4 grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-1 gap-1.5" aria-label="{% t 'Navegación de empresa' %}">
         {% with actual=request.resolver_match.url_name %}

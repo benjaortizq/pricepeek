@@ -2,7 +2,17 @@
   "es": {
     "Client": "Cliente",
     "Enterprise": "Empresa",
-    "Admin": "Administrador"
+    "Admin": "Administrador",
+    "Editar información de la tienda": "Editar información de la tienda",
+    "Nombre de la tienda": "Nombre de la tienda",
+    "Descripción de la tienda": "Descripción de la tienda",
+    "Información de la tienda": "Información de la tienda",
+    "Actualice el nombre y la descripción que se muestran en PricePeek.": "Actualice el nombre y la descripción que se muestran en PricePeek.",
+    "Solo se modificará el nombre y la descripción de su tienda.": "Solo se modificará el nombre y la descripción de su tienda.",
+    "El nombre de la tienda es obligatorio.": "El nombre de la tienda es obligatorio.",
+    "El nombre de la tienda no puede superar %(limit_value)d caracteres.": "El nombre de la tienda no puede superar %(limit_value)d caracteres.",
+    "La descripción de la tienda no puede superar %(limit_value)d caracteres.": "La descripción de la tienda no puede superar %(limit_value)d caracteres.",
+    "La información de la tienda se actualizó correctamente.": "La información de la tienda se actualizó correctamente."
   },
   "en": {
     "Activar modo oscuro": "Enable dark mode",
@@ -482,6 +492,16 @@
     "Página": "Page",
     "de": "of",
     "El archivo CSV está vacío.": "The CSV file is empty.",
-    "El archivo CSV tiene encabezados duplicados.": "The CSV file has duplicate headers."
+    "El archivo CSV tiene encabezados duplicados.": "The CSV file has duplicate headers.",
+    "Editar información de la tienda": "Edit store information",
+    "Nombre de la tienda": "Store name",
+    "Descripción de la tienda": "Store description",
+    "Información de la tienda": "Store information",
+    "Actualice el nombre y la descripción que se muestran en PricePeek.": "Update the store name and description shown on PricePeek.",
+    "Solo se modificará el nombre y la descripción de su tienda.": "Only the store name and description will be modified.",
+    "El nombre de la tienda es obligatorio.": "The store name is required.",
+    "El nombre de la tienda no puede superar %(limit_value)d caracteres.": "The store name cannot exceed %(limit_value)d characters.",
+    "La descripción de la tienda no puede superar %(limit_value)d caracteres.": "The store description cannot exceed %(limit_value)d characters.",
+    "La información de la tienda se actualizó correctamente.": "The store information was updated successfully."
   }
 }

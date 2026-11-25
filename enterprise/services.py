@@ -1,4 +1,4 @@
-"""Reglas transaccionales para escribir precios del portal de empresas."""
+"""Reglas de escritura del portal de empresas."""
 
 from decimal import Decimal
 
@@ -172,3 +172,11 @@ def desactivar_precio_empresa(store, price_id):
         precio.updated_at = timezone.now()
         precio.save(update_fields=["is_available", "updated_at"])
         return precio
+
+
+def actualizar_informacion_tienda_empresa(store, datos):
+    """Actualiza únicamente el nombre y la descripción de la tienda."""
+    store.name = datos["name"]
+    store.description = datos["description"]
+    store.save(update_fields=["name", "description"])
+    return store

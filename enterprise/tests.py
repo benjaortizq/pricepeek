@@ -10,6 +10,7 @@ from django.utils import timezone, translation
 from reportlab.platypus import Paragraph, Table
 
 from accounts.models import AccountsUser, User
+from enterprise.forms import TIENDA_DESCRIPCION_MAX_LENGTH, TIENDA_NOMBRE_MAX_LENGTH
 from enterprise.reports import construir_historia, datos_reporte
 from products.models import (
     Brands,
@@ -217,6 +218,139 @@ class AutorizacionEmpresaTests(EmpresaTestCase):
     def test_inicio_de_empresa_redirige_al_panel_nuevo(self):
         respuesta = self.client.get(reverse("inicio_empresa"))
         self.assertRedirects(respuesta, reverse("enterprise:panel"))
+
+
+class EditarTiendaEmpresaTests(EmpresaTestCase):
+    def test_muestra_solo_los_campos_editables_de_la_tienda(self):
+        respuesta = self.client.get(reverse("enterprise:editar_tienda"))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(
+            list(respuesta.context["form"].fields),
+            ["name", "description"],
+        )
+        self.assertContains(respuesta, reverse("enterprise:editar_tienda"))
+
+    def test_actualiza_solo_el_nombre_y_la_descripcion_de_la_tienda_asignada(self):
+        created_at_original = self.store.created_at
+        updated_at_original = self.store.updated_at
+
+        respuesta = self.client.post(
+            reverse("enterprise:editar_tienda"),
+            {
+                "name": "  Automercado  ",
+                "description": "  Productos para el hogar.  ",
+                "id": self.otra_store.pk,
+                "created_at": "2000-01-01T00:00:00Z",
+                "updated_at": "2000-01-01T00:00:00Z",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "La información de la tienda se actualizó correctamente.")
+        self.assertContains(respuesta, "Automercado")
+        self.store.refresh_from_db()
+        self.otra_store.refresh_from_db()
+        self.assertEqual(self.store.name, "Automercado")
+        self.assertEqual(self.store.description, "Productos para el hogar.")
+        self.assertEqual(self.store.created_at, created_at_original)
+        self.assertEqual(self.store.updated_at, updated_at_original)
+        self.assertEqual(self.otra_store.name, "Tienda Competencia")
+        self.assertIsNone(self.otra_store.description)
+
+        respuesta_catalogo = self.client.get(reverse("enterprise:catalogo"))
+        self.assertContains(respuesta_catalogo, "Automercado")
+
+    def test_el_nombre_es_obligatorio_y_no_guarda_espacios_sobrantes(self):
+        respuesta = self.client.post(
+            reverse("enterprise:editar_tienda"),
+            {"name": "   ", "description": "Descripción nueva"},
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("name", respuesta.context["form"].errors)
+        self.assertContains(respuesta, "El nombre de la tienda es obligatorio.")
+        self.store.refresh_from_db()
+        self.assertEqual(self.store.name, "Tienda Empresa\n")
+        self.assertIsNone(self.store.description)
+
+    def test_respeta_los_limites_de_nombre_y_descripcion(self):
+        respuesta = self.client.post(
+            reverse("enterprise:editar_tienda"),
+            {
+                "name": "a" * (TIENDA_NOMBRE_MAX_LENGTH + 1),
+                "description": "b" * (TIENDA_DESCRIPCION_MAX_LENGTH + 1),
+            },
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("name", respuesta.context["form"].errors)
+        self.assertIn("description", respuesta.context["form"].errors)
+        self.assertContains(respuesta, "255")
+        self.assertContains(respuesta, "2000")
+        self.store.refresh_from_db()
+        self.assertEqual(self.store.name, "Tienda Empresa\n")
+
+    def test_la_descripcion_puede_quedar_vacia(self):
+        respuesta = self.client.post(
+            reverse("enterprise:editar_tienda"),
+            {"name": "Automercado", "description": ""},
+        )
+
+        self.assertRedirects(respuesta, reverse("enterprise:panel"))
+        self.store.refresh_from_db()
+        self.assertEqual(self.store.description, "")
+
+    def test_cancelar_no_guarda_cambios(self):
+        respuesta = self.client.get(reverse("enterprise:editar_tienda"))
+        url_panel = reverse("enterprise:panel")
+
+        self.assertContains(respuesta, f'href="{url_panel}"')
+        self.store.refresh_from_db()
+        self.assertEqual(self.store.name, "Tienda Empresa\n")
+        self.assertIsNone(self.store.description)
+
+    def test_solo_un_usuario_empresa_con_tienda_puede_editar(self):
+        cliente = User.objects.create_user(
+            email="otro-cliente@example.com",
+            password="ClaveSegura123",
+            role=User.Role.CLIENT,
+        )
+        self.client.force_login(cliente)
+        respuesta_cliente = self.client.get(reverse("enterprise:editar_tienda"))
+        self.assertEqual(respuesta_cliente.status_code, 403)
+
+        self.client.force_login(self.usuario_sin_tienda)
+        respuesta_sin_tienda = self.client.get(reverse("enterprise:editar_tienda"))
+        self.assertEqual(respuesta_sin_tienda.status_code, 403)
+
+        self.client.logout()
+        respuesta_anonima = self.client.get(reverse("enterprise:editar_tienda"))
+        self.assertEqual(respuesta_anonima.status_code, 302)
+        self.assertIn(reverse("login"), respuesta_anonima["Location"])
+
+    def test_el_formulario_requiere_csrf(self):
+        cliente = Client(enforce_csrf_checks=True)
+        cliente.force_login(self.usuario)
+
+        respuesta = cliente.post(
+            reverse("enterprise:editar_tienda"),
+            {"name": "Automercado", "description": "Descripción"},
+        )
+
+        self.assertEqual(respuesta.status_code, 403)
+        self.store.refresh_from_db()
+        self.assertEqual(self.store.name, "Tienda Empresa\n")
+
+    def test_la_pantalla_se_traduce_al_ingles(self):
+        self.client.cookies["django_language"] = "en"
+
+        respuesta = self.client.get(reverse("enterprise:editar_tienda"))
+
+        self.assertContains(respuesta, "Edit store information")
+        self.assertContains(respuesta, "Store name")
+        self.assertContains(respuesta, "Store description")
 
 
 class CompetitividadEmpresaTests(EmpresaTestCase):

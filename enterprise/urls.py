@@ -8,6 +8,7 @@ app_name = "enterprise"
 
 urlpatterns = [
     path("panel/", views.panel, name="panel"),
+    path("tienda/editar/", views.editar_tienda, name="editar_tienda"),
     path("catalogo/", views.catalogo, name="catalogo"),
     path("catalogo/nuevo/", views.nuevo_producto, name="nuevo_producto"),
     path("catalogo/cargar/", views.cargar_csv, name="cargar_csv"),

@@ -17,7 +17,12 @@ from products.models import Brands, Categories, ProductImages
 
 from .access import tienda_del_usuario
 from .csv_import import COLUMNAS, ErrorEmpresa as ErrorCSV, procesar_csv
-from .forms import CargarCSVForm, PrecioEmpresaForm, ProductoEmpresaForm
+from .forms import (
+    CargarCSVForm,
+    PrecioEmpresaForm,
+    ProductoEmpresaForm,
+    TiendaEmpresaForm,
+)
 from .reports import generar_pdf_empresa
 from .selectors import (
     PRODUCTOS_POR_PAGINA,
@@ -28,6 +33,7 @@ from .selectors import (
 )
 from .services import (
     ErrorEmpresa,
+    actualizar_informacion_tienda_empresa,
     crear_precio_empresa,
     desactivar_precio_empresa,
     editar_precio_empresa,
@@ -47,6 +53,34 @@ def panel(request):
             "estadisticas": estadisticas,
             "stale_price_days": settings.STALE_PRICE_DAYS,
         },
+    )
+
+
+@role_required(User.Role.ENTERPRISE)
+def editar_tienda(request):
+    store = tienda_del_usuario(request.user)
+    if request.method == "POST":
+        form = TiendaEmpresaForm(request.POST)
+        if form.is_valid():
+            actualizar_informacion_tienda_empresa(store, form.cleaned_data)
+            messages.success(
+                request,
+                translate_text_lazy(
+                    "La información de la tienda se actualizó correctamente."
+                ),
+            )
+            return redirect("enterprise:panel")
+    else:
+        form = TiendaEmpresaForm(
+            initial={
+                "name": (store.name or "").strip(),
+                "description": store.description or "",
+            }
+        )
+    return render(
+        request,
+        "enterprise/tienda_formulario.html",
+        {"store": store, "form": form},
     )
 
 

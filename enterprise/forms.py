@@ -8,10 +8,19 @@ from django import forms
 
 from core.translations import translate_text_lazy
 from products.barcodes import validar_codigo_barras
-from products.models import Brands, Categories, ProductVariants
+from products.models import Brands, Categories, ProductVariants, Stores
 
 PRECIO_ENTEROS_MINIMO = -(2**31)
 PRECIO_ENTEROS_MAXIMO = 2**31 - 1
+# ``Stores`` no declara límites porque es un modelo no administrado; la
+# interfaz aplica 255 para el nombre y 2000 para la descripción.
+TIENDA_NOMBRE_MAX_LENGTH = Stores._meta.get_field("name").max_length or 255
+TIENDA_DESCRIPCION_MAX_LENGTH = 2000
+CLASE_CAMPO = (
+    "w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/50 "
+    "text-body-md font-body-md text-on-surface placeholder:text-secondary "
+    "focus:bg-surface-container-lowest focus:border-on-surface focus:ring-0 transition-colors"
+)
 
 
 def _rechazar_constante_json(valor):
@@ -290,4 +299,33 @@ class CargarCSVForm(forms.Form):
         help_text=translate_text_lazy(
             "El archivo no se guarda; cada fila se valida e importa por separado."
         ),
+    )
+
+
+class TiendaEmpresaForm(forms.Form):
+    """Edición de los datos públicos de la tienda asignada."""
+
+    name = forms.CharField(
+        max_length=TIENDA_NOMBRE_MAX_LENGTH,
+        strip=True,
+        widget=forms.TextInput(attrs={"class": CLASE_CAMPO}),
+        label=translate_text_lazy("Nombre de la tienda"),
+        error_messages={
+            "required": translate_text_lazy("El nombre de la tienda es obligatorio."),
+            "max_length": translate_text_lazy(
+                "El nombre de la tienda no puede superar %(limit_value)d caracteres."
+            ),
+        },
+    )
+    description = forms.CharField(
+        required=False,
+        max_length=TIENDA_DESCRIPCION_MAX_LENGTH,
+        strip=True,
+        widget=forms.Textarea(attrs={"rows": 5, "class": CLASE_CAMPO}),
+        label=translate_text_lazy("Descripción de la tienda"),
+        error_messages={
+            "max_length": translate_text_lazy(
+                "La descripción de la tienda no puede superar %(limit_value)d caracteres."
+            )
+        },
     )

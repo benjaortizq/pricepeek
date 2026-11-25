@@ -199,10 +199,12 @@ class ListaDeResenasReportadasTests(ReportesBase):
 
     def test_solo_el_administrador_puede_verla(self):
         self.assertEqual(self.client.get(self.url).status_code, 302)  # visitante
-        for usuario in (self.reportante, self.empresa):
+        for usuario in (self.reportante, self.otro_cliente, self.autor, self.empresa):
             with self.subTest(rol=usuario.role):
                 self.client.force_login(usuario)
-                self.assertEqual(self.client.get(self.url).status_code, 403)
+                respuesta = self.client.get(self.url)
+                self.assertEqual(respuesta.status_code, 403)
+                self.assertNotContains(respuesta, self.reportante.email, status_code=403)
 
     def test_muestra_la_resena_reportada_con_sus_motivos_y_quien_reporto(self):
         self.crear_reporte(self.reportante, "Insulta a otros usuarios.")

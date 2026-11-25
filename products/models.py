@@ -35,6 +35,36 @@ class Categories(models.Model):
         managed = False
         db_table = 'categories'
 
+class AuditImageChanges(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    old_values = models.TextField()
+    new_values = models.TextField()
+    id_requested_by = models.ForeignKey(AccountsUser, models.DO_NOTHING, db_column='id_requested_by')
+    id_resolved_by = models.ForeignKey(AccountsUser, models.DO_NOTHING, db_column='id_resolved_by', related_name='auditimagechanges_id_resolved_by_set')
+    is_active = models.BooleanField()
+    accepted = models.BooleanField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'audit_image_changes'
+
+
+class AuditPriceChanges(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    old_price = models.IntegerField()
+    new_price = models.IntegerField()
+    old_discount = models.DecimalField()
+    new_discount = models.DecimalField()
+    id_requested_by = models.BigIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField()
+    is_active = models.BooleanField()
+
+    class Meta:
+        managed = False
+        db_table = 'audit_price_changes'
 
 class Currencies(models.Model):
     id = models.BigAutoField(primary_key=True)

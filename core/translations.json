@@ -482,7 +482,6 @@
     "Página": "Page",
     "de": "of",
     "El archivo CSV está vacío.": "The CSV file is empty.",
-    "El archivo CSV tiene encabezados duplicados.": "The CSV file has duplicate headers.",
-    "El reporte PDF no está disponible porque faltan las bibliotecas Pango/Cairo del servidor.": "The PDF report is unavailable because the server's Pango/Cairo libraries are missing."
+    "El archivo CSV tiene encabezados duplicados.": "The CSV file has duplicate headers."
   }
 }

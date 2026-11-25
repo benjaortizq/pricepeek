@@ -1,15 +1,16 @@
 """Pruebas del portal de empresas."""
 
 from decimal import Decimal
-from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
+from reportlab.platypus import Paragraph, Table
 
 from accounts.models import AccountsUser, User
+from enterprise.reports import construir_historia, datos_reporte
 from products.models import (
     Brands,
     Categories,
@@ -32,6 +33,22 @@ MODELOS = [
     ProductImages,
     Prices,
 ]
+
+
+def _textos_historia(flujos):
+    """Extrae el texto de los flowables para verificar las traducciones."""
+    textos = []
+    for flujo in flujos:
+        if isinstance(flujo, Paragraph):
+            textos.append(flujo.getPlainText())
+        elif isinstance(flujo, Table):
+            for fila in flujo._cellvalues:
+                for celda in fila:
+                    if isinstance(celda, list):
+                        textos.extend(_textos_historia(celda))
+                    else:
+                        textos.extend(_textos_historia([celda]))
+    return textos
 
 
 class EmpresaTestCase(TestCase):
@@ -696,9 +713,7 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
         self.assertContains(respuesta, "Deactivate product")
         self.assertContains(respuesta, "The price and discount will be kept")
 
-    @patch("enterprise.reports._renderer_html")
-    def test_reporte_pdf_devuelve_pdf_y_respeta_el_idioma(self, renderer):
-        renderer.return_value.return_value.write_pdf.return_value = b"%PDF-1.4 test"
+    def test_reporte_pdf_devuelve_pdf_y_respeta_el_idioma(self):
         self.client.cookies["django_language"] = "en"
 
         respuesta = self.client.post(reverse("enterprise:reporte_pdf"))
@@ -709,35 +724,63 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
             respuesta["Content-Disposition"],
             'attachment; filename="reporte-tienda-empresa.pdf"',
         )
-        self.assertEqual(respuesta.content, b"%PDF-1.4 test")
-        html = renderer.return_value.call_args.kwargs["string"]
-        self.assertIn("Competitiveness report", html)
-        self.assertIn("Products", html)
-        self.assertIn("Products unchanged for 2 or more days", html)
-        self.assertIn('content: "Page "', html)
+        self.assertTrue(respuesta.content.startswith(b"%PDF-"))
+        self.assertIn(b"%%EOF", respuesta.content[-2048:])
+        self.assertGreater(len(respuesta.content), 1000)
 
-    @patch("enterprise.reports._renderer_html")
-    def test_el_reporte_incluye_productos_sobre_el_mercado_y_sin_cambios(self, renderer):
-        renderer.return_value.return_value.write_pdf.return_value = b"%PDF-1.4 test"
+        with translation.override("en"):
+            historia = construir_historia(datos_reporte(self.store))
+            textos = "\n".join(_textos_historia(historia))
+        self.assertIn("Competitiveness report", textos)
+        self.assertIn("Products", textos)
+        self.assertIn("Products unchanged for 2 or more days", textos)
+
+    def test_el_reporte_incluye_productos_sobre_el_mercado_y_sin_cambios(self):
         self.precio.updated_at = timezone.now() - timezone.timedelta(days=2)
         self.precio.save(update_fields=["updated_at"])
         self.crear_precio(self.otra_store, self.variante, 500)
 
+        with translation.override("es"):
+            historia = construir_historia(datos_reporte(self.store))
+            textos = "\n".join(_textos_historia(historia))
+
+        self.assertIn("Productos por encima del mercado", textos)
+        self.assertIn("Productos sin cambios desde hace 2 días o más", textos)
+        self.assertIn("Producto de prueba", textos)
+
+    def test_el_reporte_solo_contiene_productos_de_la_tienda_asignada(self):
+        self.crear_precio(self.otra_store, self.variante, 500)
+        otra_variante = self.crear_variante("7441001234576", "Producto de otra tienda")
+        precio_ajeno = self.crear_precio(self.otra_store, otra_variante, 800)
+
+        datos = datos_reporte(self.store)
+        identificadores = {
+            precio.pk for precio in datos["above_market"]
+        } | {precio.pk for precio in datos["stale"]}
+
+        self.assertIn(self.precio.pk, identificadores)
+        self.assertNotIn(precio_ajeno.pk, identificadores)
+
+    @override_settings(STALE_PRICE_DAYS=5)
+    def test_el_pdf_usa_el_umbral_configurado_para_desactualizados(self):
+        with translation.override("en"):
+            historia = construir_historia(datos_reporte(self.store))
+            textos = "\n".join(_textos_historia(historia))
+
+        self.assertIn("Products unchanged for 5 or more days", textos)
+        self.assertNotIn("Products unchanged for 2 or more days", textos)
+
+    def test_el_pdf_genera_correctamente_acentos_y_enie(self):
+        self.store.name = "Tienda Ñandú"
+        self.store.save(update_fields=["name"])
+        self.producto.name = "Café de la Peña"
+        self.producto.save(update_fields=["name"])
+
         respuesta = self.client.post(reverse("enterprise:reporte_pdf"))
 
         self.assertEqual(respuesta.status_code, 200)
-        html = renderer.return_value.call_args.kwargs["string"]
-        self.assertIn("Productos por encima del mercado", html)
-        self.assertIn("Productos sin cambios desde hace 2 días o más", html)
-        self.assertIn("Producto de prueba", html)
-
-    @patch("enterprise.views.generar_pdf_empresa", side_effect=RuntimeError("sin Pango"))
-    def test_el_pdf_ausente_muestra_un_aviso_sin_romper_el_panel(self, _renderer):
-        self.client.cookies["django_language"] = "en"
-        respuesta = self.client.post(reverse("enterprise:reporte_pdf"), follow=True)
-
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, "Pango/Cairo libraries are missing")
+        self.assertTrue(respuesta.content.startswith(b"%PDF-"))
+        self.assertIn(b"%%EOF", respuesta.content[-2048:])
 
     def test_el_html_se_traduce_al_ingles(self):
         self.client.cookies["django_language"] = "en"

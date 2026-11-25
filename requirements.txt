@@ -11,4 +11,4 @@ boto3==1.44.6
 django-storages[s3]==1.14.6
 requests==2.34.2
 curl_cffi==0.17.0
-weasyprint==70.0
+reportlab==4.5.1

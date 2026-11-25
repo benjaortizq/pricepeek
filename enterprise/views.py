@@ -346,16 +346,7 @@ def plantilla_csv(request):
 @require_POST
 def reporte_pdf(request):
     store = tienda_del_usuario(request.user)
-    try:
-        pdf = generar_pdf_empresa(store)
-    except RuntimeError:
-        messages.error(
-            request,
-            translate_text_lazy(
-                "El reporte PDF no está disponible porque faltan las bibliotecas Pango/Cairo del servidor."
-            ),
-        )
-        return redirect("enterprise:panel")
+    pdf = generar_pdf_empresa(store)
     respuesta = HttpResponse(pdf, content_type="application/pdf")
     nombre = slugify(store.name) or "empresa"
     respuesta["Content-Disposition"] = f'attachment; filename="reporte-{nombre}.pdf"'

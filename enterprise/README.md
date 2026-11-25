@@ -49,51 +49,29 @@ gtin,product_name,variant_name,brand_id,category_id,attributes,price,discount,is
 Un GTIN existente agrega únicamente el precio de la tienda. Un GTIN nuevo crea
 un producto mínimo, una variante y el precio correspondiente.
 
-## Prerrequisitos del reporte PDF
+## Reporte PDF
 
-El reporte usa `weasyprint==70.0`. Además del paquete de Python, WeasyPrint
-necesita las bibliotecas de sistema Pango, Cairo y sus dependencias. La guía
-oficial de instalación está en
-<https://doc.courtbouillon.org/weasyprint/stable/first_steps.html>. En Debian o
-Ubuntu:
+El reporte de competitividad se genera con `reportlab==4.5.1` mediante
+Platypus. ReportLab se instala con `pip` y no necesita bibliotecas de sistema
+adicionales, por lo que el mismo procedimiento funciona en Windows, macOS y
+Linux. Las fuentes Bitstream Vera incluidas en ReportLab se usan para mostrar
+correctamente tildes y la `ñ`.
 
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-  libpango-1.0-0 \
-  libpangoft2-1.0-0 \
-  libharfbuzz0b \
-  libharfbuzz-subset0 \
-  libcairo2 \
-  libgdk-pixbuf-2.0-0 \
-  libffi8 \
-  shared-mime-info \
-  fonts-dejavu-core
-```
+Después de instalar `requirements.txt`, la acción **Reporte PDF** del portal
+descarga directamente el documento. El archivo incluye el nombre de la tienda,
+la fecha de generación, el resumen de competitividad, los productos por encima
+del mercado y los precios desactualizados según `STALE_PRICE_DAYS`.
 
-WeasyPrint 70 requiere Pango 1.44 o posterior. Compruebe la versión y la
-importación de la biblioteca antes de desplegar:
+Para comprobar la generación de forma automatizada:
 
 ```bash
-pango-view --version
-python -c "from weasyprint import HTML; print('WeasyPrint OK')"
+python manage.py test enterprise.tests
 ```
 
-En Windows, la opción más sencilla es usar WSL2, un contenedor Linux o una
-imagen de servidor con Pango y Cairo. También puede instalar Pango con MSYS2
-(UCRT64) y apuntar WeasyPrint a sus DLL:
-
-```powershell
-pacman -S mingw-w64-ucrt-x86_64-pango
-$env:WEASYPRINT_DLL_DIRECTORIES = "C:\msys64\ucrt64\bin"
-python -m weasyprint --info
-```
-
-La instalación de WeasyPrint en Python por sí sola no incluye las bibliotecas
-nativas de Pango y Cairo.
-
-Si faltan las bibliotecas, el resto del portal sigue funcionando y la acción
-de descargar el PDF muestra un aviso en lugar de romper la aplicación.
+Las pruebas generan un PDF real y verifican su estructura, el idioma y los
+datos incluidos. Para una comprobación manual, inicie el servidor, ingrese con
+una cuenta `enterprise` que tenga tienda asignada y descargue el reporte desde
+el tablero.
 
 ## Pruebas
 

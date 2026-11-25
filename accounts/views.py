@@ -135,7 +135,7 @@ def inicio_cliente(request):
 
 @role_required(User.Role.ENTERPRISE)
 def inicio_empresa(request):
-    return redirect("enterprise:panel")
+    return mostrar_inicio(request, "Panel de empresa")
 
 
 ELEMENTOS_EN_LA_COLA = 10

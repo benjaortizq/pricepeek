@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     "wishlist",
     "reviews",
     "ingestion",
-    "enterprise",
 ]
 AUTH_USER_MODEL = "accounts.User"
 
@@ -202,7 +201,6 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panel"
 LOGOUT_REDIRECT_URL = "login"
 
-STALE_PRICE_DAYS = 2
 # Mantiene la sesión activa mientras haya actividad y la vence tras 30 minutos sin solicitudes.
 SESSION_COOKIE_AGE = 30 * 60
 SESSION_SAVE_EVERY_REQUEST = True

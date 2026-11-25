@@ -395,7 +395,7 @@
           {% if user.is_authenticated and user.role == "client" and resena.user_id == user.pk %}
             <div class="mt-4 flex items-center gap-4 border-t border-outline-variant/40 pt-3">
               <a class="text-body-sm font-semibold text-on-surface hover:underline" href="{% url 'editar_resena' resena.pk %}">{% t 'Editar reseña' %}</a>
-              <form method="post" action="{% url 'eliminar_resena' resena.pk %}" onsubmit="return confirm(this.dataset.confirm);" data-confirm="{% t '¿Eliminar tu reseña? Esta acción no se puede deshacer.' %}">
+              <form method="post" action="{% url 'eliminar_resena' resena.pk %}" onsubmit="return confirm('{% t '¿Eliminar tu reseña? Esta acción no se puede deshacer.' %}');">
                 {% csrf_token %}
                 <button class="text-body-sm font-semibold text-error hover:underline" type="submit">{% t 'Eliminar reseña' %}</button>
               </form>

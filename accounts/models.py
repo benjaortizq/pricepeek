@@ -108,24 +108,11 @@ class AccountsUser(models.Model):
     email = models.CharField(unique=True, max_length=254)
     role = models.CharField(max_length=20)
     active_alerts = models.BooleanField()
-    suspended_at = models.DateTimeField(blank=True, null=True)
-    suspended_by = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True)
-    suspension_reason = models.TextField()
-    from_store = models.ForeignKey('Stores', models.DO_NOTHING, db_column='from_store', blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'accounts_user'
 
-class Stores(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField()
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
-
-    class Meta:
-        managed = False
-        db_table = 'stores'
 
 class AccountsUserGroups(models.Model):
     id = models.BigAutoField(primary_key=True)

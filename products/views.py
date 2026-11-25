@@ -1,4 +1,3 @@
-from datetime import timedelta
 from decimal import Decimal
 from datetime import timedelta
 
@@ -64,8 +63,6 @@ from .precios import (
     expresion_precio_final as _expresion_precio_final,
     precios_por_gtin,
 )
-
-from config.settings import STALE_PRICE_DAYS
 
 
 def _expresion_tienda_limpia() -> ExpressionWrapper:
@@ -173,7 +170,7 @@ def detalle_producto(request, pk):
     )
     variantes = ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
     precios = list(_consulta_precios_detalle(producto.pk))
-    limite_precio_antiguo = timezone.now() - timedelta(hours=(24 * STALE_PRICE_DAYS))
+    limite_precio_antiguo = timezone.now() - timedelta(hours=48)
     for precio in precios:
         precio.desactualizado = precio.updated_at < limite_precio_antiguo
     grupos_precios = agrupar_precios_por_gtin(variantes, precios)

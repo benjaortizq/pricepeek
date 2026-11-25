@@ -1039,7 +1039,7 @@
     "La marca '{nombre}' no existe en el catálogo.": "The brand '{nombre}' does not exist in the catalog.",
     "La categoría '{nombre}' no existe en el catálogo.": "The category '{nombre}' does not exist in the catalog.",
     "La marca '{nombre}' coincide con más de una marca del catálogo.": "The brand '{nombre}' matches more than one brand in the catalog.",
-    "La categoría '{nombre}' coincide con más de una categoría del catálogo.": "The category '{nombre}' matches more than one category in the catalog."
+    "La categoría '{nombre}' coincide con más de una categoría del catálogo.": "The category '{nombre}' matches more than one category in the catalog.",
     "Catálogo": "Catalog",
     "Mantenga al día el nombre, la marca, la categoría, la descripción y la imagen de cada producto. Son los mismos en todas las tiendas que lo ofrecen; los precios los maneja cada tienda.": "Keep each product's name, brand, category, description and image up to date. They are the same in every store that sells it; each store manages its own prices.",
     "Nombre, marca o código de barras": "Name, brand or barcode",

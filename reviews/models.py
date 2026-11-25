@@ -87,7 +87,7 @@ class ReviewDeletion(models.Model):
     """
 
     class Policy(models.TextChoices):
-        # Sección 5 de los términos y condiciones (templates/terminos.html).
+        # Categorías de incumplimiento que pueden justificar eliminar una reseña.
         NOT_RELEVANT = "no_pertinente", "No es pertinente al producto"
         DISRESPECTFUL = "irrespetuoso", "Irrespetuoso, ofensivo o discriminatorio"
         NOT_LEGITIMATE = "no_legitima", "No se basa en una experiencia legítima"

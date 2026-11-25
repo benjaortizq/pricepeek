@@ -8,7 +8,7 @@
 <div class="mt-3 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
   <div class="flex items-start gap-4 min-w-0">
     <div class="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl border border-outline-variant/50 bg-surface-container-lowest flex items-center justify-center overflow-hidden shrink-0">
-      {% if imagen %}<img src="{{ imagen.image_url }}" alt="{{ precio.gtin.product.name }}" class="w-full h-full object-contain p-1">{% else %}<span class="material-symbols-outlined text-[36px] text-secondary">image_not_supported</span>{% endif %}
+      {% if imagen and imagen.url_ingresada_valida %}<img src="{{ imagen.url_ingresada }}" alt="{{ precio.gtin.product.name }}" class="w-full h-full object-contain p-1" onerror="this.hidden=true">{% else %}<span class="material-symbols-outlined text-[36px] text-secondary">image_not_supported</span>{% endif %}
     </div>
     <div class="min-w-0">
       <p class="text-body-sm font-semibold text-secondary">{{ precio.gtin.product.brand.name }} · {{ precio.gtin.product.category.name }}</p>
@@ -74,5 +74,115 @@
     <div class="mt-4 rounded-xl border border-tertiary/30 bg-tertiary-container/20 p-4 flex items-center gap-3 text-tertiary"><span class="material-symbols-outlined">check_circle</span><p class="font-semibold">{% t 'No se detectaron problemas en esta oferta.' %}</p></div>
     {% endif %}
   </article>
+</section>
+
+<section class="mt-space-lg rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6" data-image-component>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">image</span><h2 class="text-headline-md font-headline-md">{% t 'Imágenes' %}</h2></div>
+    <span class="rounded-full bg-surface-container-high px-2.5 py-1 text-body-sm font-bold">{{ imagenes|length }}</span>
+  </div>
+
+  <div class="mt-4 rounded-xl border border-primary/30 bg-primary-fixed-dim/20 p-4 text-body-sm">
+    <p class="font-semibold">{% t 'Estas imágenes se comparten con otras tiendas.' %}</p>
+    <p class="mt-1 text-secondary">{% t 'Editar un enlace cambia la imagen en toda la plataforma. No se pueden eliminar imágenes, cambiar su orden ni modificar cuál es la principal.' %}</p>
+  </div>
+
+  <form method="post" class="mt-5">
+    {% csrf_token %}
+
+    {% if imagenes_form.non_field_errors %}
+    <div class="mb-4 rounded-xl border border-error/30 bg-error-container/30 p-3 text-body-sm text-error">{% for error in imagenes_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+    {% if imagenes_form.image_urls.errors %}
+    <div class="mb-4 rounded-xl border border-error/30 bg-error-container/30 p-3 text-body-sm text-error">{% for error in imagenes_form.image_urls.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+    {% if imagenes_form.new_image_urls.errors %}
+    <div class="mb-4 rounded-xl border border-error/30 bg-error-container/30 p-3 text-body-sm text-error">{% for error in imagenes_form.new_image_urls.errors %}<p>{{ error }}</p>{% endfor %}</div>
+    {% endif %}
+
+    {% if imagenes %}
+    <div class="space-y-4">
+      {% for imagen in imagenes %}
+      <div class="grid grid-cols-1 sm:grid-cols-[96px_minmax(0,1fr)] items-center gap-4 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3" data-image-row>
+        <div class="relative h-20 w-20 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-lowest sm:h-24 sm:w-24">
+          {% if imagen.url_ingresada_valida %}<img class="h-full w-full object-contain p-1" src="{{ imagen.url_ingresada }}" alt="{% t 'Vista previa de la imagen' %}" data-image-preview onerror="this.hidden=true">{% else %}<img class="h-full w-full object-contain p-1" alt="{% t 'Vista previa de la imagen' %}" data-image-preview hidden>{% endif %}
+          <span class="absolute inset-0 flex items-center justify-center text-secondary" data-image-placeholder><span class="material-symbols-outlined text-[32px]">image</span></span>
+        </div>
+        <div class="min-w-0">
+          <div class="mb-2 flex flex-wrap items-center gap-2">
+            <span class="rounded-full bg-surface-container-high px-2.5 py-1 text-body-sm font-bold">{% t 'Número' %} {{ imagen.number_image }}</span>
+            {% if imagen.is_main %}<span class="rounded-full bg-primary-container px-2.5 py-1 text-body-sm font-bold text-on-primary-container">{% t 'Principal' %}</span>{% endif %}
+          </div>
+          <label class="sr-only" for="imagen_existente_{{ imagen.pk }}">{% t 'Enlace de la imagen' %}</label>
+          <input class="w-full rounded-xl bg-surface-container-lowest border border-outline-variant/50 px-4 py-3 text-on-surface focus:border-on-surface focus:ring-0" id="imagen_existente_{{ imagen.pk }}" name="image_urls" type="url" value="{{ imagen.url_ingresada }}" maxlength="2000" data-image-url required>
+          {% if imagen.url_ingresada_valida %}<a class="mt-2 inline-flex max-w-full items-center gap-1 truncate text-body-sm text-secondary hover:text-primary hover:underline" href="{{ imagen.url_ingresada }}" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined text-[17px]">open_in_new</span><span class="truncate">{{ imagen.url_ingresada }}</span></a>{% else %}<span class="mt-2 block truncate text-body-sm text-error">{{ imagen.url_ingresada }}</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="mt-4 rounded-xl bg-surface-container-low p-4 text-body-sm text-secondary">{% t 'Este producto todavía no tiene imágenes.' %}</div>
+    {% endif %}
+
+    <div class="mt-6 border-t border-outline-variant/50 pt-5">
+      <h3 class="font-bold">{% t 'Añadir imágenes' %}</h3>
+      <p class="mt-1 text-body-sm text-secondary">{% t 'Las nuevas imágenes se agregan al final y no modifican cuál es la principal.' %}</p>
+
+      <div class="mt-4 space-y-3" data-image-list>
+        {% if nuevas_urls %}
+          {% for url in nuevas_urls %}
+          <div class="grid grid-cols-1 sm:grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3" data-image-row>
+            <div class="relative h-20 w-20 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-lowest sm:h-24 sm:w-24">
+              <img class="h-full w-full object-contain p-1" data-image-preview alt="{% t 'Vista previa de la imagen' %}" hidden>
+              <span class="absolute inset-0 flex items-center justify-center text-secondary" data-image-placeholder><span class="material-symbols-outlined text-[32px]">image</span></span>
+            </div>
+            <div class="min-w-0">
+              <label class="sr-only" for="nueva_imagen_{{ forloop.counter }}">{% t 'Enlace de la imagen' %}</label>
+              <input class="w-full rounded-xl bg-surface-container-lowest border border-outline-variant/50 px-4 py-3 text-on-surface focus:border-on-surface focus:ring-0" id="nueva_imagen_{{ forloop.counter }}" name="new_image_urls" type="url" value="{{ url }}" maxlength="2000" data-image-url>
+            </div>
+            <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant text-secondary hover:border-error hover:text-error" type="button" data-image-remove aria-label="{% t 'Quitar imagen' %}"><span class="material-symbols-outlined text-[20px]">close</span></button>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="grid grid-cols-1 sm:grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3" data-image-row>
+            <div class="relative h-20 w-20 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-lowest sm:h-24 sm:w-24">
+              <img class="h-full w-full object-contain p-1" data-image-preview alt="{% t 'Vista previa de la imagen' %}" hidden>
+              <span class="absolute inset-0 flex items-center justify-center text-secondary" data-image-placeholder><span class="material-symbols-outlined text-[32px]">image</span></span>
+            </div>
+            <div class="min-w-0">
+              <label class="sr-only" for="nueva_imagen_1">{% t 'Enlace de la imagen' %}</label>
+              <input class="w-full rounded-xl bg-surface-container-lowest border border-outline-variant/50 px-4 py-3 text-on-surface focus:border-on-surface focus:ring-0" id="nueva_imagen_1" name="new_image_urls" type="url" maxlength="2000" data-image-url>
+            </div>
+            <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant text-secondary hover:border-error hover:text-error" type="button" data-image-remove aria-label="{% t 'Quitar imagen' %}"><span class="material-symbols-outlined text-[20px]">close</span></button>
+          </div>
+        {% endif %}
+      </div>
+
+      <button class="mt-4 inline-flex items-center gap-2 rounded-full border border-outline-variant px-4 py-2.5 font-semibold hover:border-primary" type="button" data-image-add><span class="material-symbols-outlined text-[19px]">add</span>{% t 'Agregar otra imagen' %}</button>
+    </div>
+
+    <label class="mt-5 flex items-start gap-3 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3">
+      <input class="mt-1" type="checkbox" name="confirm_shared_changes" value="on" id="confirm_shared_changes">
+      <span class="font-semibold">{% t 'Confirmo que autorizo actualizar las imágenes compartidas del producto.' %}</span>
+    </label>
+
+    <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <button class="px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container font-bold" type="submit">{% t 'Guardar imágenes' %}</button>
+    </div>
+  </form>
+
+  <template data-image-template>
+    <div class="grid grid-cols-1 sm:grid-cols-[96px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-outline-variant/50 bg-surface-container-low p-3" data-image-row>
+      <div class="relative h-20 w-20 overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-lowest sm:h-24 sm:w-24">
+        <img class="h-full w-full object-contain p-1" data-image-preview alt="{% t 'Vista previa de la imagen' %}" hidden>
+        <span class="absolute inset-0 flex items-center justify-center text-secondary" data-image-placeholder><span class="material-symbols-outlined text-[32px]">image</span></span>
+      </div>
+      <div class="min-w-0">
+        <label class="sr-only">{% t 'Enlace de la imagen' %}</label>
+        <input class="w-full rounded-xl bg-surface-container-lowest border border-outline-variant/50 px-4 py-3 text-on-surface focus:border-on-surface focus:ring-0" name="new_image_urls" type="url" maxlength="2000" data-image-url>
+      </div>
+      <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant text-secondary hover:border-error hover:text-error" type="button" data-image-remove aria-label="{% t 'Quitar imagen' %}"><span class="material-symbols-outlined text-[20px]">close</span></button>
+    </div>
+  </template>
 </section>
 {% endblock %}

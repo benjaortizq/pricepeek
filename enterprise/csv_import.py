@@ -2,6 +2,7 @@
 
 import csv
 import io
+import re
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlparse
@@ -16,19 +17,21 @@ from .forms import (
     analizar_atributos_json,
     normalizar_gtin,
 )
+from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
 from .services import ErrorEmpresa, crear_precio_empresa
 
 COLUMNAS = [
     "gtin",
     "product_name",
     "variant_name",
-    "brand_id",
-    "category_id",
+    "brand_name",
+    "category_name",
     "attributes",
     "price",
     "discount",
     "is_available",
     "product_web_url",
+    "image_urls",
 ]
 
 
@@ -72,6 +75,47 @@ def _decimal(valor):
 
 def _texto(valores, nombre):
     return str(valores.get(nombre) or "").strip()
+
+
+def _tiene_urls_imagenes_csv(valores):
+    for nombre, valor in valores.items():
+        es_columna = nombre in {"image_urls", "image_url"} or re.fullmatch(
+            r"image_url_\d+", str(nombre or "")
+        )
+        if es_columna and str(valor or "").strip():
+            return True
+    return False
+
+
+def _urls_imagenes_csv(valores):
+    """Lee URLs separadas por ``|`` y acepta columnas ``image_url_N``."""
+    partes = []
+    texto = str(valores.get("image_urls") or valores.get("image_url") or "")
+    if texto:
+        partes.extend(re.split(r"[|\r\n]+", texto))
+
+    numeradas = []
+    for nombre in valores:
+        coincidencia = re.fullmatch(r"image_url_(\d+)", str(nombre or ""))
+        if coincidencia:
+            numeradas.append((int(coincidencia.group(1)), str(valores[nombre] or "")))
+    for _, url in sorted(numeradas):
+        if url:
+            partes.append(url)
+
+    urls = [url for url in partes if url != ""]
+    try:
+        return normalizar_urls_imagenes(urls)
+    except URLImagenInvalida as error:
+        raise ErrorEmpresa(
+            translate_text_lazy(
+                "El enlace de la imagen debe comenzar con http:// o https://, no debe contener espacios y no puede superar 2000 caracteres."
+            )
+        ) from error
+    except ValueError as error:
+        raise ErrorEmpresa(
+            translate_text_lazy("No se permiten enlaces de imagen duplicados.")
+        ) from error
 
 
 def procesar_csv(archivo, store):
@@ -195,6 +239,7 @@ def _procesar_fila(valores, store, resultado, vistos):
 
     variante = variante_existente or ProductVariants.objects.filter(gtin=gtin).first()
     producto_datos = None
+    urls_imagenes = []
     if variante is None:
         nombre_producto = _texto(valores, "product_name")
         nombre_variante = _texto(valores, "variant_name")
@@ -204,8 +249,15 @@ def _procesar_fila(valores, store, resultado, vistos):
                     "Para un GTIN nuevo se necesitan product_name y variant_name."
                 )
             )
-        marca = _marca(valores.get("brand_id"))
-        categoria = _categoria(valores.get("category_id"))
+        urls_imagenes = _urls_imagenes_csv(valores)
+        if not urls_imagenes:
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "Debe agregar al menos un enlace de imagen para un GTIN nuevo."
+                )
+            )
+        marca = _marca(valores.get("brand_name"))
+        categoria = _categoria(valores.get("category_name"))
         producto_datos = {
             "product_name": nombre_producto,
             "variant_name": nombre_variante,
@@ -214,6 +266,14 @@ def _procesar_fila(valores, store, resultado, vistos):
             "description": "",
             "attributes": atributos,
         }
+    elif _tiene_urls_imagenes_csv(valores):
+        resultado.avisos.append(
+            str(
+                translate_text_lazy(
+                    "Las imágenes de un GTIN existente no se modificaron; se gestionan en su pantalla de detalle."
+                )
+            )
+        )
 
     if precio < 0:
         precio = None
@@ -241,6 +301,7 @@ def _procesar_fila(valores, store, resultado, vistos):
             "product_web_url": url,
         },
         producto_datos=producto_datos,
+        image_urls=urls_imagenes,
     )
     resultado.importado = True
     resultado.price_id = creado.pk
@@ -248,38 +309,52 @@ def _procesar_fila(valores, store, resultado, vistos):
 
 
 def _marca(valor):
-    try:
-        marca_id = int(str(valor or "").strip())
-    except ValueError as error:
+    nombre = str(valor or "").strip()
+    if not nombre:
         raise ErrorEmpresa(
-            translate_text_lazy("La marca no existe o no tiene un identificador válido.")
-        ) from error
-    if marca_id <= 0 or marca_id > 2**63 - 1:
-        raise ErrorEmpresa(
-            translate_text_lazy("La marca no existe o no tiene un identificador válido.")
+            translate_text_lazy(
+                "La marca '{nombre}' no existe en el catálogo."
+            ).format(nombre=nombre)
         )
-    try:
-        return Brands.objects.get(pk=marca_id)
-    except Brands.DoesNotExist as error:
+    coincidencias = list(
+        Brands.objects.filter(name__iexact=nombre).order_by("id")[:2]
+    )
+    if not coincidencias:
         raise ErrorEmpresa(
-            translate_text_lazy("La marca no existe o no tiene un identificador válido.")
-        ) from error
+            translate_text_lazy(
+                "La marca '{nombre}' no existe en el catálogo."
+            ).format(nombre=nombre)
+        )
+    if len(coincidencias) > 1:
+        raise ErrorEmpresa(
+            translate_text_lazy(
+                "La marca '{nombre}' coincide con más de una marca del catálogo."
+            ).format(nombre=nombre)
+        )
+    return coincidencias[0]
 
 
 def _categoria(valor):
-    try:
-        categoria_id = int(str(valor or "").strip())
-    except ValueError as error:
+    nombre = str(valor or "").strip()
+    if not nombre:
         raise ErrorEmpresa(
-            translate_text_lazy("La categoría no existe o no tiene un identificador válido.")
-        ) from error
-    if categoria_id <= 0 or categoria_id > 2**63 - 1:
-        raise ErrorEmpresa(
-            translate_text_lazy("La categoría no existe o no tiene un identificador válido.")
+            translate_text_lazy(
+                "La categoría '{nombre}' no existe en el catálogo."
+            ).format(nombre=nombre)
         )
-    try:
-        return Categories.objects.get(pk=categoria_id)
-    except Categories.DoesNotExist as error:
+    coincidencias = list(
+        Categories.objects.filter(name__iexact=nombre).order_by("id")[:2]
+    )
+    if not coincidencias:
         raise ErrorEmpresa(
-            translate_text_lazy("La categoría no existe o no tiene un identificador válido.")
-        ) from error
+            translate_text_lazy(
+                "La categoría '{nombre}' no existe en el catálogo."
+            ).format(nombre=nombre)
+        )
+    if len(coincidencias) > 1:
+        raise ErrorEmpresa(
+            translate_text_lazy(
+                "La categoría '{nombre}' coincide con más de una categoría del catálogo."
+            ).format(nombre=nombre)
+        )
+    return coincidencias[0]

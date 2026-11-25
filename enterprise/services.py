@@ -1,16 +1,44 @@
 """Reglas de escritura del portal de empresas."""
 
+import hashlib
 from decimal import Decimal
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from core.translations import translate_text_lazy
-from products.models import Currencies, Prices, ProductVariants, Products
+from products.models import Currencies, Prices, ProductImages, ProductVariants, Products
+
+from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
 
 
 class ErrorEmpresa(Exception):
     """Error de negocio que puede mostrarse directamente al usuario."""
+
+
+# Espacio reservado para los bloqueos advisories del módulo de empresas.
+_ESPACIO_BLOQUEO_GTIN = 0x50506565
+
+
+def _bloquear_gtin(gtin):
+    """Serializa las escrituras concurrentes del mismo GTIN.
+
+    ``select_for_update`` no puede bloquear una variante que todavía no
+    existe. En PostgreSQL, un lock advisory de transacción cubre esa breve
+    ventana y coordina también a tiendas distintas que reciben el mismo GTIN.
+    La restricción única de ``product_variants.gtin`` sigue siendo la defensa
+    final frente a escritores externos a este módulo.
+    """
+    if connection.vendor != "postgresql":
+        return
+
+    digest = hashlib.sha256(str(gtin).encode("utf-8")).digest()
+    clave_gtin = int.from_bytes(digest[:4], byteorder="big", signed=True)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT pg_advisory_xact_lock(%s, %s)",
+            [_ESPACIO_BLOQUEO_GTIN, clave_gtin],
+        )
 
 
 def moneda_para_tienda(store):
@@ -43,21 +71,87 @@ def _datos_precio(datos, precio):
     }
 
 
-def crear_precio_empresa(store, gtin, datos, producto_datos=None):
+def _urls_imagenes_empresa(urls):
+    try:
+        return normalizar_urls_imagenes(urls or [])
+    except URLImagenInvalida as error:
+        raise ErrorEmpresa(
+            translate_text_lazy(
+                "El enlace de la imagen debe comenzar con http:// o https://, no debe contener espacios y no puede superar 2000 caracteres."
+            )
+        ) from error
+    except ValueError as error:
+        raise ErrorEmpresa(
+            translate_text_lazy("No se permiten enlaces de imagen duplicados.")
+        ) from error
+
+
+def _imagenes_bloqueadas(product_id):
+    """Devuelve las imágenes del producto bloqueadas para escritura."""
+    variant_ids = ProductVariants.objects.filter(product_id=product_id).values_list(
+        "id", flat=True
+    )
+    return list(
+        ProductImages.objects.select_for_update()
+        .filter(variant_id__in=variant_ids)
+        .order_by("number_image", "id")
+    )
+
+
+def _agregar_imagenes(variante, urls, ahora, imagenes_existentes=None):
+    """Agrega imágenes con orden consecutive y una sola principal por producto."""
+    urls = _urls_imagenes_empresa(urls)
+    if not urls:
+        return []
+
+    # El producto es el padre estable de todas sus variantes. Bloquearlo
+    # serializa las adiciones aunque dos solicitudes lleguen a la vez.
+    Products.objects.select_for_update().get(pk=variante.product_id)
+    imagenes = (
+        imagenes_existentes
+        if imagenes_existentes is not None
+        else _imagenes_bloqueadas(variante.product_id)
+    )
+    if imagenes:
+        siguiente_numero = max(imagen.number_image for imagen in imagenes) + 1
+        es_principal = False
+    else:
+        siguiente_numero = 1
+        es_principal = True
+
+    creadas = []
+    for indice, url in enumerate(urls):
+        imagen = ProductImages.objects.create(
+            variant=variante,
+            image_url=url,
+            is_main=es_principal and indice == 0,
+            number_image=siguiente_numero,
+            created_at=ahora,
+            updated_at=ahora,
+        )
+        creadas.append(imagen)
+        siguiente_numero += 1
+    return creadas
+
+
+def crear_precio_empresa(store, gtin, datos, producto_datos=None, image_urls=None):
     """Crea el precio propio para un GTIN existente o nuevo.
 
-    Para un GTIN existente solo se crea ``Prices``. Para uno nuevo se crean
-    también un ``Products`` mínimo y su ``ProductVariants``.
+    Para un GTIN existente solo se crea ``Prices`` y nunca se modifican sus
+    imágenes. Para uno nuevo se crean también un ``Products`` mínimo, su
+    ``ProductVariants`` y las imágenes indicadas, todo en una sola transacción.
     """
     ahora = timezone.now()
     try:
         with transaction.atomic():
+            _bloquear_gtin(gtin)
             variante = (
                 ProductVariants.objects.select_for_update()
                 .filter(gtin=gtin)
                 .first()
             )
             if variante is not None:
+                gtin_ya_existia = True
                 if Prices.objects.filter(id_store_id=store.pk, gtin_id=gtin).exists():
                     raise ErrorEmpresa(
                         translate_text_lazy(
@@ -65,6 +159,7 @@ def crear_precio_empresa(store, gtin, datos, producto_datos=None):
                         )
                     )
             else:
+                gtin_ya_existia = False
                 datos_producto = producto_datos or {}
                 marca = datos_producto.get("brand")
                 categoria = datos_producto.get("category")
@@ -72,6 +167,13 @@ def crear_precio_empresa(store, gtin, datos, producto_datos=None):
                     raise ErrorEmpresa(
                         translate_text_lazy(
                             "Para crear un GTIN nuevo se necesita una marca y una categoría existentes."
+                        )
+                    )
+                urls_imagenes = _urls_imagenes_empresa(image_urls)
+                if not urls_imagenes:
+                    raise ErrorEmpresa(
+                        translate_text_lazy(
+                            "Debe agregar al menos un enlace de imagen para un GTIN nuevo."
                         )
                     )
                 producto = Products.objects.create(
@@ -90,10 +192,11 @@ def crear_precio_empresa(store, gtin, datos, producto_datos=None):
                     created_at=ahora,
                     updated_at=ahora,
                 )
+                _agregar_imagenes(variante, urls_imagenes, ahora)
 
             moneda = moneda_para_tienda(store)
             valores = _datos_precio(datos, datos.get("price"))
-            return Prices.objects.create(
+            precio = Prices.objects.create(
                 id_store=store,
                 gtin=variante,
                 currency=moneda,
@@ -101,12 +204,98 @@ def crear_precio_empresa(store, gtin, datos, producto_datos=None):
                 updated_at=ahora,
                 **valores,
             )
+            # La vista usa esta marca para distinguir un GTIN recién creado de
+            # uno que ya existía, incluso si cambió entre el POST y el lock.
+            precio.gtin_ya_existia = gtin_ya_existia
+            return precio
     except IntegrityError as error:
         raise ErrorEmpresa(
             translate_text_lazy(
                 "No se pudo guardar el precio porque el GTIN ya fue registrado para esta tienda."
             )
         ) from error
+
+
+def editar_imagenes_empresa(
+    store,
+    price_id,
+    image_urls,
+    new_image_urls,
+    confirm_shared_changes=False,
+):
+    """Edita y agrega imágenes de un producto que pertenece a la tienda.
+
+    Las imágenes existentes se envían en el mismo orden que devuelve el
+    servidor. No se aceptan identificadores de imagen del cliente.
+    """
+    existentes = _urls_imagenes_empresa(image_urls)
+    nuevas = _urls_imagenes_empresa(new_image_urls)
+    try:
+        normalizar_urls_imagenes(existentes + nuevas)
+    except URLImagenInvalida as error:
+        raise ErrorEmpresa(
+            translate_text_lazy(
+                "El enlace de la imagen debe comenzar con http:// o https://, no debe contener espacios y no puede superar 2000 caracteres."
+            )
+        ) from error
+    except ValueError as error:
+        raise ErrorEmpresa(
+            translate_text_lazy("No se permiten enlaces de imagen duplicados.")
+        ) from error
+
+    ahora = timezone.now()
+    with transaction.atomic():
+        precio = (
+            Prices.objects.select_for_update()
+            .filter(pk=price_id, id_store_id=store.pk)
+            .select_related("gtin__product")
+            .first()
+        )
+        if precio is None:
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "El producto no existe o no pertenece a su tienda."
+                )
+            )
+
+        product_id = precio.gtin.product_id
+        Products.objects.select_for_update().get(pk=product_id)
+        imagenes = _imagenes_bloqueadas(product_id)
+        if len(existentes) != len(imagenes):
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "La lista de imágenes cambió. Recargue la página e intente de nuevo."
+                )
+            )
+        if not imagenes and not nuevas:
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "Debe agregar al menos un enlace de imagen para este producto."
+                )
+            )
+
+        cambiaron_existentes = False
+        for imagen, url in zip(imagenes, existentes):
+            if imagen.image_url != url:
+                cambiaron_existentes = True
+                imagen.image_url = url
+                imagen.updated_at = ahora
+                imagen.save(update_fields=["image_url", "updated_at"])
+
+        if cambiaron_existentes and not confirm_shared_changes:
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "Debe confirmar que autoriza actualizar las imágenes compartidas."
+                )
+            )
+
+        _agregar_imagenes(
+            precio.gtin,
+            nuevas,
+            ahora,
+            imagenes_existentes=imagenes,
+        )
+        return precio
 
 
 def editar_precio_empresa(store, price_id, datos):

@@ -11,6 +11,7 @@ urlpatterns = [
     path("tienda/editar/", views.editar_tienda, name="editar_tienda"),
     path("catalogo/", views.catalogo, name="catalogo"),
     path("catalogo/nuevo/", views.nuevo_producto, name="nuevo_producto"),
+    path("catalogo/gtin-existe/", views.comprobar_gtin, name="comprobar_gtin"),
     path("catalogo/cargar/", views.cargar_csv, name="cargar_csv"),
     path("catalogo/plantilla.csv/", views.plantilla_csv, name="plantilla_csv"),
     path("catalogo/<int:price_id>/", views.detalle_producto, name="detalle_producto"),

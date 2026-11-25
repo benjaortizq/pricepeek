@@ -5,7 +5,7 @@ import csv
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
@@ -13,15 +13,18 @@ from django.views.decorators.http import require_POST
 from accounts.decorators import role_required
 from accounts.models import User
 from core.translations import translate_text_lazy
-from products.models import Brands, Categories, ProductImages
+from products.models import Brands, Categories, ProductImages, ProductVariants
 
 from .access import tienda_del_usuario
 from .csv_import import COLUMNAS, ErrorEmpresa as ErrorCSV, procesar_csv
+from .imagenes import url_imagen_valida
 from .forms import (
     CargarCSVForm,
+    ImagenesEmpresaForm,
     PrecioEmpresaForm,
     ProductoEmpresaForm,
     TiendaEmpresaForm,
+    normalizar_gtin,
 )
 from .reports import generar_pdf_empresa
 from .selectors import (
@@ -36,6 +39,7 @@ from .services import (
     actualizar_informacion_tienda_empresa,
     crear_precio_empresa,
     desactivar_precio_empresa,
+    editar_imagenes_empresa,
     editar_precio_empresa,
     quitar_precio_empresa,
 )
@@ -113,10 +117,12 @@ def catalogo(request):
 @role_required(User.Role.ENTERPRISE)
 def nuevo_producto(request):
     store = tienda_del_usuario(request.user)
+    gtin_existente = False
     if request.method == "POST":
         form = ProductoEmpresaForm(request.POST)
         if form.is_valid():
             datos = form.cleaned_data
+            gtin_existente = datos.get("variante_existente") is not None
             try:
                 precio = crear_precio_empresa(
                     store,
@@ -130,19 +136,38 @@ def nuevo_producto(request):
                         "description": datos.get("description"),
                         "attributes": datos.get("attributes"),
                     },
+                    image_urls=datos.get("image_urls") or [],
                 )
             except ErrorEmpresa as error:
                 messages.error(request, str(error))
             else:
-                messages.success(
-                    request,
-                    translate_text_lazy(
-                        "El producto se agregó al catálogo de su tienda."
-                    ),
+                gtin_existente = getattr(
+                    precio, "gtin_ya_existia", gtin_existente
                 )
+                if gtin_existente:
+                    messages.info(
+                        request,
+                        translate_text_lazy(
+                            "Las imágenes del producto se gestionan en su pantalla de detalle."
+                        ),
+                    )
+                else:
+                    messages.success(
+                        request,
+                        translate_text_lazy(
+                            "El producto se agregó al catálogo de su tienda."
+                        ),
+                    )
                 return redirect("enterprise:detalle_producto", price_id=precio.pk)
     else:
         form = ProductoEmpresaForm()
+
+    if request.method == "POST":
+        gtin_existente = form.cleaned_data.get("variante_existente") is not None
+
+    imagenes_enviadas = (
+        request.POST.getlist("image_urls") if request.method == "POST" else []
+    )
     return render(
         request,
         "enterprise/producto_formulario.html",
@@ -150,6 +175,8 @@ def nuevo_producto(request):
             "store": store,
             "form": form,
             "modo": "nuevo",
+            "gtin_existente": gtin_existente,
+            "imagenes_enviadas": imagenes_enviadas,
             "campos_producto": [
                 form["gtin"],
                 form["product_name"],
@@ -166,6 +193,21 @@ def nuevo_producto(request):
             ],
         },
     )
+
+
+@role_required(User.Role.ENTERPRISE)
+def comprobar_gtin(request):
+    """Indica al formulario si el GTIN ya pertenece al catálogo."""
+    tienda_del_usuario(request.user)
+    if request.method != "GET":
+        return JsonResponse({"exists": False}, status=405)
+
+    gtin = request.GET.get("gtin", "").strip()
+    candidatos = dict.fromkeys((gtin, normalizar_gtin(gtin))) if gtin else ()
+    existe = ProductVariants.objects.filter(gtin__in=candidatos).exists()
+    respuesta = JsonResponse({"exists": existe})
+    respuesta["Cache-Control"] = "no-store"
+    return respuesta
 
 
 @role_required(User.Role.ENTERPRISE)
@@ -239,10 +281,55 @@ def detalle_producto(request, price_id):
             {"store": store},
             status=404,
         )
-    imagen = ProductImages.objects.filter(
-        variant=precio.gtin,
-        is_main=True,
-    ).first()
+
+    product_id = precio.gtin.product_id
+    imagenes = list(
+        ProductImages.objects.filter(variant__product_id=product_id).order_by(
+            "number_image", "id"
+        )
+    )
+    if request.method == "POST":
+        form = ImagenesEmpresaForm(
+            request.POST,
+            current_image_count=len(imagenes),
+        )
+        if form.is_valid():
+            try:
+                editar_imagenes_empresa(
+                    store,
+                    price_id,
+                    form.cleaned_data.get("image_urls") or [],
+                    form.cleaned_data.get("new_image_urls") or [],
+                    form.cleaned_data.get("confirm_shared_changes", False),
+                )
+            except ErrorEmpresa as error:
+                messages.error(request, str(error))
+            else:
+                messages.success(
+                    request,
+                    translate_text_lazy(
+                        "Las imágenes del producto se actualizaron correctamente."
+                    ),
+                )
+                return redirect("enterprise:detalle_producto", price_id=price_id)
+    else:
+        form = ImagenesEmpresaForm(current_image_count=len(imagenes))
+
+    urls_enviadas = (
+        request.POST.getlist("image_urls") if request.method == "POST" else []
+    )
+    nuevas_urls = (
+        request.POST.getlist("new_image_urls") if request.method == "POST" else []
+    )
+    for indice, imagen in enumerate(imagenes):
+        imagen.url_ingresada = (
+            urls_enviadas[indice]
+            if indice < len(urls_enviadas)
+            else imagen.image_url
+        )
+        imagen.url_ingresada_valida = url_imagen_valida(imagen.url_ingresada)
+
+    imagen = next((item for item in imagenes if item.is_main), None)
     return render(
         request,
         "enterprise/producto_detalle.html",
@@ -250,6 +337,9 @@ def detalle_producto(request, price_id):
             "store": store,
             "precio": precio,
             "imagen": imagen,
+            "imagenes": imagenes,
+            "imagenes_form": form,
+            "nuevas_urls": nuevas_urls,
             "problemas": problemas_de_precio(precio),
         },
     )

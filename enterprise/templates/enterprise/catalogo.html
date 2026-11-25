@@ -42,14 +42,14 @@
     <span class="sr-only">{% t 'Categoría' %}</span>
     <select name="categoria" class="w-full rounded-xl bg-surface-container-low border border-outline-variant/50 px-3 py-3">
       <option value="">{% t 'Todas las categorías' %}</option>
-      {% for categoria in categories %}<option value="{{ categoria.pk }}" {% if parametros.categoria == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.name }}</option>{% endfor %}
+      {% for categoria in categories %}<option value="{{ categoria.pk }}" {% if parametros.categoria == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria }}</option>{% endfor %}
     </select>
   </label>
   <label class="campo sin-icono">
     <span class="sr-only">{% t 'Marca' %}</span>
     <select name="marca" class="w-full rounded-xl bg-surface-container-low border border-outline-variant/50 px-3 py-3">
       <option value="">{% t 'Todas las marcas' %}</option>
-      {% for brand in brands %}<option value="{{ brand.pk }}" {% if parametros.marca == brand.pk|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>{% endfor %}
+      {% for brand in brands %}<option value="{{ brand.pk }}" {% if parametros.marca == brand.pk|stringformat:"s" %}selected{% endif %}>{{ brand }}</option>{% endfor %}
     </select>
   </label>
   <label class="campo sin-icono">

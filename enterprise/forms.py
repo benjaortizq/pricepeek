@@ -10,6 +10,8 @@ from core.translations import translate_text_lazy
 from products.barcodes import validar_codigo_barras
 from products.models import Brands, Categories, ProductVariants, Stores
 
+from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
+
 PRECIO_ENTEROS_MINIMO = -(2**31)
 PRECIO_ENTEROS_MAXIMO = 2**31 - 1
 # ``Stores`` no declara límites porque es un modelo no administrado; la
@@ -77,6 +79,49 @@ class IdentificadorModelChoiceField(forms.ModelChoiceField):
                 translate_text_lazy("Seleccione una opción válida.")
             )
         return super().to_python(value)
+
+
+class ListaURLsImagenesWidget(forms.HiddenInput):
+    """Widget que conserva todos los valores enviados con el mismo nombre."""
+
+    def value_from_datadict(self, data, files, name):
+        if hasattr(data, "getlist"):
+            return data.getlist(name)
+        value = data.get(name)
+        if isinstance(value, (list, tuple)):
+            return list(value)
+        return [value] if value not in (None, "") else []
+
+
+class ListaURLsImagenesField(forms.Field):
+    """Campo invisible que conserva el orden de varios enlaces de imagen."""
+
+    widget = ListaURLsImagenesWidget
+
+    def __init__(self, *args, validar_urls=True, **kwargs):
+        self.validar_urls = validar_urls
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        if not value:
+            return []
+        if isinstance(value, str):
+            value = [value]
+        valores = [url for url in value if isinstance(url, str) and url != ""]
+        if not self.validar_urls:
+            return valores
+        try:
+            return normalizar_urls_imagenes(valores)
+        except URLImagenInvalida as error:
+            raise forms.ValidationError(
+                translate_text_lazy(
+                    "El enlace de la imagen debe comenzar con http:// o https://, no debe contener espacios y no puede superar 2000 caracteres."
+                )
+            ) from error
+        except ValueError as error:
+            raise forms.ValidationError(
+                translate_text_lazy("No se permiten enlaces de imagen duplicados.")
+            ) from error
 
 
 class PrecioEmpresaForm(forms.Form):
@@ -223,6 +268,7 @@ class ProductoEmpresaForm(forms.Form):
         max_length=2000,
         label=translate_text_lazy("Enlace del producto"),
     )
+    image_urls = ListaURLsImagenesField(required=False, validar_urls=False)
 
     def clean_gtin(self):
         codigo = self.cleaned_data.get("gtin", "").strip()
@@ -279,6 +325,37 @@ class ProductoEmpresaForm(forms.Form):
                             "Este campo es obligatorio cuando el GTIN no existe en el catálogo."
                         ),
                     )
+            try:
+                urls_imagenes = normalizar_urls_imagenes(
+                    datos.get("image_urls") or []
+                )
+            except URLImagenInvalida:
+                self.add_error(
+                    "image_urls",
+                    translate_text_lazy(
+                        "El enlace de la imagen debe comenzar con http:// o https://, no debe contener espacios y no puede superar 2000 caracteres."
+                    ),
+                )
+            except ValueError:
+                self.add_error(
+                    "image_urls",
+                    translate_text_lazy(
+                        "No se permiten enlaces de imagen duplicados."
+                    ),
+                )
+            else:
+                datos["image_urls"] = urls_imagenes
+                if not urls_imagenes:
+                    self.add_error(
+                        "image_urls",
+                        translate_text_lazy(
+                            "Debe agregar al menos un enlace de imagen para un GTIN nuevo."
+                        ),
+                    )
+        else:
+            # Un GTIN existente solo recibe el precio de la tienda. Cualquier
+            # enlace enviado en el formulario se ignora por completo.
+            datos["image_urls"] = []
 
         precio = datos.get("price")
         if precio is not None and precio < 0:
@@ -290,6 +367,48 @@ class ProductoEmpresaForm(forms.Form):
             datos["precio_invalido"] = True
             self.precio_invalido = True
             datos["is_available"] = False
+        return datos
+
+
+class ImagenesEmpresaForm(forms.Form):
+    """Edición de URLs existentes y adición de imágenes del producto."""
+
+    image_urls = ListaURLsImagenesField(required=False)
+    new_image_urls = ListaURLsImagenesField(required=False)
+    confirm_shared_changes = forms.BooleanField(required=False)
+
+    def __init__(self, *args, current_image_count=0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.current_image_count = current_image_count
+
+    def clean(self):
+        datos = super().clean()
+        if self._errors:
+            return datos
+
+        existentes = datos.get("image_urls") or []
+        nuevas = datos.get("new_image_urls") or []
+        if len(existentes) != self.current_image_count:
+            self.add_error(
+                "image_urls",
+                translate_text_lazy(
+                    "La lista de imágenes cambió. Recargue la página e intente de nuevo."
+                ),
+            )
+
+        if self.current_image_count == 0 and not nuevas:
+            self.add_error(
+                "new_image_urls",
+                translate_text_lazy(
+                    "Debe agregar al menos un enlace de imagen para este producto."
+                ),
+            )
+
+        if not self.errors and len(set(existentes + nuevas)) != len(existentes + nuevas):
+            self.add_error(
+                "new_image_urls",
+                translate_text_lazy("No se permiten enlaces de imagen duplicados."),
+            )
         return datos
 
 

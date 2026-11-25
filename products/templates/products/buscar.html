@@ -17,7 +17,7 @@
         <select class="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="categoria">
           <option value="">{% t 'Todas las categorías' %}</option>
           {% for categoria_opcion in categorias %}
-            <option value="{{ categoria_opcion.id }}"{% if categoria_seleccionada == categoria_opcion.id|stringformat:"s" or categoria_seleccionada == categoria_opcion.name %} selected{% endif %}>{{ categoria_opcion.name }}</option>
+            <option value="{{ categoria_opcion.id }}"{% if categoria_seleccionada == categoria_opcion.id|stringformat:"s" or categoria_seleccionada == categoria_opcion.name %} selected{% endif %}>{{ categoria_opcion }}</option>
           {% endfor %}
         </select>
       </label>
@@ -26,7 +26,7 @@
         <select class="w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md font-body-md text-on-surface focus:border-on-surface focus:ring-0" name="marca">
           <option value="">{% t 'Todas las marcas' %}</option>
           {% for marca_opcion in marcas %}
-            <option value="{{ marca_opcion.id }}"{% if marca_seleccionada == marca_opcion.id|stringformat:"s" or marca_seleccionada == marca_opcion.name or marca_seleccionada == marca_opcion.slug %} selected{% endif %}>{{ marca_opcion.name }}</option>
+            <option value="{{ marca_opcion.id }}"{% if marca_seleccionada == marca_opcion.id|stringformat:"s" or marca_seleccionada == marca_opcion.name or marca_seleccionada == marca_opcion.slug %} selected{% endif %}>{{ marca_opcion }}</option>
           {% endfor %}
         </select>
       </label>

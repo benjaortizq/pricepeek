@@ -34,7 +34,10 @@
       <ul class="mt-2 list-disc pl-5 space-y-1 text-secondary">
         <li>{% t 'gtin y price son obligatorios.' %}</li>
         <li>{% t 'discount usa un decimal entre 0 y 1; vacío significa 0.' %}</li>
-        <li>{% t 'Para un GTIN nuevo se necesitan product_name, variant_name, brand_id y category_id.' %}</li>
+        <li>{% t 'Para un GTIN nuevo se necesitan product_name, variant_name, brand_name, category_name y al menos una imagen.' %}</li>
+        <li>{% t 'Los nombres de brand_name y category_name deben existir en el catálogo.' %}</li>
+        <li>{% t 'image_urls separa varios enlaces de imagen con |; la primera URL es la principal.' %}</li>
+        <li>{% t 'Las imágenes de un GTIN existente no se modifican desde el CSV.' %}</li>
         <li>{% t 'La tienda, la moneda y las fechas se asignan en el servidor.' %}</li>
       </ul>
     </div>

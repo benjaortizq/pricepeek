@@ -433,12 +433,27 @@ class ImagenesEmpresaForm(forms.Form):
 
 
 class CargarCSVForm(forms.Form):
+    TAMANO_MAXIMO = 10 * 1024 * 1024  # 10 MB
+
     archivo = forms.FileField(
         label=translate_text_lazy("Archivo CSV"),
         help_text=translate_text_lazy(
             "El archivo no se guarda; cada fila se valida e importa por separado."
         ),
+        widget=forms.FileInput(attrs={"accept": ".csv,text/csv"}),
     )
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data["archivo"]
+        if archivo.size > self.TAMANO_MAXIMO:
+            raise forms.ValidationError(
+                translate_text_lazy("El archivo CSV pesa más de 10 MB.")
+            )
+        if not archivo.name.lower().endswith(".csv"):
+            raise forms.ValidationError(
+                translate_text_lazy("El archivo de carga debe estar en formato CSV.")
+            )
+        return archivo
 
 
 class TiendaEmpresaForm(forms.Form):

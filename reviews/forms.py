@@ -7,6 +7,8 @@ from core.translations import translate_text, translate_text_lazy
 
 from .models import ReviewDeletion
 
+TAMANO_MAXIMO_DE_IMAGEN = 5 * 1024 * 1024  # 5 MB
+
 
 def _star_label(value):
     singular = "estrella" if value == 1 else "estrellas"
@@ -33,7 +35,24 @@ class ReviewForm(forms.Form):
     photo = forms.ImageField(
         label=translate_text_lazy("Foto (opcional)"),
         required=False,
+        widget=forms.FileInput(
+            attrs={"accept": "image/jpeg,image/png,.jpg,.jpeg,.png"}
+        ),
     )
+
+    def clean_photo(self):
+        foto = self.cleaned_data.get("photo")
+        if not foto:
+            return None
+        if foto.size > TAMANO_MAXIMO_DE_IMAGEN:
+            raise forms.ValidationError(
+                translate_text_lazy("La imagen pesa más de 5 MB.")
+            )
+        if foto.image.format not in {"JPEG", "PNG"}:
+            raise forms.ValidationError(
+                translate_text_lazy("La imagen tiene que ser JPG o PNG.")
+            )
+        return foto
 
 
 class ReviewReportForm(forms.Form):

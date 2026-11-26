@@ -1,0 +1,50 @@
+{% load precios site_i18n %}
+{% comment %}
+  El precio de cada tienda en cada actualización (products/historial.py, armar_comparativa):
+  una fila por registro del historial, la más reciente primero. La celda de la tienda que
+  cambió queda resaltada y dice qué pasó; «Mejor» marca el precio más bajo disponible en ese
+  momento. Va dentro de un elemento con la clase historial-precios (los colores de las tiendas).
+  columnas, filas, simbolo; con mostrar_origen=True agrega de dónde vino el cambio.
+{% endcomment %}
+<div class="overflow-x-auto">
+  <table class="w-full text-left border-collapse">
+    <thead>
+      <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+        <th scope="col" class="py-3 px-4 whitespace-nowrap">{% t 'Fecha' %}</th>
+        {% for columna in columnas %}
+          <th scope="col" class="py-3 px-4 whitespace-nowrap text-right">
+            <span class="inline-flex items-center gap-2 serie-{{ columna.color }}">
+              <span class="historial-clave{% if columna.punteada %} punteada{% endif %}" aria-hidden="true"></span>{{ columna.nombre }}
+            </span>
+          </th>
+        {% endfor %}
+        {% if mostrar_origen %}<th scope="col" class="py-3 px-4 whitespace-nowrap">{% t 'Origen' %}</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-outline-variant/50 text-body-sm font-body-sm text-on-surface">
+      {% for fila in filas %}
+        <tr>
+          <th scope="row" class="py-2.5 px-4 font-normal whitespace-nowrap text-secondary align-top">{{ fila.registro.recorded_at|date:"d/m/Y H:i" }}</th>
+          {% for celda in fila.celdas %}
+            <td class="py-2.5 px-4 text-right whitespace-nowrap align-top{% if celda.cambio %} bg-surface-container-low{% endif %}">
+              {% if celda.sin_datos %}
+                <span class="text-secondary" aria-hidden="true">—</span><span class="sr-only">{% t 'Sin datos' %}</span>
+              {% elif not celda.disponible %}
+                <span class="text-secondary">{% t 'No disponible' %}</span>
+              {% elif celda.final is None %}
+                <span class="text-secondary">{% t 'Sin precio' %}</span>
+              {% else %}
+                <span class="{% if celda.cambio %}font-bold{% else %}font-medium{% endif %} tabular-nums">{{ simbolo }}{{ celda.final|miles }}</span>
+                {% if celda.es_mejor %}<span class="ml-1 font-label-badge text-label-badge px-1.5 py-0.5 rounded-full bg-primary-container text-on-primary-container">{% t 'Mejor' %}</span>{% endif %}
+              {% endif %}
+              {% if celda.cambio %}
+                <span class="block mt-0.5">{% include "products/cambio_de_precio.html" with cambio=celda.cambio diferencia=celda.diferencia %}</span>
+              {% endif %}
+            </td>
+          {% endfor %}
+          {% if mostrar_origen %}<td class="py-2.5 px-4 whitespace-nowrap text-secondary align-top">{% t fila.registro.get_source_display %}</td>{% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

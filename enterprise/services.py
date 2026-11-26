@@ -7,9 +7,11 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from core.translations import translate_text_lazy
+from products.historial import registrar
 from products.models import (
     Currencies,
     Prices,
+    PriceHistory,
     ProductImages,
     ProductVariants,
     Products,
@@ -217,6 +219,7 @@ def crear_precio_empresa(
                 updated_at=ahora,
                 **valores,
             )
+            registrar([precio], PriceHistory.Source.EMPRESA)
             # La vista usa esta marca para distinguir un GTIN recién creado de
             # uno que ya existía, incluso si cambió entre el POST y el lock.
             precio.gtin_ya_existia = gtin_ya_existia
@@ -341,6 +344,7 @@ def editar_precio_empresa(store, price_id, datos):
                 "updated_at",
             ]
         )
+        registrar([precio], PriceHistory.Source.EMPRESA)
         return precio
 
 
@@ -365,6 +369,7 @@ def quitar_precio_empresa(store, price_id):
         precio.is_available = False
         precio.updated_at = timezone.now()
         precio.save(update_fields=["price", "is_available", "updated_at"])
+        registrar([precio], PriceHistory.Source.EMPRESA)
         return precio
 
 
@@ -385,6 +390,7 @@ def desactivar_precio_empresa(store, price_id):
         precio.is_available = False
         precio.updated_at = timezone.now()
         precio.save(update_fields=["is_available", "updated_at"])
+        registrar([precio], PriceHistory.Source.EMPRESA)
         return precio
 
 

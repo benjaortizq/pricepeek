@@ -11,7 +11,8 @@ from decimal import Decimal
 from django.utils import timezone
 
 from products.barcodes import calcular_digito_verificador
-from products.models import Prices
+from products.historial import registrar
+from products.models import PriceHistory, Prices
 
 from .models import Incident, StoreProduct
 from .scrapers import (
@@ -220,11 +221,17 @@ def revisar(precio, http, guardar=True, permitir_cambio_grande=False):
 
 def guardar_cambios(precio, cambios):
     """Escribe los cambios en prices. updated_at queda como la última vez que se verificó el
-    precio, aunque no haya cambiado."""
+    precio, aunque no haya cambiado.
+
+    Si cambió el precio, el descuento o la disponibilidad, queda en el
+    historial de precios (products/historial.py).
+    """
     nuevos = {campo: despues for campo, (_, despues) in cambios.items()}
     Prices.objects.filter(pk=precio.pk).update(
         updated_at=timezone.now(), **nuevos
     )
+    if cambios:
+        registrar([precio.pk], PriceHistory.Source.SCRAPING)
 
 
 def _aplicar(precio, oferta, guardar):

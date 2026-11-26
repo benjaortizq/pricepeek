@@ -1,7 +1,11 @@
 {% extends "base.html" %}
-{% load precios site_i18n %}
+{% load precios site_i18n static %}
 
 {% block title %}{{ producto.name }}{% endblock %}
+
+{% block head %}
+  {% if hay_historial %}<link rel="stylesheet" href="{% static 'css/historial-precios.css' %}">{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl w-full mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-6">
@@ -259,6 +263,10 @@
                 {% endfor %}
               </div>
             {% endif %}
+
+            {% if grupo.historial %}
+              {% include "products/historial_precios.html" with grafico=grupo.historial id=grupo.gtin %}
+            {% endif %}
           </section>
         {% endfor %}
       </div>
@@ -434,4 +442,8 @@
     </div>
   </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  {% if hay_historial %}<script src="{% static 'js/historial-precios.js' %}"></script>{% endif %}
 {% endblock %}

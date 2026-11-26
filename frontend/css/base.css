@@ -131,3 +131,35 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Diseño adaptable (360px a 1920px): la página nunca debe desplazarse en
+ * horizontal. Las tablas anchas se desplazan dentro de su propio contenedor
+ * (overflow-x-auto) y el texto largo sin espacios (correos, códigos, reseñas)
+ * se parte en vez de ensanchar la página. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  /* clip (y no hidden) para no romper el encabezado sticky. Es la última
+   * defensa: lo normal es corregir el elemento que se desborda. */
+  overflow-x: clip;
+}
+
+img,
+video,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+}

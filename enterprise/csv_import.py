@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from core.translations import translate_text_lazy
 from products.barcodes import validar_codigo_barras
-from products.models import Brands, Categories, ProductVariants
+from products.models import Brands, Categories, Prices, ProductVariants
 
 from .forms import (
     PRECIO_ENTEROS_MAXIMO,
@@ -18,7 +18,7 @@ from .forms import (
     normalizar_gtin,
 )
 from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
-from .services import ErrorEmpresa, crear_precio_empresa
+from .services import ErrorEmpresa, crear_precio_empresa, editar_precio_empresa
 
 COLUMNAS = [
     "gtin",
@@ -120,7 +120,7 @@ def _urls_imagenes_csv(valores):
         ) from error
 
 
-def procesar_csv(archivo, store):
+def procesar_csv(archivo, store, usuario=None):
     """Procesa cada fila de forma independiente y devuelve su resultado."""
     try:
         contenido = archivo.read().decode("utf-8-sig")
@@ -163,7 +163,7 @@ def procesar_csv(archivo, store):
         linea = lector.line_num
         resultado = ResultadoFila(linea=linea)
         try:
-            _procesar_fila(valores, store, resultado, vistos)
+            _procesar_fila(valores, store, resultado, vistos, usuario)
         except ErrorEmpresa as error:
             resultado.errores.append(str(error))
         except (InvalidOperation, TypeError, ValueError):
@@ -178,7 +178,7 @@ def procesar_csv(archivo, store):
     return resultados
 
 
-def _procesar_fila(valores, store, resultado, vistos):
+def _procesar_fila(valores, store, resultado, vistos, usuario=None):
     codigo = _texto(valores, "gtin")
     resultado.gtin = codigo
     variante_existente = None
@@ -315,18 +315,30 @@ def _procesar_fila(valores, store, resultado, vistos):
             )
         )
 
-    creado = crear_precio_empresa(
-        store,
-        gtin,
-        {
-            "price": precio,
-            "discount": descuento,
-            "is_available": disponible,
-            "product_web_url": url,
-        },
-        producto_datos=producto_datos,
-        image_urls=urls_imagenes,
-    )
+    datos_precio = {
+        "price": precio,
+        "discount": descuento,
+        "is_available": disponible,
+        "product_web_url": url,
+    }
+    existente = Prices.objects.filter(
+        id_store_id=store.pk, gtin_id=gtin
+    ).first()
+    if existente is not None:
+        creado = editar_precio_empresa(
+            store,
+            existente.pk,
+            datos_precio,
+            usuario=usuario,
+        )
+    else:
+        creado = crear_precio_empresa(
+            store,
+            gtin,
+            datos_precio,
+            producto_datos=producto_datos,
+            image_urls=urls_imagenes,
+        )
     resultado.importado = True
     resultado.price_id = creado.pk
     vistos.add(gtin)

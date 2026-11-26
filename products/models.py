@@ -38,6 +38,27 @@ class Categories(models.Model):
         db_table = "categories"
 
 
+class AuditPriceChanges(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    old_price = models.IntegerField()
+    new_price = models.IntegerField()
+    old_discount = models.DecimalField(max_digits=3, decimal_places=2)
+    new_discount = models.DecimalField(max_digits=3, decimal_places=2)
+    id_requested_by = models.BigIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField()
+    is_active = models.BooleanField()
+    gtin = models.ForeignKey(
+        "ProductVariants", models.DO_NOTHING, db_column="gtin", to_field="gtin"
+    )
+    id_store = models.ForeignKey(
+        "Stores", models.DO_NOTHING, db_column="id_store"
+    )
+
+    class Meta:
+        managed = False
+        db_table = "audit_price_changes"
+
+
 class Currencies(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField()

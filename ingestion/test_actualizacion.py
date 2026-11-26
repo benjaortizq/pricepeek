@@ -11,7 +11,7 @@ from django.core.management.base import CommandError
 from django.test import override_settings
 from django.utils import timezone
 
-from products.models import Prices, ProductView, Stores
+from products.models import AuditPriceChanges, Prices, ProductView, Stores
 from products.tests import CatalogoTestCase, fechas
 
 from .actualizacion import (
@@ -149,6 +149,17 @@ class RevisarTests(PrecioGuardadoTestCase):
         self.assertGreater(fila.updated_at, self.hace_tres_dias)
         self.assertEqual(Incident.objects.count(), 0)
 
+        auditoria = AuditPriceChanges.objects.get()
+        self.assertEqual(
+            (auditoria.old_price, auditoria.new_price), (1760, 2000)
+        )
+        self.assertEqual(auditoria.old_discount, Decimal("0.00"))
+        self.assertEqual(auditoria.new_discount, Decimal("0.25"))
+        self.assertTrue(auditoria.is_active)
+        self.assertIsNone(auditoria.id_requested_by)
+        self.assertEqual(auditoria.id_store_id, self.walmart.pk)
+        self.assertEqual(auditoria.gtin_id, self.variante_leche.gtin)
+
     def test_sin_cambios_igual_marca_la_fecha_de_verificacion(self):
         fila = self.guardado(precio=1760)
         revision = self.revisar(fila, respuesta_vtex(lista=1760, final=1760))
@@ -156,6 +167,7 @@ class RevisarTests(PrecioGuardadoTestCase):
             (revision.resultado, revision.cambios), (SIN_CAMBIOS, {})
         )
         self.assertGreater(self.recargar(fila).updated_at, self.hace_tres_dias)
+        self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_dry_run_no_guarda_nada(self):
         fila = self.guardado(precio=1760)
@@ -180,6 +192,15 @@ class RevisarTests(PrecioGuardadoTestCase):
         fila = self.recargar(fila)
         self.assertEqual((fila.price, fila.is_available), (1760, False))
 
+    def test_no_audita_un_precio_que_antes_era_null(self):
+        fila = self.guardado(precio=None, disponible=False)
+
+        self.revisar(fila, respuesta_vtex(lista=1800, final=1800))
+
+        fila = self.recargar(fila)
+        self.assertEqual((fila.price, fila.is_available), (1800, True))
+        self.assertFalse(AuditPriceChanges.objects.exists())
+
     def test_producto_que_ya_no_existe_queda_no_disponible_con_incidencia(
         self,
     ):
@@ -187,6 +208,12 @@ class RevisarTests(PrecioGuardadoTestCase):
         revision = self.revisar(fila, ProductoNoEncontrado("404"))
         self.assertEqual(revision.cambios, {"is_available": (True, False)})
         self.assertFalse(self.recargar(fila).is_available)
+        auditoria = AuditPriceChanges.objects.get()
+        self.assertEqual(
+            (auditoria.old_price, auditoria.new_price), (1760, 1760)
+        )
+        self.assertFalse(auditoria.is_active)
+        self.assertIsNone(auditoria.id_requested_by)
         incidencia = Incident.objects.get()
         self.assertEqual(incidencia.kind, Incident.Kind.PRODUCT_NOT_FOUND)
         self.assertEqual(

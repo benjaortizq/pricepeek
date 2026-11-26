@@ -81,7 +81,7 @@
   {% block cuerpo %}
   {% include "componentes/encabezado.html" %}
 
-  <main class="flex-grow w-full">
+  <main class="flex-grow w-full{% if user.is_authenticated and user.role == 'client' %} pb-24 md:pb-0{% endif %}">
     {% if messages %}
       <div class="w-full max-w-7xl mx-auto px-margin md:px-margin-desktop pt-space-lg space-y-2">
         {% include "componentes/mensajes.html" %}
@@ -91,13 +91,38 @@
     {% block content %}{% endblock %}
   </main>
 
+  {% if user.is_authenticated and user.role == "client" %}
+    {% with actual=request.resolver_match.url_name %}
+    <nav aria-label="{% t 'Navegación principal' %}" class="fixed inset-x-0 bottom-0 z-40 md:hidden border-t border-outline-variant/50 bg-surface-container-lowest/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <div class="mx-auto grid max-w-lg grid-cols-4">
+        {% url 'inicio_cliente' as url_inicio %}
+        <a href="{{ url_inicio }}" class="flex min-h-16 flex-col items-center justify-center gap-1 px-1 {% if actual == 'inicio_cliente' %}text-on-surface font-bold{% else %}text-secondary{% endif %}"{% if actual == 'inicio_cliente' %} aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">home</span><span class="text-[11px] leading-tight">{% t 'Inicio' %}</span>
+        </a>
+        {% url 'buscar_productos' as url_buscar %}
+        <a href="{{ url_buscar }}" class="flex min-h-16 flex-col items-center justify-center gap-1 px-1 {% if actual == 'buscar_productos' %}text-on-surface font-bold{% else %}text-secondary{% endif %}"{% if actual == 'buscar_productos' %} aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">search</span><span class="text-[11px] leading-tight">{% t 'Buscar' %}</span>
+        </a>
+        {% url 'wishlist:lista' as url_lista_deseos %}
+        <a href="{{ url_lista_deseos }}" class="flex min-h-16 flex-col items-center justify-center gap-1 px-1 {% if actual == 'lista' %}text-on-surface font-bold{% else %}text-secondary{% endif %}"{% if actual == 'lista' %} aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">favorite</span><span class="text-[11px] leading-tight">{% t 'Deseos' %}</span>
+        </a>
+        {% url 'editar_perfil' as url_perfil %}
+        <a href="{{ url_perfil }}" class="flex min-h-16 flex-col items-center justify-center gap-1 px-1 {% if actual == 'editar_perfil' %}text-on-surface font-bold{% else %}text-secondary{% endif %}"{% if actual == 'editar_perfil' %} aria-current="page"{% endif %}>
+          <span class="material-symbols-outlined text-[22px]" aria-hidden="true">person</span><span class="text-[11px] leading-tight">{% t 'Perfil' %}</span>
+        </a>
+      </div>
+    </nav>
+    {% endwith %}
+  {% endif %}
+
   {% include "componentes/pie.html" %}
   {% endblock %}
 
   <button
     id="theme-toggle"
     type="button"
-    class="fixed bottom-5 right-5 z-[60] h-12 w-12 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/60 shadow-lg hover:bg-surface-container hover:border-on-surface/40 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors flex items-center justify-center"
+    class="fixed bottom-20 left-4 right-auto z-[60] h-12 w-12 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant/60 shadow-lg hover:bg-surface-container hover:border-on-surface/40 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors flex items-center justify-center md:bottom-5 md:left-auto md:right-5"
     aria-label="{% t 'Activar modo oscuro' %}"
     title="{% t 'Activar modo oscuro' %}"
     aria-pressed="false"

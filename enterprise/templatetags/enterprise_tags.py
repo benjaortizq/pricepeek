@@ -14,7 +14,9 @@ register = template.Library()
 def _formatear_numero(valor, decimales):
     texto = f"{valor:,.{decimales}f}"
     if (get_language() or "es").lower().startswith("es"):
-        return texto.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+        return (
+            texto.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+        )
     return texto
 
 
@@ -68,7 +70,9 @@ def json_pretty(value):
     if value in (None, ""):
         return ""
     try:
-        contenido = json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True)
+        contenido = json.dumps(
+            value, ensure_ascii=False, indent=2, sort_keys=True
+        )
     except (TypeError, ValueError):
         return escape(str(value))
     return mark_safe(escape(contenido))

@@ -1,3 +1,5 @@
+"""Modelos de datos de la aplicación reviews."""
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -7,7 +9,7 @@ from products.models import ProductVariants
 
 class Reviews(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(AccountsUser, models.DO_NOTHING, db_column='user')
+    user = models.ForeignKey(AccountsUser, models.DO_NOTHING, db_column="user")
     content = models.TextField()
     variant = models.ForeignKey(ProductVariants, models.DO_NOTHING)
     created_at = models.DateTimeField()
@@ -16,8 +18,8 @@ class Reviews(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'reviews'
-        unique_together = (('user', 'variant'),)
+        db_table = "reviews"
+        unique_together = (("user", "variant"),)
 
 
 class ReviewPhoto(models.Model):
@@ -40,7 +42,9 @@ class ReviewReport(models.Model):
     # Reviews es una tabla de Supabase (managed = False), por eso no es una llave foránea.
     review_id = models.PositiveBigIntegerField()
     reporter = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="review_reports"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="review_reports",
     )
     # Autor de la reseña, guardado aparte porque la reseña puede borrarse: así el administrador
     # sigue viendo cuántas reseñas de un cliente se eliminaron por incumplir las políticas (RF-42).
@@ -52,7 +56,9 @@ class ReviewReport(models.Model):
         related_name="reportes_recibidos",
     )
     reason = models.TextField()
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     resolved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -70,7 +76,8 @@ class ReviewReport(models.Model):
         constraints = [
             # Un cliente solo puede reportar una vez la misma reseña.
             models.UniqueConstraint(
-                fields=["review_id", "reporter"], name="un_reporte_por_cliente_y_resena"
+                fields=["review_id", "reporter"],
+                name="un_reporte_por_cliente_y_resena",
             ),
         ]
 
@@ -89,8 +96,14 @@ class ReviewDeletion(models.Model):
     class Policy(models.TextChoices):
         # Categorías de incumplimiento que pueden justificar eliminar una reseña.
         NOT_RELEVANT = "no_pertinente", "No es pertinente al producto"
-        DISRESPECTFUL = "irrespetuoso", "Irrespetuoso, ofensivo o discriminatorio"
-        NOT_LEGITIMATE = "no_legitima", "No se basa en una experiencia legítima"
+        DISRESPECTFUL = (
+            "irrespetuoso",
+            "Irrespetuoso, ofensivo o discriminatorio",
+        )
+        NOT_LEGITIMATE = (
+            "no_legitima",
+            "No se basa en una experiencia legítima",
+        )
         MISLEADING = "enganoso", "Engañoso"
         DEFAMATORY = "difamatorio", "Difamatorio"
         PRIVACY = "privacidad", "Invade la privacidad de otras personas"
@@ -99,7 +112,9 @@ class ReviewDeletion(models.Model):
         # Solo para las eliminaciones anteriores a este registro (migración 0004).
         UNCLASSIFIED = "sin_clasificar", "Sin clasificar"
 
-    SELECTABLE = Policy.choices[:-1]  # todas menos «Sin clasificar», que es la última
+    SELECTABLE = Policy.choices[
+        :-1
+    ]  # todas menos «Sin clasificar», que es la última
 
     # Reviews es una tabla de Supabase (managed = False), por eso no es una llave foránea.
     review_id = models.PositiveBigIntegerField("reseña", db_index=True)
@@ -121,14 +136,20 @@ class ReviewDeletion(models.Model):
         related_name="+",
     )
     deleted_at = models.DateTimeField("eliminada el", default=timezone.now)
-    policy = models.CharField("política incumplida", max_length=20, choices=Policy.choices)
+    policy = models.CharField(
+        "política incumplida", max_length=20, choices=Policy.choices
+    )
     reason = models.TextField("razón de la eliminación")
     product_name = models.CharField("producto", max_length=255, blank=True)
     variant_name = models.CharField("presentación", max_length=255, blank=True)
     content = models.TextField("texto de la reseña", blank=True)
     score = models.SmallIntegerField("calificación", null=True, blank=True)
-    reports = models.PositiveIntegerField("reportes pendientes que tenía", default=0)
-    author_suspended = models.BooleanField("se suspendió al autor", default=False)
+    reports = models.PositiveIntegerField(
+        "reportes pendientes que tenía", default=0
+    )
+    author_suspended = models.BooleanField(
+        "se suspendió al autor", default=False
+    )
 
     class Meta:
         db_table = "review_deletions"
@@ -137,4 +158,6 @@ class ReviewDeletion(models.Model):
         verbose_name_plural = "reseñas eliminadas"
 
     def __str__(self):
-        return f"Reseña {self.review_id} eliminada ({self.get_policy_display()})"
+        return (
+            f"Reseña {self.review_id} eliminada ({self.get_policy_display()})"
+        )

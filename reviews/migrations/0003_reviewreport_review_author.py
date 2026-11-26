@@ -1,3 +1,5 @@
+"""Migración de base de datos 0003_reviewreport_review_author para la aplicación reviews."""
+
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
@@ -25,7 +27,6 @@ def completar_autores(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("reviews", "0002_reviewreport"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

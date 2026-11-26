@@ -1,3 +1,5 @@
+"""Procesamiento de solicitudes mediante middleware de la aplicación accounts."""
+
 from django.shortcuts import redirect
 from django.urls import reverse
 
@@ -19,7 +21,11 @@ class PrivacyConsentMiddleware:
     @staticmethod
     def _must_accept_current_policy(request):
         user = getattr(request, "user", None)
-        if not user or not user.is_authenticated or user.role != User.Role.CLIENT:
+        if (
+            not user
+            or not user.is_authenticated
+            or user.role != User.Role.CLIENT
+        ):
             return False
 
         path = request.path_info

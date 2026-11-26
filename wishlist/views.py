@@ -1,3 +1,5 @@
+"""Vistas HTTP de la aplicación wishlist."""
+
 from django.contrib import messages
 from django.db import IntegrityError
 from django.http import HttpResponseNotAllowed
@@ -35,7 +37,10 @@ def lista_deseos(request):
             precio.final = round(precio.price * (1 - precio.discount))
             precio.tienda = precio.id_store.name.strip()
             actual = precios_por_variante_y_moneda.get(clave)
-            if actual is None or (precio.final, precio.tienda) < (actual.final, actual.tienda):
+            if actual is None or (precio.final, precio.tienda) < (
+                actual.final,
+                actual.tienda,
+            ):
                 precios_por_variante_y_moneda[clave] = precio
 
         imagenes = {}
@@ -51,7 +56,11 @@ def lista_deseos(request):
             )
 
     comparativas = totales_por_tienda(items) if items else []
-    return render(request, "wishlist/lista.html", {"items": items, "comparativas": comparativas})
+    return render(
+        request,
+        "wishlist/lista.html",
+        {"items": items, "comparativas": comparativas},
+    )
 
 
 @role_required("client")
@@ -60,22 +69,35 @@ def agregar_a_lista_deseos(request, pk):
         return HttpResponseNotAllowed(["POST"])
 
     producto = get_object_or_404(Products, pk=pk)
-    variante = ProductVariants.objects.filter(product_id=producto.pk).order_by("id").first()
+    variante = (
+        ProductVariants.objects.filter(product_id=producto.pk)
+        .order_by("id")
+        .first()
+    )
     if variante is not None:
         try:
-            _, creada = WishlistItem.objects.get_or_create(user=request.user, variant=variante)
+            _, creada = WishlistItem.objects.get_or_create(
+                user=request.user, variant=variante
+            )
         except IntegrityError:
             # La restricción única evita duplicados si llegan solicitudes simultáneas.
             creada = False
         if creada:
             messages.success(request, "Producto añadido a tu lista de deseos.")
         else:
-            messages.info(request, "Este producto ya está en tu lista de deseos.")
+            messages.info(
+                request, "Este producto ya está en tu lista de deseos."
+            )
     else:
-        messages.error(request, "No se pudo guardar este producto porque todavía no tiene una presentación disponible. Pruebe con otro producto o vuelva a intentarlo cuando tenga una variante.")
+        messages.error(
+            request,
+            "No se pudo guardar este producto porque todavía no tiene una presentación disponible. Pruebe con otro producto o vuelva a intentarlo cuando tenga una variante.",
+        )
 
     siguiente = request.POST.get("next", "")
-    if not url_has_allowed_host_and_scheme(siguiente, allowed_hosts={request.get_host()}):
+    if not url_has_allowed_host_and_scheme(
+        siguiente, allowed_hosts={request.get_host()}
+    ):
         siguiente = "buscar_productos"
     return redirect(siguiente)
 

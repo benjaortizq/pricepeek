@@ -17,7 +17,14 @@ from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    Flowable,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from core.translations import translate_text
 
@@ -181,7 +188,9 @@ def _formatear_cantidad(valor):
     decimales = 0 if monto == monto.to_integral_value() else 2
     texto = f"{monto:,.{decimales}f}"
     if (translation.get_language() or "es").lower().startswith("es"):
-        texto = texto.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+        texto = (
+            texto.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+        )
     return texto
 
 
@@ -204,7 +213,9 @@ class _MontoPDF(Flowable):
         else:
             self._simbolo_dibujado = self.simbolo
         self._ancho_simbolo = (
-            pdfmetrics.stringWidth(self._simbolo_dibujado, FUENTE_REGULAR, self.TAMANO)
+            pdfmetrics.stringWidth(
+                self._simbolo_dibujado, FUENTE_REGULAR, self.TAMANO
+            )
             if self._simbolo_dibujado
             else 0
         )
@@ -261,7 +272,8 @@ def _tabla_resumen(estadisticas, porcentajes, estilos):
     ]
 
     rotulos = [
-        Paragraph(escape(etiqueta), estilos["resumen_rotulo"]) for etiqueta in etiquetas
+        Paragraph(escape(etiqueta), estilos["resumen_rotulo"])
+        for etiqueta in etiquetas
     ]
     celdas_valor = []
     for valor, color in zip(valores, colores_valor):
@@ -315,7 +327,9 @@ def _tabla_sobre_mercado(precios, estilos):
         filas.append(
             [
                 Paragraph(escape(str(precio.gtin_id)), estilos["celda"]),
-                Paragraph(escape(str(precio.gtin.product.name)), estilos["celda"]),
+                Paragraph(
+                    escape(str(precio.gtin.product.name)), estilos["celda"]
+                ),
                 _MontoPDF(precio.final_price, precio.currency.symbol),
                 _MontoPDF(precio.competitor_price, precio.currency.symbol),
                 Paragraph(
@@ -360,7 +374,9 @@ def _tabla_desactualizados(precios, estilos):
         filas.append(
             [
                 Paragraph(escape(str(precio.gtin_id)), estilos["celda"]),
-                Paragraph(escape(str(precio.gtin.product.name)), estilos["celda"]),
+                Paragraph(
+                    escape(str(precio.gtin.product.name)), estilos["celda"]
+                ),
                 _MontoPDF(precio.final_price, precio.currency.symbol),
                 Paragraph(escape(fecha), estilos["celda"]),
                 Paragraph(
@@ -387,7 +403,12 @@ def _estilo_tabla_datos():
             ("BACKGROUND", (0, 0), (-1, 0), COLOR_ENCABEZADO),
             ("LINEBELOW", (0, 0), (-1, 0), 0.9, COLOR_ACENTO),
             ("LINEBELOW", (0, 1), (-1, -1), 0.3, COLOR_BORDE),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#FAF9F7")]),
+            (
+                "ROWBACKGROUNDS",
+                (0, 1),
+                (-1, -1),
+                [colors.white, colors.HexColor("#FAF9F7")],
+            ),
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ("TOPPADDING", (0, 0), (-1, -1), 5),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
@@ -460,13 +481,16 @@ def construir_historia(datos):
     """Construye el contenido Platypus del reporte con datos ya filtrados."""
     estilos = _estilos()
     historia = [
-        Paragraph(escape(_traducir("Reporte de competitividad")), estilos["titulo"]),
+        Paragraph(
+            escape(_traducir("Reporte de competitividad")), estilos["titulo"]
+        ),
         Paragraph(escape(_traducir("Resumen PDF")), estilos["seccion"]),
         _tabla_resumen(datos["stats"], datos["percentages"], estilos),
         Spacer(1, 4 * mm),
         _nota_explicativa(estilos),
         Paragraph(
-            escape(_traducir("Productos por encima del mercado")), estilos["seccion"]
+            escape(_traducir("Productos por encima del mercado")),
+            estilos["seccion"],
         ),
     ]
 
@@ -496,7 +520,11 @@ def construir_historia(datos):
     else:
         historia.append(
             Paragraph(
-                escape(_traducir("No hay productos sin cambios durante este período.")),
+                escape(
+                    _traducir(
+                        "No hay productos sin cambios durante este período."
+                    )
+                ),
                 estilos["vacio"],
             )
         )
@@ -526,7 +554,9 @@ class _CanvasNumerado(canvas.Canvas):
         self.saveState()
         self.setStrokeColor(COLOR_BORDE)
         self.setLineWidth(0.4)
-        self.line(MARGEN_HORIZONTAL, 13 * mm, A4[0] - MARGEN_HORIZONTAL, 13 * mm)
+        self.line(
+            MARGEN_HORIZONTAL, 13 * mm, A4[0] - MARGEN_HORIZONTAL, 13 * mm
+        )
         self.setFillColor(COLOR_SUAVE)
         self.setFont(FUENTE_REGULAR, 7.5)
         self.drawRightString(
@@ -562,7 +592,9 @@ def generar_pdf_empresa(store):
         pdf_canvas = _CanvasNumerado(*args, **kwargs)
         pdf_canvas.setTitle(_traducir("Reporte de competitividad"))
         pdf_canvas.setAuthor(_traducir("PricePeek Business"))
-        pdf_canvas.setSubject(f"{_traducir('Tienda asignada')}: {nombre_tienda}")
+        pdf_canvas.setSubject(
+            f"{_traducir('Tienda asignada')}: {nombre_tienda}"
+        )
         pdf_canvas.setKeywords(f"{nombre_tienda}; {fecha}")
         return pdf_canvas
 
@@ -572,7 +604,9 @@ def generar_pdf_empresa(store):
         derecha = A4[0] - doc.rightMargin
         pdf_canvas.setFillColor(COLOR_TEXTO)
         pdf_canvas.setFont(FUENTE_GRUESA, 13)
-        pdf_canvas.drawString(doc.leftMargin, y, _traducir("PricePeek Business"))
+        pdf_canvas.drawString(
+            doc.leftMargin, y, _traducir("PricePeek Business")
+        )
         pdf_canvas.setFont(FUENTE_GRUESA, 9)
         pdf_canvas.drawRightString(derecha, y, nombre_tienda)
         pdf_canvas.setFillColor(COLOR_SUAVE)

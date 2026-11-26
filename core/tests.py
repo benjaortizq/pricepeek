@@ -1,3 +1,5 @@
+"""Pruebas automatizadas de tests para la aplicación core."""
+
 from django.templatetags.static import static
 from django.test import SimpleTestCase
 from django.urls import reverse
@@ -9,11 +11,15 @@ from .translations import translate_text
 class SiteTranslationTests(SimpleTestCase):
     def test_translates_interface_text_to_english(self):
         with translation.override("en"):
-            self.assertEqual(translate_text("Activar modo oscuro"), "Enable dark mode")
+            self.assertEqual(
+                translate_text("Activar modo oscuro"), "Enable dark mode"
+            )
 
     def test_keeps_spanish_when_no_translation_exists(self):
         with translation.override("en"):
-            self.assertEqual(translate_text("Texto sin traducir"), "Texto sin traducir")
+            self.assertEqual(
+                translate_text("Texto sin traducir"), "Texto sin traducir"
+            )
 
     def test_formats_dynamic_values(self):
         with translation.override("en"):
@@ -22,7 +28,9 @@ class SiteTranslationTests(SimpleTestCase):
                 "Hello, Alex",
             )
 
-    def test_translates_a_dynamic_message_after_its_values_were_formatted(self):
+    def test_translates_a_dynamic_message_after_its_values_were_formatted(
+        self,
+    ):
         mensaje = "La cuenta de ana@example.com fue suspendida."
         with translation.override("en"):
             self.assertEqual(
@@ -63,7 +71,7 @@ class LanguageSelectorTests(SimpleTestCase):
         for asset in ("js/main.js", "js/tailwind.config.js", "css/base.css"):
             self.assertContains(
                 response,
-                f'{static(asset)}?v=20261123-theme',
+                f"{static(asset)}?v=20261123-theme",
             )
 
     def test_page_language_follows_language_cookie(self):

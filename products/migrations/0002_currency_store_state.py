@@ -1,3 +1,5 @@
+"""Migración de base de datos 0002_currency_store_state para la aplicación products."""
+
 from django.db import migrations, models
 
 
@@ -11,7 +13,12 @@ class Migration(migrations.Migration):
                 migrations.CreateModel(
                     name="Currencies",
                     fields=[
-                        ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                        (
+                            "id",
+                            models.BigAutoField(
+                                primary_key=True, serialize=False
+                            ),
+                        ),
                         ("name", models.CharField()),
                         ("symbol", models.CharField()),
                         ("created_at", models.DateTimeField()),
@@ -22,7 +29,12 @@ class Migration(migrations.Migration):
                 migrations.CreateModel(
                     name="Stores",
                     fields=[
-                        ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                        (
+                            "id",
+                            models.BigAutoField(
+                                primary_key=True, serialize=False
+                            ),
+                        ),
                         ("name", models.CharField()),
                         ("created_at", models.DateTimeField()),
                         ("updated_at", models.DateTimeField()),

@@ -28,7 +28,16 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from products.barcodes import validar_codigo_barras
-from products.models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
+from products.models import (
+    Brands,
+    Categories,
+    Currencies,
+    Prices,
+    ProductImages,
+    Products,
+    ProductVariants,
+    Stores,
+)
 
 from .actualizacion import formas_del_codigo
 from .categorias import categoria_para
@@ -43,12 +52,23 @@ Status = StoreProduct.Status
 CREABLES = (Status.NO_MATCH, Status.REJECTED)
 MOTIVO_CREADO = "creado en el catálogo con los datos de la tienda"
 # Marcas que en realidad dicen "sin marca" (Gollo usa "Commodity" para los genéricos).
-MARCAS_SIN_NOMBRE = {"", "commodity", "generico", "generica", "sinmarca", "varios", "otros", "otro"}
+MARCAS_SIN_NOMBRE = {
+    "",
+    "commodity",
+    "generico",
+    "generica",
+    "sinmarca",
+    "varios",
+    "otros",
+    "otro",
+}
 
 # Sugeridos por nombre que no se vinculan solos (se revisan en el admin).
 OTRO_CODIGO = "sugerido por nombre, pero con otro código de barras"
 EMPATE = "sugerido por nombre, empatado con otra página de la tienda"
-OTRA_SE_PARECE_MAS = "sugerido por nombre, pero otra página de la tienda se parece más"
+OTRA_SE_PARECE_MAS = (
+    "sugerido por nombre, pero otra página de la tienda se parece más"
+)
 EN_POCAS_TIENDAS = "en pocas tiendas"
 
 CREADO = "creado"
@@ -60,14 +80,16 @@ OMITIDO = "omitido"
 class Resultado:
     tipo: str  # CREADO, VINCULADO u OMITIDO
     motivo: str = ""  # por qué se omitió, o la categoría / el gtin
-    grupo: str = ""  # para el resumen: "sin código de barras", "sin categoría"...
+    grupo: str = (
+        ""  # para el resumen: "sin código de barras", "sin categoría"...
+    )
     tipo_en_tienda: str = ""  # el tipo de producto que no tiene categoría
     marca_nueva: bool = False
     por_nombre: bool = False  # vinculado por el parecido del nombre, no por el código de barras
 
 
 def _clave(texto):
-    """"Black + Decker", "black-decker" y "BLACK+DECKER" -> "blackdecker"."""
+    """ "Black + Decker", "black-decker" y "BLACK+DECKER" -> "blackdecker"."""
     return normalizar(texto).replace(" ", "").replace(".", "")
 
 
@@ -99,7 +121,9 @@ class Catalogo:
     def contar_tiendas(self):
         """Anota en qué tiendas aparece cada código de barras (en cualquier estado), para --min-tiendas."""
         self.tiendas = {}
-        for tienda, codigos in StoreProduct.objects.values_list("store_name", "barcodes"):
+        for tienda, codigos in StoreProduct.objects.values_list(
+            "store_name", "barcodes"
+        ):
             for codigo in codigos or ():
                 if validar_codigo_barras(codigo):
                     for forma in formas_del_codigo(codigo):
@@ -109,7 +133,13 @@ class Catalogo:
         """Las tiendas que publican alguno de esos códigos (hay que llamar antes a contar_tiendas)."""
         if self.tiendas is None:
             self.contar_tiendas()
-        return set().union(*(self.tiendas.get(forma, set()) for c in codigos for forma in formas_del_codigo(c)))
+        return set().union(
+            *(
+                self.tiendas.get(forma, set())
+                for c in codigos
+                for forma in formas_del_codigo(c)
+            )
+        )
 
     def anotar_marca(self, marca):
         self.marcas.setdefault(_clave(marca.name), marca)
@@ -136,9 +166,13 @@ class Catalogo:
         """
         puntajes = {}
         for producto in productos:
-            if sugerido_por_nombre(producto, desde) and not _codigos_validos(producto):
+            if sugerido_por_nombre(producto, desde) and not _codigos_validos(
+                producto
+            ):
                 clave = (producto.store_name, producto.suggested_gtin)
-                puntajes.setdefault(clave, []).append((producto.score, producto.url))
+                puntajes.setdefault(clave, []).append(
+                    (producto.score, producto.url)
+                )
         for clave, opciones in puntajes.items():
             opciones.sort(reverse=True)
             empate = len(opciones) > 1 and opciones[0][0] == opciones[1][0]
@@ -154,10 +188,21 @@ class Catalogo:
         while slug in self.slugs:
             slug, numero = f"{base}-{numero}", numero + 1
         ahora = timezone.now()
-        return Brands(name=nombre.strip(), slug=slug, created_at=ahora, updated_at=ahora), True
+        return Brands(
+            name=nombre.strip(), slug=slug, created_at=ahora, updated_at=ahora
+        ), True
 
 
-TABLAS_DEL_CATALOGO = (Brands, Categories, Currencies, Stores, Products, ProductVariants, ProductImages, Prices)
+TABLAS_DEL_CATALOGO = (
+    Brands,
+    Categories,
+    Currencies,
+    Stores,
+    Products,
+    ProductVariants,
+    ProductImages,
+    Prices,
+)
 
 
 def secuencias_atrasadas(modelos=TABLAS_DEL_CATALOGO):
@@ -195,7 +240,10 @@ def arreglar_secuencias(atrasadas):
 
 
 def sugerido_por_codigo(producto):
-    return producto.status == Status.SUGGESTED and producto.match_reason == MOTIVO_MISMO_CODIGO
+    return (
+        producto.status == Status.SUGGESTED
+        and producto.match_reason == MOTIVO_MISMO_CODIGO
+    )
 
 
 def sugerido_por_nombre(producto, desde):
@@ -212,22 +260,38 @@ def _codigos_validos(producto):
     return [c for c in producto.barcodes if validar_codigo_barras(c)]
 
 
-def crear_en_catalogo(producto, catalogo, guardar=True, confirmar_desde=None, min_tiendas=1):
+def crear_en_catalogo(
+    producto, catalogo, guardar=True, confirmar_desde=None, min_tiendas=1
+):
     """Pasa un producto de tienda al catálogo (o lo vincula, si su código ya está) y dice qué pasó.
 
     Con confirmar_desde, también vincula los sugeridos por nombre con al menos ese puntaje (para
     los empates, antes hay que llamar a catalogo.anotar_sugerencias). Con min_tiendas, solo crea
     los que tienen el código de barras en al menos esa cantidad de tiendas distintas.
     """
-    por_nombre = confirmar_desde is not None and sugerido_por_nombre(producto, confirmar_desde)
-    if producto.status not in CREABLES and not sugerido_por_codigo(producto) and not por_nombre:
+    por_nombre = confirmar_desde is not None and sugerido_por_nombre(
+        producto, confirmar_desde
+    )
+    if (
+        producto.status not in CREABLES
+        and not sugerido_por_codigo(producto)
+        and not por_nombre
+    ):
         estado = producto.get_status_display().lower()
-        return Resultado(OMITIDO, f"está como «{estado}»: se revisa a mano en el admin", "ya revisado o con sugerencia")
+        return Resultado(
+            OMITIDO,
+            f"está como «{estado}»: se revisa a mano en el admin",
+            "ya revisado o con sugerencia",
+        )
     codigos = _codigos_validos(producto)
     if por_nombre and not codigos:
         return _confirmar_por_nombre(producto, catalogo, guardar)
     if not codigos:
-        return Resultado(OMITIDO, "no tiene un código de barras válido", "sin código de barras")
+        return Resultado(
+            OMITIDO,
+            "no tiene un código de barras válido",
+            "sin código de barras",
+        )
 
     existente = catalogo.variante_con_codigo(codigos)
     if existente is not None:
@@ -245,17 +309,32 @@ def crear_en_catalogo(producto, catalogo, guardar=True, confirmar_desde=None, mi
     nombre_categoria = categoria_para(producto.category, producto.name)
     if nombre_categoria is None:
         tipo = producto.category or producto.name
-        return Resultado(OMITIDO, f"no hay categoría para «{tipo}»", "sin categoría", tipo_en_tienda=tipo)
+        return Resultado(
+            OMITIDO,
+            f"no hay categoría para «{tipo}»",
+            "sin categoría",
+            tipo_en_tienda=tipo,
+        )
     categoria = catalogo.categorias.get(_clave(nombre_categoria))
     if categoria is None:
-        return Resultado(OMITIDO, f"no existe la categoría «{nombre_categoria}» en el catálogo", "sin categoría")
+        return Resultado(
+            OMITIDO,
+            f"no existe la categoría «{nombre_categoria}» en el catálogo",
+            "sin categoría",
+        )
     if _clave(producto.brand) in MARCAS_SIN_NOMBRE:
-        return Resultado(OMITIDO, f"no tiene marca («{producto.brand}»)", "sin marca")
+        return Resultado(
+            OMITIDO, f"no tiene marca («{producto.brand}»)", "sin marca"
+        )
     if min_tiendas > 1:
         tiendas = catalogo.tiendas_con_codigo(codigos)
         if len(tiendas) < min_tiendas:
             donde = ", ".join(sorted(tiendas))
-            return Resultado(OMITIDO, f"solo está en {len(tiendas)} tienda(s) ({donde}): se piden {min_tiendas}", EN_POCAS_TIENDAS)
+            return Resultado(
+                OMITIDO,
+                f"solo está en {len(tiendas)} tienda(s) ({donde}): se piden {min_tiendas}",
+                EN_POCAS_TIENDAS,
+            )
 
     marca, marca_nueva = catalogo.marca(producto.brand)
     gtin = gtin_del_catalogo(codigos[0])
@@ -276,7 +355,13 @@ def _crear(producto, gtin, marca, marca_nueva, categoria):
     fechas = {"created_at": ahora, "updated_at": ahora}
     if marca_nueva:
         marca.save()
-    nuevo = Products.objects.create(name=producto.name, description=None, brand=marca, category=categoria, **fechas)
+    nuevo = Products.objects.create(
+        name=producto.name,
+        description=None,
+        brand=marca,
+        category=categoria,
+        **fechas,
+    )
     variante = ProductVariants.objects.create(
         product=nuevo,
         gtin=gtin,
@@ -285,34 +370,81 @@ def _crear(producto, gtin, marca, marca_nueva, categoria):
         **fechas,
     )
     if producto.image_url:
-        ProductImages.objects.create(variant=variante, image_url=producto.image_url, is_main=True, number_image=1, **fechas)
-    producto.suggested_gtin, producto.score, producto.match_reason = gtin, 100, MOTIVO_CREADO
-    producto.save(update_fields=["suggested_gtin", "score", "match_reason", "updated_at"])
+        ProductImages.objects.create(
+            variant=variante,
+            image_url=producto.image_url,
+            is_main=True,
+            number_image=1,
+            **fechas,
+        )
+    producto.suggested_gtin, producto.score, producto.match_reason = (
+        gtin,
+        100,
+        MOTIVO_CREADO,
+    )
+    producto.save(
+        update_fields=["suggested_gtin", "score", "match_reason", "updated_at"]
+    )
     confirmar(producto)  # crea su fila en prices y lo deja como vinculado
 
 
 def _confirmar_por_nombre(producto, catalogo, guardar):
-    elegida = catalogo.por_nombre.get((producto.store_name, producto.suggested_gtin), producto.url)
+    elegida = catalogo.por_nombre.get(
+        (producto.store_name, producto.suggested_gtin), producto.url
+    )
     if elegida is None:
-        return Resultado(OMITIDO, "otra página de la tienda se parece igual a esa variante: no se sabe cuál es", EMPATE)
+        return Resultado(
+            OMITIDO,
+            "otra página de la tienda se parece igual a esa variante: no se sabe cuál es",
+            EMPATE,
+        )
     if elegida != producto.url:
-        return Resultado(OMITIDO, f"otra página de la tienda se parece más a esa variante: {elegida}", OTRA_SE_PARECE_MAS)
-    return _vincular(producto, producto.suggested_gtin, catalogo, guardar, por_nombre=True)
+        return Resultado(
+            OMITIDO,
+            f"otra página de la tienda se parece más a esa variante: {elegida}",
+            OTRA_SE_PARECE_MAS,
+        )
+    return _vincular(
+        producto, producto.suggested_gtin, catalogo, guardar, por_nombre=True
+    )
 
 
 def _vincular(producto, gtin, catalogo, guardar, por_nombre=False):
     if producto.status == Status.REJECTED and producto.suggested_gtin == gtin:
-        return Resultado(OMITIDO, "alguien rechazó a mano esa variante del catálogo", "rechazado a mano")
+        return Resultado(
+            OMITIDO,
+            "alguien rechazó a mano esa variante del catálogo",
+            "rechazado a mano",
+        )
     otra = catalogo.paginas.get((producto.store_name, gtin))
     if otra and otra != producto.url:
-        motivo = "ya quedó vinculada a esa variante" if por_nombre else "tiene el mismo código"
-        return Resultado(OMITIDO, f"otra página de la tienda {motivo}: {otra}", "código repetido en la tienda")
+        motivo = (
+            "ya quedó vinculada a esa variante"
+            if por_nombre
+            else "tiene el mismo código"
+        )
+        return Resultado(
+            OMITIDO,
+            f"otra página de la tienda {motivo}: {otra}",
+            "código repetido en la tienda",
+        )
     if guardar:
         try:
             with transaction.atomic():
                 if not por_nombre:  # el sugerido por nombre ya tiene su variante, puntaje y motivo
-                    producto.suggested_gtin, producto.score, producto.match_reason = gtin, 100, MOTIVO_MISMO_CODIGO
-                    producto.save(update_fields=["suggested_gtin", "score", "match_reason", "updated_at"])
+                    (
+                        producto.suggested_gtin,
+                        producto.score,
+                        producto.match_reason,
+                    ) = gtin, 100, MOTIVO_MISMO_CODIGO
+                    producto.save(
+                        update_fields=[
+                            "suggested_gtin",
+                            "score",
+                            "match_reason",
+                            "updated_at",
+                        ]
+                    )
                 confirmar(producto)
         except NoSePuedeVincular as error:
             return Resultado(OMITIDO, str(error), "no se pudo vincular")

@@ -1,3 +1,5 @@
+"""Pruebas automatizadas de test_alertas para la aplicación wishlist."""
+
 from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
@@ -25,7 +27,15 @@ from .models import WishlistItem
 
 
 class AlertasDeBajaDePrecioTests(TestCase):
-    modelos_sin_migracion = [Brands, Categories, Currencies, Stores, Products, ProductVariants, Prices]
+    modelos_sin_migracion = [
+        Brands,
+        Categories,
+        Currencies,
+        Stores,
+        Products,
+        ProductVariants,
+        Prices,
+    ]
 
     @classmethod
     def setUpClass(cls):
@@ -44,29 +54,67 @@ class AlertasDeBajaDePrecioTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         ahora = timezone.now()
-        cls.colones = Currencies.objects.create(id=1, name="Colón", symbol="₡", created_at=ahora, updated_at=ahora)
-        cls.dolares = Currencies.objects.create(id=2, name="Dólar", symbol="$", created_at=ahora, updated_at=ahora)
-        cls.automercado = Stores.objects.create(name="Automercado", created_at=ahora, updated_at=ahora)
-        cls.walmart = Stores.objects.create(name="Walmart", created_at=ahora, updated_at=ahora)
-        marca = Brands.objects.create(name="Dos Pinos", slug="dos-pinos", created_at=ahora, updated_at=ahora)
-        categoria = Categories.objects.create(name="Lácteos", created_at=ahora, updated_at=ahora)
+        cls.colones = Currencies.objects.create(
+            id=1, name="Colón", symbol="₡", created_at=ahora, updated_at=ahora
+        )
+        cls.dolares = Currencies.objects.create(
+            id=2, name="Dólar", symbol="$", created_at=ahora, updated_at=ahora
+        )
+        cls.automercado = Stores.objects.create(
+            name="Automercado", created_at=ahora, updated_at=ahora
+        )
+        cls.walmart = Stores.objects.create(
+            name="Walmart", created_at=ahora, updated_at=ahora
+        )
+        marca = Brands.objects.create(
+            name="Dos Pinos",
+            slug="dos-pinos",
+            created_at=ahora,
+            updated_at=ahora,
+        )
+        categoria = Categories.objects.create(
+            name="Lácteos", created_at=ahora, updated_at=ahora
+        )
         cls.producto = Products.objects.create(
-            name="Leche entera 1L", brand=marca, category=categoria, created_at=ahora, updated_at=ahora
+            name="Leche entera 1L",
+            brand=marca,
+            category=categoria,
+            created_at=ahora,
+            updated_at=ahora,
         )
         cls.variante = ProductVariants.objects.create(
-            product=cls.producto, gtin="4006381333931", name="Leche", created_at=ahora, updated_at=ahora
+            product=cls.producto,
+            gtin="4006381333931",
+            name="Leche",
+            created_at=ahora,
+            updated_at=ahora,
         )
-        cls.cliente = User.objects.create_user(email="ana@example.com", password="Clave2026segura", first_name="Ana")
+        cls.cliente = User.objects.create_user(
+            email="ana@example.com",
+            password="Clave2026segura",
+            first_name="Ana",
+        )
 
     def setUp(self):
         self.item = self.guardar_en_la_lista(self.cliente, baseline=2000)
 
     def guardar_en_la_lista(self, cliente, variante=None, baseline=None):
         return WishlistItem.objects.create(
-            user=cliente, variant=variante or self.variante, currency=self.colones, baseline_price=baseline
+            user=cliente,
+            variant=variante or self.variante,
+            currency=self.colones,
+            baseline_price=baseline,
         )
 
-    def poner_precio(self, tienda, precio, descuento="0.00", disponible=True, moneda=None, variante=None):
+    def poner_precio(
+        self,
+        tienda,
+        precio,
+        descuento="0.00",
+        disponible=True,
+        moneda=None,
+        variante=None,
+    ):
         ahora = timezone.now()
         variante = variante or self.variante
         Prices.objects.update_or_create(
@@ -100,9 +148,19 @@ class AlertasDeBajaDePrecioTests(TestCase):
         self.assertIn("₡2.000", correo.body)
         self.assertIn("₡1.500", correo.body)
         self.assertIn("Automercado", correo.body)
-        self.assertIn(reverse("detalle_producto", kwargs={"pk": self.producto.pk}), correo.body)
+        self.assertIn(
+            reverse("detalle_producto", kwargs={"pk": self.producto.pk}),
+            correo.body,
+        )
         self.assertIn(reverse("editar_perfil"), correo.body)
-        self.assertEqual((resultado.correos_enviados, resultado.productos_con_baja, resultado.errores), (1, 1, 0))
+        self.assertEqual(
+            (
+                resultado.correos_enviados,
+                resultado.productos_con_baja,
+                resultado.errores,
+            ),
+            (1, 1, 0),
+        )
 
     def test_registra_el_nuevo_precio_y_el_aviso(self):
         self.poner_precio(self.automercado, 1500)
@@ -123,13 +181,17 @@ class AlertasDeBajaDePrecioTests(TestCase):
         revisar_alertas_de_baja_de_precio()
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_si_el_precio_sube_no_avisa_y_la_siguiente_baja_se_compara_con_el_ultimo_precio(self):
+    def test_si_el_precio_sube_no_avisa_y_la_siguiente_baja_se_compara_con_el_ultimo_precio(
+        self,
+    ):
         self.poner_precio(self.automercado, 2400)
         revisar_alertas_de_baja_de_precio()
         self.assertEqual(len(mail.outbox), 0)
         self.assertEqual(self.baseline(), 2400)
 
-        self.poner_precio(self.automercado, 2200)  # es más que el 2000 original, pero bajó
+        self.poner_precio(
+            self.automercado, 2200
+        )  # es más que el 2000 original, pero bajó
         revisar_alertas_de_baja_de_precio()
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn("₡2.400", mail.outbox[0].body)
@@ -144,7 +206,9 @@ class AlertasDeBajaDePrecioTests(TestCase):
         self.assertEqual(self.baseline(), 1800)
 
     def test_usa_el_precio_final_con_descuento_y_la_tienda_mas_barata(self):
-        self.poner_precio(self.automercado, 2000, descuento="0.25")  # 1.500 finales
+        self.poner_precio(
+            self.automercado, 2000, descuento="0.25"
+        )  # 1.500 finales
         self.poner_precio(self.walmart, 1900)
         revisar_alertas_de_baja_de_precio()
         self.assertIn("₡1.500 en Automercado", mail.outbox[0].body)
@@ -172,7 +236,9 @@ class AlertasDeBajaDePrecioTests(TestCase):
 
     def test_respeta_las_alertas_desactivadas_en_el_producto(self):
         self.poner_precio(self.automercado, 1500)
-        WishlistItem.objects.filter(pk=self.item.pk).update(alert_enabled=False)
+        WishlistItem.objects.filter(pk=self.item.pk).update(
+            alert_enabled=False
+        )
         revisar_alertas_de_baja_de_precio()
         self.assertEqual(len(mail.outbox), 0)
 
@@ -182,12 +248,20 @@ class AlertasDeBajaDePrecioTests(TestCase):
         revisar_alertas_de_baja_de_precio()
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_un_solo_correo_por_cliente_con_todos_sus_productos_que_bajaron(self):
+    def test_un_solo_correo_por_cliente_con_todos_sus_productos_que_bajaron(
+        self,
+    ):
         ahora = timezone.now()
         otra = ProductVariants.objects.create(
-            product=self.producto, gtin="036000291452", name="Leche light", created_at=ahora, updated_at=ahora
+            product=self.producto,
+            gtin="036000291452",
+            name="Leche light",
+            created_at=ahora,
+            updated_at=ahora,
         )
-        otro_item = self.guardar_en_la_lista(self.cliente, variante=otra, baseline=1000)
+        otro_item = self.guardar_en_la_lista(
+            self.cliente, variante=otra, baseline=1000
+        )
         self.poner_precio(self.automercado, 1500)
         self.poner_precio(self.walmart, 700, variante=otra)
         resultado = revisar_alertas_de_baja_de_precio()
@@ -195,24 +269,37 @@ class AlertasDeBajaDePrecioTests(TestCase):
         self.assertIn("Bajó el precio de 2 productos", mail.outbox[0].subject)
         self.assertIn("₡1.500", mail.outbox[0].body)
         self.assertIn("₡700", mail.outbox[0].body)
-        self.assertEqual((resultado.correos_enviados, resultado.productos_con_baja), (1, 2))
+        self.assertEqual(
+            (resultado.correos_enviados, resultado.productos_con_baja), (1, 2)
+        )
         otro_item.refresh_from_db()
         self.assertEqual(otro_item.baseline_price, 700)
 
-    def test_si_falla_el_envio_no_se_pierde_la_baja_ni_se_detiene_a_los_demas(self):
-        luis = User.objects.create_user(email="luis@example.com", password="Clave2026segura")
+    def test_si_falla_el_envio_no_se_pierde_la_baja_ni_se_detiene_a_los_demas(
+        self,
+    ):
+        luis = User.objects.create_user(
+            email="luis@example.com", password="Clave2026segura"
+        )
         item_luis = self.guardar_en_la_lista(luis, baseline=2000)
         self.poner_precio(self.automercado, 1500)
 
-        with patch("wishlist.alertas.send_mail", side_effect=[Exception("SMTP caído"), 1]) as enviar:
+        with patch(
+            "wishlist.alertas.send_mail",
+            side_effect=[Exception("SMTP caído"), 1],
+        ) as enviar:
             with self.assertLogs("wishlist.alertas", level="ERROR"):
                 resultado = revisar_alertas_de_baja_de_precio()
 
         self.assertEqual(enviar.call_count, 2)
-        self.assertEqual((resultado.errores, resultado.correos_enviados), (1, 1))
+        self.assertEqual(
+            (resultado.errores, resultado.correos_enviados), (1, 1)
+        )
         self.item.refresh_from_db()
         item_luis.refresh_from_db()
-        self.assertEqual(self.item.baseline_price, 2000)  # ana: se reintenta en la próxima revisión
+        self.assertEqual(
+            self.item.baseline_price, 2000
+        )  # ana: se reintenta en la próxima revisión
         self.assertEqual(item_luis.baseline_price, 1500)  # luis: sí se avisó
 
     def test_comando_de_la_revision_periodica(self):

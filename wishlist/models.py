@@ -1,3 +1,5 @@
+"""Modelos de datos de la aplicación wishlist."""
+
 from django.conf import settings
 from django.db import models
 

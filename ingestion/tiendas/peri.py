@@ -22,13 +22,20 @@ import re
 
 from products.barcodes import validar_codigo_barras
 
-from ..scrapers import ErrorDescarga, ErrorExtraccion, Oferta, PrecioNoEncontrado
+from ..scrapers import (
+    ErrorDescarga,
+    ErrorExtraccion,
+    Oferta,
+    PrecioNoEncontrado,
+)
 from ..scrapers.base import a_colones
 from .base import Ficha, ruta_de_busqueda
 
 DOMINIO = "www.peridomicilio.com"
 INICIO = f"https://{DOMINIO}/"
-POR_PAGINA = 50  # los productos que trae desde el servidor la página de una categoría
+POR_PAGINA = (
+    50  # los productos que trae desde el servidor la página de una categoría
+)
 
 # Next.js manda los datos de la página en bloques <script>self.__next_f.push([1,"…"])</script>.
 _BLOQUE_NEXT = re.compile(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)')
@@ -52,10 +59,14 @@ def _valores_despues_de(texto, clave):
 
 def arbol_de_categorias(html_de_inicio):
     """El árbol de categorías de la página de inicio: las de primer nivel, con sus subCategories."""
-    for arbol in _valores_despues_de(datos_de_next(html_de_inicio), '"categoryTree":'):
+    for arbol in _valores_despues_de(
+        datos_de_next(html_de_inicio), '"categoryTree":'
+    ):
         if isinstance(arbol, list) and arbol:
             return arbol
-    raise PrecioNoEncontrado("La página de inicio no trae el árbol de categorías (categoryTree).")
+    raise PrecioNoEncontrado(
+        "La página de inicio no trae el árbol de categorías (categoryTree)."
+    )
 
 
 def recorrer(arbol):
@@ -68,8 +79,10 @@ def recorrer(arbol):
 
 
 def ruta_de_la_categoria(categoria):
-    """"/Panadería/Galletas" -> "panaderia/galletas": como sale en su URL, sin los códigos (F2/C15)."""
-    return ruta_de_busqueda(categoria.get("categoryNamesPath") or "") or ruta_de_busqueda(categoria["slug"])
+    """ "/Panadería/Galletas" -> "panaderia/galletas": como sale en su URL, sin los códigos (F2/C15)."""
+    return ruta_de_busqueda(
+        categoria.get("categoryNamesPath") or ""
+    ) or ruta_de_busqueda(categoria["slug"])
 
 
 def url_de_la_categoria(categoria):
@@ -82,13 +95,15 @@ def productos_de_la_pagina(html):
     productos = [
         producto
         for producto in _valores_despues_de(texto, '"product":')
-        if isinstance(producto, dict) and producto.get("__typename") == "CatalogProductModel"
+        if isinstance(producto, dict)
+        and producto.get("__typename") == "CatalogProductModel"
     ]
     total = next(
         (
             paginacion["total"].get("value")
             for paginacion in _valores_despues_de(texto, '"pagination":')
-            if isinstance(paginacion, dict) and isinstance(paginacion.get("total"), dict)
+            if isinstance(paginacion, dict)
+            and isinstance(paginacion.get("total"), dict)
         ),
         None,
     )
@@ -111,7 +126,11 @@ def precio_que_se_cobra(producto):
         and promocion.get("isActive")
         and (promocion.get("benefit") or {}).get("type") == "unitPrice"
     ]
-    especiales = [precio for precio in especiales if precio is not None and (normal is None or precio < normal)]
+    especiales = [
+        precio
+        for precio in especiales
+        if precio is not None and (normal is None or precio < normal)
+    ]
     return min(especiales) if especiales else normal
 
 
@@ -139,7 +158,11 @@ def categoria_del_producto(producto):
     ]
     if not rutas:
         return ""
-    return " > ".join(parte for parte in max(rutas, key=lambda ruta: ruta.count("/")).split("/") if parte)
+    return " > ".join(
+        parte
+        for parte in max(rutas, key=lambda ruta: ruta.count("/")).split("/")
+        if parte
+    )
 
 
 def ficha_del_producto(url, producto):
@@ -152,7 +175,9 @@ def ficha_del_producto(url, producto):
     return Ficha(
         url=url,
         nombre=" ".join(str(producto.get("name") or "").split()),
-        oferta=Oferta(precio, precio, disponible, validos),  # un código inválido no sirve para comparar (RF-38)
+        oferta=Oferta(
+            precio, precio, disponible, validos
+        ),  # un código inválido no sirve para comparar (RF-38)
         sku=str(producto.get("sku") or ""),
         marca=str(producto.get("brand") or "").strip(),
         categoria=categoria_del_producto(producto),
@@ -175,26 +200,45 @@ class TiendaPeri:
         elegidas = []
         for pedida in categorias:
             ruta = ruta_de_busqueda(pedida)
-            categoria = next((c for c in todas if ruta in (ruta_de_la_categoria(c), ruta_de_busqueda(c["slug"]))), None)
+            categoria = next(
+                (
+                    c
+                    for c in todas
+                    if ruta
+                    in (ruta_de_la_categoria(c), ruta_de_busqueda(c["slug"]))
+                ),
+                None,
+            )
             if categoria is None:
-                avisar(f"{ruta}: no existe en Peri. Es la ruta de su URL sin los códigos, por ejemplo panaderia/galletas")
+                avisar(
+                    f"{ruta}: no existe en Peri. Es la ruta de su URL sin los códigos, por ejemplo panaderia/galletas"
+                )
                 continue
-            elegidas += [categoria, *recorrer(categoria.get("subCategories") or [])]
+            elegidas += [
+                categoria,
+                *recorrer(categoria.get("subCategories") or []),
+            ]
         return elegidas
 
     def productos_de_categorias(self, http, categorias, avisar=None):
         """{URL de la página: producto} de esas categorías ("panaderia", "panaderia/galletas"), o de todas."""
         avisar = avisar or (lambda texto: None)
         todas = list(recorrer(arbol_de_categorias(http.texto(INICIO))))
-        elegidas = self._elegir(todas, categorias, avisar) if categorias else todas
-        elegidas = list({categoria["slug"]: categoria for categoria in elegidas}.values())  # sin repetir
+        elegidas = (
+            self._elegir(todas, categorias, avisar) if categorias else todas
+        )
+        elegidas = list(
+            {categoria["slug"]: categoria for categoria in elegidas}.values()
+        )  # sin repetir
 
         productos = {}
         incompletas = 0
         for categoria in elegidas:
             ruta = ruta_de_la_categoria(categoria)
             try:
-                de_la_pagina, total = productos_de_la_pagina(http.texto(url_de_la_categoria(categoria)))
+                de_la_pagina, total = productos_de_la_pagina(
+                    http.texto(url_de_la_categoria(categoria))
+                )
             except ErrorExtraccion as error:
                 if isinstance(error, ErrorDescarga) and error.es_rechazo:
                     raise  # si la tienda nos rechaza, seguir pidiendo no lo arregla
@@ -207,7 +251,9 @@ class TiendaPeri:
             nuevos = len(productos) - antes
             if total > len(de_la_pagina):
                 incompletas += 1
-                avisar(f"{ruta}: {nuevos} productos nuevos (tiene {total}; su página solo muestra {len(de_la_pagina)})")
+                avisar(
+                    f"{ruta}: {nuevos} productos nuevos (tiene {total}; su página solo muestra {len(de_la_pagina)})"
+                )
             else:
                 avisar(f"{ruta}: {nuevos} productos nuevos")
         if incompletas:

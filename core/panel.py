@@ -13,7 +13,17 @@ def plural(cantidad, singular, plural_):
     return f"{cantidad} {singular if cantidad == 1 else plural_}"
 
 
-def indicador(etiqueta, valor, unidad="", insignia="", tono="", icono="", pie_izq="", pie_der="", destacada=False):
+def indicador(
+    etiqueta,
+    valor,
+    unidad="",
+    insignia="",
+    tono="",
+    icono="",
+    pie_izq="",
+    pie_der="",
+    destacada=False,
+):
     """Una tarjeta de templates/panel/kpi.html. tono de la insignia: alerta, bien, marca o neutro."""
     return {
         "etiqueta": etiqueta,
@@ -36,7 +46,9 @@ def pestanas(url, parametro, opciones, actual, conservar=None):
     """
     resultado = []
     for valor, texto, cantidad in opciones:
-        consulta = {clave: dato for clave, dato in (conservar or {}).items() if dato}
+        consulta = {
+            clave: dato for clave, dato in (conservar or {}).items() if dato
+        }
         if valor:
             consulta[parametro] = valor
         resultado.append(
@@ -52,7 +64,9 @@ def pestanas(url, parametro, opciones, actual, conservar=None):
 
 def inicio_de_hoy():
     """Las 00:00 de hoy en la hora de Costa Rica."""
-    return timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+    return timezone.localtime().replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
 
 
 def inicio_del_mes():

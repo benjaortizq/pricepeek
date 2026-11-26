@@ -1,3 +1,5 @@
+"""Formularios y validaciones de entrada de la aplicación accounts."""
+
 from django import forms
 from django.contrib.auth.forms import (
     AuthenticationForm,
@@ -29,7 +31,9 @@ class IniciarSesionForm(AuthenticationForm):
         except forms.ValidationError as error:
             # Django rechaza las cuentas inactivas como si la contraseña fuera incorrecta.
             if error.code == "invalid_login" and self.es_cuenta_suspendida():
-                raise forms.ValidationError(self.error_messages["inactive"], code="inactive") from None
+                raise forms.ValidationError(
+                    self.error_messages["inactive"], code="inactive"
+                ) from None
             raise
 
     def es_cuenta_suspendida(self):
@@ -37,7 +41,9 @@ class IniciarSesionForm(AuthenticationForm):
         usuario = User.objects.filter(
             email=self.cleaned_data.get("username"), is_active=False
         ).first()
-        return usuario is not None and usuario.check_password(self.cleaned_data.get("password"))
+        return usuario is not None and usuario.check_password(
+            self.cleaned_data.get("password")
+        )
 
 
 class SuspenderClienteForm(forms.Form):
@@ -50,7 +56,9 @@ class SuspenderClienteForm(forms.Form):
 
 
 class RegistroClienteForm(UserCreationForm):
-    first_name = forms.CharField(label=translate_text_lazy("Nombre"), max_length=150)
+    first_name = forms.CharField(
+        label=translate_text_lazy("Nombre"), max_length=150
+    )
     email = forms.EmailField(label=translate_text_lazy("Correo electrónico"))
     accept_privacy = forms.BooleanField(
         required=True,
@@ -67,7 +75,9 @@ class RegistroClienteForm(UserCreationForm):
     def clean_email(self):
         email = self.cleaned_data["email"].lower()
         if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Ya existe una cuenta con este correo electrónico.")
+            raise forms.ValidationError(
+                "Ya existe una cuenta con este correo electrónico."
+            )
         return email
 
     def save(self, commit=True):
@@ -115,7 +125,9 @@ class EliminarCuentaForm(forms.Form):
     def clean_password(self):
         password = self.cleaned_data["password"]
         if not self.user.check_password(password):
-            raise forms.ValidationError("La contraseña ingresada no es correcta.")
+            raise forms.ValidationError(
+                "La contraseña ingresada no es correcta."
+            )
         return password
 
 
@@ -127,12 +139,16 @@ class CodigoCambioContrasenaForm(forms.Form):
     codigo = forms.CharField(
         label=translate_text_lazy("Código de verificación"),
         max_length=6,
-        widget=forms.TextInput(attrs={"autocomplete": "one-time-code", "inputmode": "numeric"}),
+        widget=forms.TextInput(
+            attrs={"autocomplete": "one-time-code", "inputmode": "numeric"}
+        ),
     )
 
 
 class EditarNombreForm(forms.ModelForm):
-    first_name = forms.CharField(label=translate_text_lazy("Nombre"), max_length=150)
+    first_name = forms.CharField(
+        label=translate_text_lazy("Nombre"), max_length=150
+    )
 
     class Meta:
         model = User
@@ -143,7 +159,9 @@ class AlertasPrecioForm(forms.ModelForm):
     """Interruptor de las alertas de baja de precio (RF-24)."""
 
     active_alerts = forms.BooleanField(
-        label=translate_text_lazy("Recibir alertas de baja de precio por correo"),
+        label=translate_text_lazy(
+            "Recibir alertas de baja de precio por correo"
+        ),
         required=False,
     )
 
@@ -154,13 +172,17 @@ class AlertasPrecioForm(forms.ModelForm):
 
 def correo_en_uso(email, user):
     """True si el correo ya pertenece a otra cuenta (sin importar mayúsculas)."""
-    return User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists()
+    return (
+        User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists()
+    )
 
 
 class NuevoCorreoForm(forms.Form):
     """Paso 1 del cambio de correo: verificar que el correo nuevo esté libre."""
 
-    email = forms.EmailField(label=translate_text_lazy("Correo electrónico nuevo"))
+    email = forms.EmailField(
+        label=translate_text_lazy("Correo electrónico nuevo")
+    )
 
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -171,7 +193,9 @@ class NuevoCorreoForm(forms.Form):
         if email == self.user.email.lower():
             raise forms.ValidationError("Ese ya es el correo de su cuenta.")
         if correo_en_uso(email, self.user):
-            raise forms.ValidationError("Ya existe una cuenta con este correo electrónico.")
+            raise forms.ValidationError(
+                "Ya existe una cuenta con este correo electrónico."
+            )
         return email
 
 
@@ -191,5 +215,7 @@ class ConfirmarCorreoForm(forms.Form):
     def clean_password(self):
         password = self.cleaned_data["password"]
         if not self.user.check_password(password):
-            raise forms.ValidationError("La contraseña ingresada no es correcta.")
+            raise forms.ValidationError(
+                "La contraseña ingresada no es correcta."
+            )
         return password

@@ -1,6 +1,7 @@
+"""Vistas HTTP de la aplicación products."""
+
 from datetime import timedelta
 from decimal import Decimal
-from datetime import timedelta
 
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
@@ -162,18 +163,26 @@ def _consulta_precios_detalle(producto_id) -> QuerySet:
 
 
 def detalle_producto(request, pk):
-    producto = get_object_or_404(Products.objects.select_related("brand", "category"), pk=pk)
+    producto = get_object_or_404(
+        Products.objects.select_related("brand", "category"), pk=pk
+    )
     if request.method == "GET":  # publicar una reseña (POST) no es otra visita
         registrar_visita(request, producto.pk)
     imagen = (
-        ProductImages.objects.filter(variant__product_id=producto.pk, is_main=True)
+        ProductImages.objects.filter(
+            variant__product_id=producto.pk, is_main=True
+        )
         .order_by("id")
         .values("image_url")
         .first()
     )
-    variantes = ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
+    variantes = ProductVariants.objects.filter(
+        product_id=producto.pk
+    ).order_by("id")
     precios = list(_consulta_precios_detalle(producto.pk))
-    limite_precio_antiguo = timezone.now() - timedelta(hours=(24 * STALE_PRICE_DAYS))
+    limite_precio_antiguo = timezone.now() - timedelta(
+        hours=(24 * STALE_PRICE_DAYS)
+    )
     for precio in precios:
         precio.desactualizado = precio.updated_at < limite_precio_antiguo
     grupos_precios = agrupar_precios_por_gtin(variantes, precios)
@@ -183,8 +192,14 @@ def detalle_producto(request, pk):
         .filter(variant__product_id=producto.pk)
         .order_by("-created_at")
     )
-    calificacion_promedio = resenas.aggregate(promedio=Avg("score"))["promedio"]
-    estrellas_promedio = int(calificacion_promedio + 0.5) if calificacion_promedio is not None else 0
+    calificacion_promedio = resenas.aggregate(promedio=Avg("score"))[
+        "promedio"
+    ]
+    estrellas_promedio = (
+        int(calificacion_promedio + 0.5)
+        if calificacion_promedio is not None
+        else 0
+    )
     ya_reseño = (
         request.user.is_authenticated
         and request.user.role == "client"
@@ -223,7 +238,9 @@ def detalle_producto(request, pk):
                         photo = review_form.cleaned_data["photo"]
                         if photo:
                             review_photo = ReviewPhoto(review_id=resena.pk)
-                            review_photo.image.save(photo.name, photo, save=False)
+                            review_photo.image.save(
+                                photo.name, photo, save=False
+                            )
                             stored_photo_name = review_photo.image.name
                             review_photo.save()
             except DatabaseError:
@@ -249,7 +266,8 @@ def detalle_producto(request, pk):
     if request.user.is_authenticated and request.user.role == "client":
         reportadas = set(
             ReviewReport.objects.filter(
-                reporter=request.user, review_id__in=[resena.pk for resena in resenas]
+                reporter=request.user,
+                review_id__in=[resena.pk for resena in resenas],
             ).values_list("review_id", flat=True)
         )
     for resena in resenas:
@@ -307,9 +325,14 @@ def buscar(request):
     if palabra and palabra.isascii() and palabra.isdigit():
         codigo_barras = validar_codigo_barras(palabra)
         if codigo_barras:
-            variante = ProductVariants.objects.filter(
-                Q(gtin=codigo_barras.normalizado) | Q(gtin=codigo_barras.codigo)
-            ).only("product_id").first()
+            variante = (
+                ProductVariants.objects.filter(
+                    Q(gtin=codigo_barras.normalizado)
+                    | Q(gtin=codigo_barras.codigo)
+                )
+                .only("product_id")
+                .first()
+            )
             if variante:
                 return redirect("detalle_producto", pk=variante.product_id)
             error_codigo = translate_text(
@@ -325,7 +348,9 @@ def buscar(request):
     )
     categoria_actual = _categoria_por_filtro(categoria)
     marca_actual = _marca_por_filtro(marca)
-    pagina = _pagina_de_variantes(request, "" if error_codigo else palabra, categoria, marca)
+    pagina = _pagina_de_variantes(
+        request, "" if error_codigo else palabra, categoria, marca
+    )
     corregida = None
     if palabra and not error_codigo and not pagina.paginator.count:
         # «¿Quiso decir…?»: si no hay nada, se busca con las palabras del catálogo más parecidas.
@@ -341,7 +366,9 @@ def buscar(request):
             "error_codigo": error_codigo,
             "corregida": corregida,
             "categoria_seleccionada": (
-                str(categoria_actual.pk) if categoria_actual is not None else ""
+                str(categoria_actual.pk)
+                if categoria_actual is not None
+                else ""
             ),
             "marca_seleccionada": (
                 str(marca_actual.pk) if marca_actual is not None else ""
@@ -357,7 +384,9 @@ def buscar(request):
 def _pagina_de_variantes(request, palabra, categoria, marca):
     """La página pedida (de PRODUCTOS_POR_PAGINA en PRODUCTOS_POR_PAGINA) de la búsqueda."""
     variantes = buscar_variantes_por_nombre(palabra, categoria, marca)
-    return Paginator(variantes, PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    return Paginator(variantes, PRODUCTOS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
 
 
 def _prefijo_de_filtro(queryset: QuerySet) -> str:
@@ -392,7 +421,9 @@ def _categoria_por_filtro(categoria):
         if por_id is not None:
             return por_id
 
-    return Categories.objects.filter(name__iexact=texto).order_by("name").first()
+    return (
+        Categories.objects.filter(name__iexact=texto).order_by("name").first()
+    )
 
 
 def _marca_por_filtro(marca):
@@ -483,7 +514,9 @@ def buscar_variantes_por_nombre(
     return filtrar_por_marca(variantes, marca)
 
 
-def obtener_precios_por_gtin(gtin: str, solo_disponibles: bool = True) -> QuerySet:
+def obtener_precios_por_gtin(
+    gtin: str, solo_disponibles: bool = True
+) -> QuerySet:
     """Obtiene y rankea todos los precios de un GTIN, de menor a mayor.
 
     Se excluyen los precios nulos y, por defecto, las ofertas no disponibles.
@@ -528,7 +561,11 @@ def comparar_precios(request):
     nombre = _parametro_de_consulta(request, "nombre", "name", "q")
     if not nombre:
         return JsonResponse(
-            {"error": translate_text("Debe indicar el nombre del producto a comparar.")},
+            {
+                "error": translate_text(
+                    "Debe indicar el nombre del producto a comparar."
+                )
+            },
             status=400,
         )
 
@@ -554,9 +591,7 @@ def comparar_precios(request):
                     "categoria": variante.product.category.name,
                     "marca": variante.product.brand.name,
                 },
-                "precios": [
-                    _serializar_precio(precio) for precio in precios
-                ],
+                "precios": [_serializar_precio(precio) for precio in precios],
             }
         )
 

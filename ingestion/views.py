@@ -1,3 +1,5 @@
+"""Vistas HTTP de la aplicación ingestion."""
+
 from datetime import timedelta
 
 from django.conf import settings
@@ -12,11 +14,24 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import role_required
 from accounts.models import User
-from core.panel import duracion_aproximada, indicador, inicio_de_hoy, inicio_del_mes, pestanas, plural
+from core.panel import (
+    duracion_aproximada,
+    indicador,
+    inicio_de_hoy,
+    inicio_del_mes,
+    pestanas,
+    plural,
+)
 
 from . import ejecucion_manual
 from .models import Incident, ManualRun
-from .resolucion import EXTRACCION_FALLIDA, NoSePuedeResolver, Resolucion, acciones_para, codigos_de_la_tienda
+from .resolucion import (
+    EXTRACCION_FALLIDA,
+    NoSePuedeResolver,
+    Resolucion,
+    acciones_para,
+    codigos_de_la_tienda,
+)
 
 INCIDENCIAS_POR_PAGINA = 25
 
@@ -56,10 +71,17 @@ ICONOS = {
 def comercios_del_registro(incidencias):
     """Cada comercio con los nombres con que quedó guardado (algunos traen espacios o saltos de línea)."""
     comercios = {}
-    nombres = incidencias.exclude(store_name="").order_by().values_list("store_name", flat=True).distinct()
+    nombres = (
+        incidencias.exclude(store_name="")
+        .order_by()
+        .values_list("store_name", flat=True)
+        .distinct()
+    )
     for nombre in nombres:
         comercios.setdefault(nombre.strip(), []).append(nombre)
-    return dict(sorted(comercios.items(), key=lambda comercio: comercio[0].casefold()))
+    return dict(
+        sorted(comercios.items(), key=lambda comercio: comercio[0].casefold())
+    )
 
 
 @role_required(User.Role.ADMIN)
@@ -80,17 +102,36 @@ def incidencias(request):
     totales = Incident.objects.aggregate(
         fallidas=Count("pk", filter=pendiente),
         excluidos=Count("pk", filter=Q(kind__in=REGISTROS[EXCLUIDOS])),
-        fallidas_hoy=Count("pk", filter=pendiente & Q(created_at__gte=inicio_de_hoy())),
-        excluidos_mes=Count("pk", filter=Q(kind__in=REGISTROS[EXCLUIDOS], created_at__gte=inicio_del_mes())),
-        sospechosos=Count("pk", filter=pendiente & Q(kind=Incident.Kind.SUSPICIOUS_PRICE)),
-        codigos_distintos=Count("pk", filter=pendiente & Q(kind=Incident.Kind.BARCODE_MISMATCH)),
+        fallidas_hoy=Count(
+            "pk", filter=pendiente & Q(created_at__gte=inicio_de_hoy())
+        ),
+        excluidos_mes=Count(
+            "pk",
+            filter=Q(
+                kind__in=REGISTROS[EXCLUIDOS], created_at__gte=inicio_del_mes()
+            ),
+        ),
+        sospechosos=Count(
+            "pk", filter=pendiente & Q(kind=Incident.Kind.SUSPICIOUS_PRICE)
+        ),
+        codigos_distintos=Count(
+            "pk", filter=pendiente & Q(kind=Incident.Kind.BARCODE_MISMATCH)
+        ),
         resueltas_mes=Count(
             "pk",
-            filter=Q(kind__in=REGISTROS[FALLIDAS], status=Incident.Status.RESOLVED, resolved_at__gte=inicio_del_mes()),
+            filter=Q(
+                kind__in=REGISTROS[FALLIDAS],
+                status=Incident.Status.RESOLVED,
+                resolved_at__gte=inicio_del_mes(),
+            ),
         ),
     )
-    comercios_afectados = len(comercios_del_registro(Incident.objects.filter(pendiente)))
-    por_tipo = dict(del_registro.order_by().values_list("kind").annotate(total=Count("pk")))
+    comercios_afectados = len(
+        comercios_del_registro(Incident.objects.filter(pendiente))
+    )
+    por_tipo = dict(
+        del_registro.order_by().values_list("kind").annotate(total=Count("pk"))
+    )
     comercios = comercios_del_registro(del_registro)
 
     busqueda = request.GET.get("q", "").strip()
@@ -101,7 +142,9 @@ def incidencias(request):
     lista = del_registro.select_related("resolved_by")
     if busqueda:
         lista = lista.filter(
-            Q(product_name__icontains=busqueda) | Q(gtin__icontains=busqueda) | Q(reason__icontains=busqueda)
+            Q(product_name__icontains=busqueda)
+            | Q(gtin__icontains=busqueda)
+            | Q(reason__icontains=busqueda)
         )
     if comercio in comercios:
         lista = lista.filter(store_name__in=comercios[comercio])
@@ -112,13 +155,15 @@ def incidencias(request):
     else:
         tipo = ""
     if periodo in PERIODOS:
-        lista = lista.filter(created_at__gte=timezone.now() - PERIODOS[periodo][1])
+        lista = lista.filter(
+            created_at__gte=timezone.now() - PERIODOS[periodo][1]
+        )
     else:
         periodo = ""
 
-    pagina = Paginator(lista.order_by("-created_at", "-pk"), INCIDENCIAS_POR_PAGINA).get_page(
-        request.GET.get("pagina")
-    )
+    pagina = Paginator(
+        lista.order_by("-created_at", "-pk"), INCIDENCIAS_POR_PAGINA
+    ).get_page(request.GET.get("pagina"))
     for incidencia in pagina.object_list:
         incidencia.icono = ICONOS.get(incidencia.kind, "report")
         incidencia.acciones = acciones_para(incidencia)
@@ -136,11 +181,18 @@ def incidencias(request):
             "comercio": comercio,
             "comercios": list(comercios),
             "tipo": tipo,
-            "tipos": [(t.value, t.label, por_tipo.get(t.value, 0)) for t in REGISTROS[FALLIDAS]],
+            "tipos": [
+                (t.value, t.label, por_tipo.get(t.value, 0))
+                for t in REGISTROS[FALLIDAS]
+            ],
             "estado": estado,
             "periodo": periodo,
-            "periodos": [(clave, nombre) for clave, (nombre, _) in PERIODOS.items()],
-            "hay_filtros": bool(busqueda or comercio or tipo or periodo or estado),
+            "periodos": [
+                (clave, nombre) for clave, (nombre, _) in PERIODOS.items()
+            ],
+            "hay_filtros": bool(
+                busqueda or comercio or tipo or periodo or estado
+            ),
             "kpis": tarjetas_de_incidencias(totales, comercios_afectados),
             "pestanas": pestanas(
                 reverse("incidencias"),
@@ -151,7 +203,9 @@ def incidencias(request):
                 ],
                 registro,
             ),
-            "total_texto": plural(pagina.paginator.count, "incidencia", "incidencias"),
+            "total_texto": plural(
+                pagina.paginator.count, "incidencia", "incidencias"
+            ),
         },
     )
 
@@ -166,14 +220,24 @@ def tarjetas_de_incidencias(totales, comercios_afectados):
             insignia=f"+{totales['fallidas_hoy']} hoy",
             tono="alerta" if totales["fallidas_hoy"] else "",
             icono="arrow_upward" if totales["fallidas_hoy"] else "",
-            pie_izq=plural(comercios_afectados, "comercio afectado", "comercios afectados"),
+            pie_izq=plural(
+                comercios_afectados, "comercio afectado", "comercios afectados"
+            ),
             destacada=True,
         ),
         indicador(
             "Precios por confirmar",
             totales["sospechosos"] + totales["codigos_distintos"],
-            pie_izq=plural(totales["sospechosos"], "cambio sospechoso", "cambios sospechosos"),
-            pie_der=plural(totales["codigos_distintos"], "código distinto", "códigos distintos"),
+            pie_izq=plural(
+                totales["sospechosos"],
+                "cambio sospechoso",
+                "cambios sospechosos",
+            ),
+            pie_der=plural(
+                totales["codigos_distintos"],
+                "código distinto",
+                "códigos distintos",
+            ),
         ),
         indicador(
             "Productos excluidos",
@@ -196,8 +260,12 @@ def tarjetas_de_incidencias(totales, comercios_afectados):
 def _volver(request):
     """La lista de donde vino el administrador, con sus filtros y su página."""
     volver = request.POST.get("volver", "")
-    if volver.startswith(reverse("incidencias")) and url_has_allowed_host_and_scheme(
-        volver, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    if volver.startswith(
+        reverse("incidencias")
+    ) and url_has_allowed_host_and_scheme(
+        volver,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
     ):
         return volver
     return reverse("incidencias")
@@ -207,7 +275,9 @@ def _volver(request):
 @require_POST
 def resolver_incidencia(request, pk):
     """Los botones de una extracción fallida: aceptar el precio o el código, cambiar el enlace..."""
-    incidencia = get_object_or_404(Incident, pk=pk, kind__in=EXTRACCION_FALLIDA)
+    incidencia = get_object_or_404(
+        Incident, pk=pk, kind__in=EXTRACCION_FALLIDA
+    )
     try:
         resultado = Resolucion(incidencia, request.user).ejecutar(
             request.POST.get("accion", ""), url=request.POST.get("url", "")
@@ -215,12 +285,18 @@ def resolver_incidencia(request, pk):
     except NoSePuedeResolver as error:
         messages.error(request, str(error))
     else:
-        (messages.success if resultado.exito else messages.warning)(request, resultado.mensaje)
+        (messages.success if resultado.exito else messages.warning)(
+            request, resultado.mensaje
+        )
         if resultado.repetidas == 1:
-            messages.info(request, "También se resolvió 1 incidencia repetida del mismo precio.")
+            messages.info(
+                request,
+                "También se resolvió 1 incidencia repetida del mismo precio.",
+            )
         elif resultado.repetidas:
             messages.info(
-                request, f"También se resolvieron {resultado.repetidas} incidencias repetidas del mismo precio."
+                request,
+                f"También se resolvieron {resultado.repetidas} incidencias repetidas del mismo precio.",
             )
     return redirect(_volver(request))
 
@@ -236,15 +312,27 @@ def obtencion_de_datos(request):
     comercios = ejecucion_manual.comercios_con_scraping()
     ejecuciones = list(ejecucion_manual.ultimas_ejecuciones())
     activas = {}
-    for ejecucion in ManualRun.objects.filter(status__in=ManualRun.ACTIVE).order_by("created_at"):
+    for ejecucion in ManualRun.objects.filter(
+        status__in=ManualRun.ACTIVE
+    ).order_by("created_at"):
         activas[ejecucion.store_name] = ejecucion
     for comercio in comercios:
         comercio["en_curso"] = activas.get(comercio["nombre"])
 
     precios = sum(comercio["precios"] for comercio in comercios)
-    desactualizados = sum(comercio["desactualizados"] for comercio in comercios)
-    revisiones = [comercio["ultima_revision"] for comercio in comercios if comercio["ultima_revision"]]
-    hace = duracion_aproximada(timezone.now() - max(revisiones)) if revisiones else ("—", "")
+    desactualizados = sum(
+        comercio["desactualizados"] for comercio in comercios
+    )
+    revisiones = [
+        comercio["ultima_revision"]
+        for comercio in comercios
+        if comercio["ultima_revision"]
+    ]
+    hace = (
+        duracion_aproximada(timezone.now() - max(revisiones))
+        if revisiones
+        else ("—", "")
+    )
     hoy = ManualRun.objects.filter(created_at__gte=inicio_de_hoy()).count()
     opciones = ejecucion_manual.opciones_disponibles()
     return render(
@@ -268,7 +356,11 @@ def obtencion_de_datos(request):
                 indicador(
                     "Comercios con web scraping",
                     len(comercios),
-                    pie_izq=plural(precios, "precio que se revisa", "precios que se revisan"),
+                    pie_izq=plural(
+                        precios,
+                        "precio que se revisa",
+                        "precios que se revisan",
+                    ),
                     destacada=True,
                 ),
                 indicador(
@@ -316,7 +408,10 @@ def ejecutar_obtencion(request):
         messages.error(request, str(error))
     else:
         if ejecucion.runner == ManualRun.Runner.SERVER:
-            messages.success(request, f"Empezó la obtención de datos de {ejecucion.store_name} en el servidor.")
+            messages.success(
+                request,
+                f"Empezó la obtención de datos de {ejecucion.store_name} en el servidor.",
+            )
         else:
             messages.success(
                 request,

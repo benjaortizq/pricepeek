@@ -1,8 +1,9 @@
+"""Migración de base de datos 0001_reviewphoto para la aplicación reviews."""
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []

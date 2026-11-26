@@ -36,7 +36,9 @@ class _Especificaciones(HTMLParser):
 
     def handle_endtag(self, tag):
         if tag == "td" and self._clave is not None:
-            self.datos.setdefault(self._clave, " ".join("".join(self._texto).split()))
+            self.datos.setdefault(
+                self._clave, " ".join("".join(self._texto).split())
+            )
             self._clave = None
 
     def handle_data(self, data):
@@ -56,18 +58,30 @@ def codigo_de_barras(valor):
     codigo = re.sub(r"\s", "", valor or "")
     if not codigo.strip("0"):
         return "", ""
-    if len(codigo) == 11 and codigo.isdigit() and validar_codigo_barras(codigo.zfill(12)):
-        return codigo.zfill(12), ""  # un UPC-A al que se le perdió el cero inicial
+    if (
+        len(codigo) == 11
+        and codigo.isdigit()
+        and validar_codigo_barras(codigo.zfill(12))
+    ):
+        return codigo.zfill(
+            12
+        ), ""  # un UPC-A al que se le perdió el cero inicial
     resultado = validar_codigo_barras(codigo)
     return (codigo, "") if resultado else ("", resultado.motivo)
 
 
 def imagen_principal(html, producto):
-    encontrada = re.search(r'<meta property="og:image" content="([^"]+)"', html)
+    encontrada = re.search(
+        r'<meta property="og:image" content="([^"]+)"', html
+    )
     if encontrada:
         return unescape(encontrada.group(1))
     imagen = producto.get("image") or ""
-    return f"https://www.gollo.com/media/catalog/product{imagen}" if imagen.startswith("/") else imagen
+    return (
+        f"https://www.gollo.com/media/catalog/product{imagen}"
+        if imagen.startswith("/")
+        else imagen
+    )
 
 
 def leer_pagina(html):
@@ -87,5 +101,7 @@ def leer_pagina(html):
 def extraer(url, http):
     leido = leer_pagina(http.texto(url))
     if leido is None:
-        raise PrecioNoEncontrado("La página no trae los datos del producto (ld+json).")
+        raise PrecioNoEncontrado(
+            "La página no trae los datos del producto (ld+json)."
+        )
     return [leido[2]]

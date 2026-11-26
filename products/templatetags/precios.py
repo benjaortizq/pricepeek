@@ -1,3 +1,5 @@
+"""Etiquetas de plantilla de Django para la aplicación products."""
+
 from django import template
 
 register = template.Library()

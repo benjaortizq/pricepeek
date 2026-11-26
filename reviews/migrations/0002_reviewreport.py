@@ -1,10 +1,11 @@
+"""Migración de base de datos 0002_reviewreport para la aplicación reviews."""
+
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("reviews", "0001_reviewphoto"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -64,7 +65,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="reviewreport",
             constraint=models.UniqueConstraint(
-                fields=("review_id", "reporter"), name="un_reporte_por_cliente_y_resena"
+                fields=("review_id", "reporter"),
+                name="un_reporte_por_cliente_y_resena",
             ),
         ),
     ]

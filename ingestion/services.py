@@ -1,3 +1,5 @@
+"""Lógica de services de la aplicación ingestion."""
+
 from products.barcodes import validar_codigo_barras
 
 from .models import Incident
@@ -22,8 +24,12 @@ def filtrar_productos_con_codigo_valido(productos, tienda=""):
             Incident(
                 kind=Incident.Kind.INVALID_BARCODE,
                 store_name=str(tienda)[: Incident.NAME_MAX_LENGTH],
-                product_name=str(producto.get("name") or "")[: Incident.NAME_MAX_LENGTH],
-                gtin=str(producto.get("gtin") or "")[: Incident.GTIN_MAX_LENGTH],
+                product_name=str(producto.get("name") or "")[
+                    : Incident.NAME_MAX_LENGTH
+                ],
+                gtin=str(producto.get("gtin") or "")[
+                    : Incident.GTIN_MAX_LENGTH
+                ],
                 reason=resultado.motivo,
             )
         )

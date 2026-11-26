@@ -35,24 +35,6 @@ class Categories(models.Model):
         managed = False
         db_table = 'categories'
 
-class AuditImageChanges(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    old_values = models.TextField()
-    new_values = models.TextField()
-    id_requested_by = models.ForeignKey(AccountsUser, models.DO_NOTHING, db_column='id_requested_by')
-    id_resolved_by = models.ForeignKey(AccountsUser, models.DO_NOTHING, db_column='id_resolved_by', related_name='auditimagechanges_id_resolved_by_set', blank=True, null=True)
-    is_active = models.BooleanField()
-    accepted = models.BooleanField(blank=True, null=True)
-    reason = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField()
-    updated_at = models.DateTimeField()
-    gtin = models.ForeignKey('ProductVariants', models.DO_NOTHING, db_column='gtin', to_field='gtin')
-
-    class Meta:
-        managed = False
-        db_table = 'audit_image_changes'
-
-
 class AuditPriceChanges(models.Model):
     id = models.BigAutoField(primary_key=True)
     old_price = models.IntegerField()
@@ -63,10 +45,7 @@ class AuditPriceChanges(models.Model):
     created_at = models.DateTimeField()
     is_active = models.BooleanField()
     gtin = models.ForeignKey('ProductVariants', models.DO_NOTHING, db_column='gtin', to_field='gtin')
-
-    class Meta:
-        managed = False
-        db_table = 'audit_price_changes'
+    id_store = models.ForeignKey('Stores', models.DO_NOTHING, db_column='id_store')
 
     class Meta:
         managed = False

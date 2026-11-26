@@ -31,7 +31,7 @@ PRODUCTOS_POR_PAGINA = 20
 
 def _competidor_menor(store_id):
     competidores = (
-        Prices.objects.filter(
+        Prices.visibles.filter(
             gtin_id=OuterRef("gtin_id"),
             is_available=True,
             price__isnull=False,

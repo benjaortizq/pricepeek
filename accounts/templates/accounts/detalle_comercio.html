@@ -1,0 +1,190 @@
+{% extends "panel/base.html" %}
+{% load site_i18n %}
+{% comment %}
+  Diseño: frontend/html/business-producto-formulario.html (tarjetas en dos columnas) y, para el
+  estado, la tarjeta de suspender cuenta de accounts/detalle_cliente.html.
+{% endcomment %}
+
+{% block title %}{% t 'Comercio' %} {{ nombre }}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <a class="hover:text-on-surface transition-colors" href="{% url 'comercios' %}">{% t 'Comercios' %}</a>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{{ nombre }}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{{ nombre }}{% endblock %}
+{% block descripcion %}
+  {% if mecanismo == mecanismos.SCRAPING %}{% t 'Sus datos se obtienen por web scraping.' %}{% else %}{% t 'Sus datos los provee el comercio.' %}{% endif %}
+  · {% t 'Registrado el {fecha}' fecha=tienda.created_at|date:"d/m/Y" %}
+{% endblock %}
+
+{% block acciones %}
+  {% if activo %}
+    <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-tertiary-container/30 text-tertiary font-bold">
+      <span class="material-symbols-outlined text-xs" aria-hidden="true">check_circle</span>{% t 'Comercio activo' %}
+    </span>
+  {% else %}
+    <span class="inline-flex items-center gap-1 font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold border border-error-container">
+      <span class="material-symbols-outlined text-xs" aria-hidden="true">visibility_off</span>{% t 'Comercio desactivado' %}
+    </span>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<a class="inline-flex items-center gap-1.5 text-body-sm font-semibold text-secondary hover:text-on-surface transition-colors -mt-2 self-start" href="{% url 'comercios' %}">
+  <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>{% t 'Volver a los comercios' %}
+</a>
+
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+  <div class="lg:col-span-8 flex flex-col gap-6">
+    <!-- DATOS DEL COMERCIO -->
+    <form class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6" method="post" novalidate>
+      {% csrf_token %}
+      <div class="flex items-center gap-2.5 pb-4 border-b border-outline-variant mb-6">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">storefront</span>
+        <h2 class="text-headline-md font-headline-md text-on-surface">{% t 'Datos del comercio' %}</h2>
+      </div>
+      <div class="space-y-5">
+        {% include "accounts/campo_comercio.html" with campo=form_datos.name obligatorio=True %}
+        {% include "accounts/campo_comercio.html" with campo=form_datos.description ayuda="Se muestra en el portal de empresas." %}
+        {% include "accounts/mecanismo_comercio.html" with campo=form_datos.data_source sin_lector=sin_lector %}
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button class="px-6 py-2.5 rounded-full bg-primary-container text-on-primary-container text-body-md font-bold hover:brightness-95 transition-all active:scale-[0.98] shadow-sm flex items-center gap-2" type="submit">
+          <span>{% t 'Guardar cambios' %}</span>
+          <span class="material-symbols-outlined text-lg" aria-hidden="true">check_circle</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- CUENTAS DE EMPRESA -->
+    <section class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden" id="cuentas">
+      <div class="flex items-center gap-2.5 p-6 pb-4 border-b border-outline-variant">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">badge</span>
+        <h2 class="text-headline-md font-headline-md text-on-surface">{% t 'Cuentas de empresa' %}</h2>
+      </div>
+      {% if cuentas %}
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface-container-low/70 border-b border-outline-variant font-label-badge text-label-badge text-secondary uppercase">
+                <th class="py-3 px-6">{% t 'Cuenta' %}</th>
+                <th class="py-3 px-4">{% t 'Último ingreso' %}</th>
+                <th class="py-3 px-6 text-right">{% t 'Acciones' %}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/50 text-body-sm text-on-surface">
+              {% for cuenta in cuentas %}
+                <tr>
+                  <td class="py-3 px-6">
+                    <div class="font-semibold break-all">{{ cuenta.email }}</div>
+                    {% if cuenta.get_full_name %}<div class="text-secondary">{{ cuenta.get_full_name }}</div>{% endif %}
+                  </td>
+                  <td class="py-3 px-4 whitespace-nowrap text-secondary">{% if cuenta.last_login %}{{ cuenta.last_login|date:"d/m/Y H:i" }}{% else %}{% t 'Nunca ha entrado' %}{% endif %}</td>
+                  <td class="py-3 px-6 whitespace-nowrap text-right">
+                    {% if cuenta.is_active %}
+                      <form method="post" action="{% url 'reenviar_acceso_comercio' tienda.pk cuenta.pk %}">
+                        {% csrf_token %}
+                        <button class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border border-outline-variant text-on-surface font-semibold hover:bg-surface-container-low transition-colors" type="submit" title="{% t 'Envía de nuevo el enlace para elegir la contraseña' %}">
+                          <span class="material-symbols-outlined text-[16px]" aria-hidden="true">forward_to_inbox</span>{% t 'Reenviar acceso' %}
+                        </button>
+                      </form>
+                    {% else %}
+                      <span class="font-label-badge text-label-badge px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-bold">{% t 'Suspendida' %}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="m-6 mb-0 flex items-start gap-2 text-body-sm text-error bg-error-container/40 p-3 rounded-lg border border-error/20">
+          <span class="material-symbols-outlined text-[18px] shrink-0" aria-hidden="true">warning</span>
+          <span>{% t 'Este comercio todavía no tiene cuenta de empresa. Cree una para que pueda entrar al portal de empresas.' %}</span>
+        </div>
+      {% endif %}
+
+      <form class="p-6 border-t border-outline-variant mt-6 {% if not cuentas %}border-t-0 mt-0{% endif %}" method="post" action="{% url 'crear_cuenta_comercio' tienda.pk %}#cuentas" novalidate>
+        {% csrf_token %}
+        <h3 class="font-semibold text-on-surface mb-4">{% t 'Crear una cuenta de empresa' %}</h3>
+        <div class="space-y-4">
+          {% include "accounts/campo_comercio.html" with campo=form_cuenta.email obligatorio=True ayuda="Le llegará un correo con el enlace para elegir su contraseña. Usted no la ve ni la elige." %}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {% include "accounts/campo_comercio.html" with campo=form_cuenta.first_name %}
+            {% include "accounts/campo_comercio.html" with campo=form_cuenta.last_name %}
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end">
+          <button class="px-5 py-2.5 rounded-full bg-on-surface text-surface-container-lowest text-body-md font-semibold hover:opacity-90 transition-colors flex items-center gap-2" type="submit">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">person_add</span>{% t 'Crear cuenta y enviar acceso' %}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="lg:col-span-4 flex flex-col gap-6">
+    <!-- ESTADO -->
+    <section class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant" aria-labelledby="titulo-estado">
+      {% if activo %}
+        <span id="titulo-estado" class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Desactivar comercio' %}</span>
+        <p class="text-body-sm text-secondary mb-4">
+          {% t 'Sus precios dejan de mostrarse en todo el sitio (búsqueda, detalle de productos, ofertas y listas de deseos) y la obtención de datos deja de revisarlos. Su cuenta de empresa sigue entrando al portal.' %}
+        </p>
+        <form method="post" action="{% url 'estado_comercio' tienda.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="activo" value="0">
+          <button class="w-full px-5 py-2 rounded-full bg-error text-on-error font-bold text-body-md hover:brightness-95 transition-colors flex items-center justify-center gap-2 shadow-sm" type="submit" onclick="return confirm('{% t '¿Desactivar el comercio {comercio}? Sus precios dejarán de mostrarse.' comercio=nombre|escapejs %}')">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility_off</span>{% t 'Desactivar comercio' %}
+          </button>
+        </form>
+      {% else %}
+        <span id="titulo-estado" class="font-label-badge text-label-badge text-secondary block mb-2 uppercase">{% t 'Comercio desactivado' %}</span>
+        <p class="text-body-sm text-secondary mb-4">{% t 'Sus precios no se muestran y la obtención de datos no los revisa.' %}</p>
+        <div class="space-y-2.5">
+          {% if perfil.status_changed_at %}
+            <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+              <span class="text-secondary">{% t 'Desde:' %}</span>
+              <span class="font-semibold text-on-surface">{{ perfil.status_changed_at|date:"d/m/Y H:i" }}</span>
+            </div>
+          {% endif %}
+          {% if perfil.status_changed_by %}
+            <div class="flex justify-between items-center gap-3 text-body-sm pb-1.5 border-b border-outline-variant/40">
+              <span class="text-secondary">{% t 'Desactivado por:' %}</span>
+              <span class="font-semibold text-on-surface break-all text-right">{{ perfil.status_changed_by.email }}</span>
+            </div>
+          {% endif %}
+        </div>
+        <form class="mt-6" method="post" action="{% url 'estado_comercio' tienda.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="activo" value="1">
+          <button class="w-full bg-primary-container hover:brightness-95 text-on-primary-container font-body-md text-body-md font-bold py-2 px-3 rounded-full transition-colors active:scale-[0.98] flex items-center justify-center gap-2" type="submit">
+            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">visibility</span>{% t 'Activar comercio' %}
+          </button>
+        </form>
+      {% endif %}
+    </section>
+
+    <!-- PRECIOS -->
+    <section class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant">
+      <div class="flex items-center gap-2 pb-3 border-b border-outline-variant mb-4">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">sell</span>
+        <h2 class="text-body-lg font-headline-md font-semibold text-on-surface">{% t 'Precios' %}</h2>
+      </div>
+      <div class="space-y-2.5 text-body-sm">
+        <div class="flex justify-between gap-3"><span class="text-secondary">{% t 'Precios guardados' %}</span><span class="font-semibold text-on-surface">{{ precios.total }}</span></div>
+        <div class="flex justify-between gap-3"><span class="text-secondary">{% t 'Disponibles' %}</span><span class="font-semibold text-on-surface">{{ precios.disponibles }}</span></div>
+        <div class="flex justify-between gap-3"><span class="text-secondary">{% t 'Última revisión' %}</span><span class="font-semibold text-on-surface">{{ precios.ultima|date:"d/m/Y H:i"|default:"—" }}</span></div>
+      </div>
+      {% if mecanismo == mecanismos.SCRAPING and activo and con_lector %}
+        <a class="mt-4 inline-flex items-center gap-1 text-body-sm font-semibold text-on-surface hover:underline" href="{% url 'obtencion_de_datos' %}">
+          {% t 'Ejecutar la obtención de datos' %}<span class="material-symbols-outlined text-[16px]" aria-hidden="true">arrow_forward</span>
+        </a>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

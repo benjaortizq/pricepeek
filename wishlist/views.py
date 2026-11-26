@@ -24,7 +24,7 @@ def lista_deseos(request):
         variantes = [item.variant for item in items]
         precios_por_variante_y_moneda = {}
         precios = (
-            Prices.objects.filter(
+            Prices.visibles.filter(
                 gtin__in=[variante.gtin for variante in variantes],
                 currency_id__in={item.currency_id for item in items},
                 is_available=True,

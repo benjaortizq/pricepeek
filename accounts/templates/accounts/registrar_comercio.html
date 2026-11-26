@@ -1,0 +1,80 @@
+{% extends "panel/base.html" %}
+{% load site_i18n %}
+{# Diseño: frontend/html/business-producto-formulario.html (tarjetas en dos columnas y la barra de guardar), dentro del panel. #}
+
+{% block title %}{% t 'Registrar comercio' %}{% endblock %}
+
+{% block migas %}
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <a class="hover:text-on-surface transition-colors" href="{% url 'comercios' %}">{% t 'Comercios' %}</a>
+  <span class="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+  <span class="text-on-surface font-semibold">{% t 'Registrar comercio' %}</span>
+{% endblock %}
+
+{% block titulo_pagina %}{% t 'Registrar comercio asociado' %}{% endblock %}
+{% block descripcion %}{% t 'Cree el comercio con su cuenta de empresa y defina cómo se obtienen sus datos.' %}{% endblock %}
+
+{% block content %}
+<a class="inline-flex items-center gap-1.5 text-body-sm font-semibold text-secondary hover:text-on-surface transition-colors -mt-2 self-start" href="{% url 'comercios' %}">
+  <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>{% t 'Volver a los comercios' %}
+</a>
+
+<form class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start" method="post" novalidate>
+  {% csrf_token %}
+  <div class="lg:col-span-8 flex flex-col gap-6">
+    <!-- DATOS DEL COMERCIO -->
+    <section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6">
+      <div class="flex items-center gap-2.5 pb-4 border-b border-outline-variant mb-6">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">storefront</span>
+        <h2 class="text-headline-md font-headline-md text-on-surface">{% t 'Datos del comercio' %}</h2>
+      </div>
+      <div class="space-y-5">
+        {% include "accounts/campo_comercio.html" with campo=form.name obligatorio=True %}
+        {% include "accounts/campo_comercio.html" with campo=form.description ayuda="Se muestra en el portal de empresas." %}
+        {% include "accounts/mecanismo_comercio.html" with campo=form.data_source sin_lector=True %}
+      </div>
+    </section>
+
+    <!-- CUENTA DE EMPRESA -->
+    <section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6">
+      <div class="flex items-center gap-2.5 pb-4 border-b border-outline-variant mb-6">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">badge</span>
+        <h2 class="text-headline-md font-headline-md text-on-surface">{% t 'Cuenta de empresa' %}</h2>
+      </div>
+      <div class="space-y-5">
+        {% include "accounts/campo_comercio.html" with campo=form.email obligatorio=True ayuda="Le llegará un correo con el enlace para elegir su contraseña. Usted no la ve ni la elige." %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {% include "accounts/campo_comercio.html" with campo=form.first_name %}
+          {% include "accounts/campo_comercio.html" with campo=form.last_name %}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="lg:col-span-4 flex flex-col gap-6">
+    <!-- ESTADO -->
+    <section class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6">
+      <div class="flex items-center gap-2 pb-3 border-b border-outline-variant mb-4">
+        <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">toggle_on</span>
+        <h2 class="text-body-lg font-headline-md font-semibold text-on-surface">{% t 'Estado' %}</h2>
+      </div>
+      <label class="flex items-start gap-3 cursor-pointer" for="{{ form.is_active.id_for_label }}">
+        <input class="mt-1 rounded text-on-surface focus:ring-on-surface" type="checkbox" name="{{ form.is_active.html_name }}" id="{{ form.is_active.id_for_label }}"{% if form.is_active.value %} checked{% endif %}>
+        <span>
+          <span class="block font-semibold text-on-surface">{{ form.is_active.label }}</span>
+          <span class="block text-body-sm text-secondary mt-0.5">{% t 'Si lo deja desactivado, sus precios no se muestran hasta que lo active.' %}</span>
+        </span>
+      </label>
+    </section>
+  </div>
+
+  <!-- BARRA DE GUARDAR -->
+  <div class="lg:col-span-12 sticky bottom-0 z-20 -mx-4 sm:mx-0 bg-surface-container-lowest border-t sm:border border-outline-variant sm:rounded-2xl py-3.5 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-end gap-3">
+    <a class="px-5 py-2.5 rounded-full border border-outline-variant bg-surface hover:bg-surface-container-low text-body-md font-semibold text-on-surface transition-colors text-center" href="{% url 'comercios' %}">{% t 'Cancelar' %}</a>
+    <button class="px-7 py-2.5 rounded-full bg-primary-container text-on-primary-container text-body-md font-bold hover:brightness-95 transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2" type="submit">
+      <span>{% t 'Registrar comercio' %}</span>
+      <span class="material-symbols-outlined text-lg" aria-hidden="true">check_circle</span>
+    </button>
+  </div>
+</form>
+{% endblock %}

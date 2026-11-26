@@ -37,12 +37,11 @@ from .models import Brands, ProductImages, ProductVariants
 
 CARPETA_DE_IMAGENES = "productos/"
 # El nombre de una imagen subida, sin la carpeta: «<id del producto>/<32 letras hexadecimales>.<extensión>».
+# Se conservan extensiones antiguas para que las imágenes ya almacenadas sigan resolviendo.
 NOMBRE_DE_IMAGEN = re.compile(r"\d+/[0-9a-f]{32}\.(?:jpg|png|webp|gif)")
 EXTENSION_POR_FORMATO = {
     "JPEG": "jpg",
     "PNG": "png",
-    "WEBP": "webp",
-    "GIF": "gif",
 }
 
 

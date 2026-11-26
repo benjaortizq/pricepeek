@@ -102,6 +102,7 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5432"),
         "CONN_MAX_AGE": 60,
         "CONN_HEALTH_CHECKS": True,
+        "DISABLE_SERVER_SIDE_CURSORS": True,
         "OPTIONS": {
             "sslmode": os.environ.get("DB_SSLMODE", "require"),
         },

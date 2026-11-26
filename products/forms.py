@@ -75,7 +75,7 @@ class EditarProductoForm(forms.Form):
             ),
         },
         widget=forms.FileInput(
-            attrs={"accept": "image/jpeg,image/png,image/webp,image/gif"}
+            attrs={"accept": "image/jpeg,image/png,.jpg,.jpeg,.png"}
         ),
     )
     image_url = forms.URLField(
@@ -122,9 +122,7 @@ class EditarProductoForm(forms.Form):
             )
         if imagen.image.format not in EXTENSION_POR_FORMATO:
             raise forms.ValidationError(
-                translate_text_lazy(
-                    "La imagen tiene que ser JPG, PNG, WEBP o GIF."
-                )
+                translate_text_lazy("La imagen tiene que ser JPG o PNG.")
             )
         return imagen
 

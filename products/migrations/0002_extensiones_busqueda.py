@@ -7,7 +7,10 @@ Solo se activan (CREATE EXTENSION IF NOT EXISTS): no cambian ninguna tabla. En S
 pruebas) Django no hace nada.
 """
 
-from django.contrib.postgres.operations import CreateExtension, TrigramExtension
+from django.contrib.postgres.operations import (
+    CreateExtension,
+    TrigramExtension,
+)
 from django.db import migrations
 
 

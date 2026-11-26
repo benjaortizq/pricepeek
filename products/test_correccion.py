@@ -1,3 +1,5 @@
+"""Pruebas automatizadas de test_correccion para la aplicación products."""
+
 import random
 from unittest import mock
 
@@ -36,7 +38,10 @@ class LevenshteinTests(SimpleTestCase):
 
 def palabras_al_azar(cantidad, semilla=56):
     azar = random.Random(semilla)
-    return ["".join(azar.choice("abcdefghij") for _ in range(azar.randint(4, 9))) for _ in range(cantidad)]
+    return [
+        "".join(azar.choice("abcdefghij") for _ in range(azar.randint(4, 9)))
+        for _ in range(cantidad)
+    ]
 
 
 class ArbolBKTests(SimpleTestCase):
@@ -46,8 +51,14 @@ class ArbolBKTests(SimpleTestCase):
         for buscada in palabras_al_azar(30, semilla=7) + palabras[:5]:
             for tolerancia in (0, 1, 2):
                 with self.subTest(buscada=buscada, tolerancia=tolerancia):
-                    todas = sorted((levenshtein(buscada, p), p) for p in set(palabras) if levenshtein(buscada, p) <= tolerancia)
-                    self.assertEqual(sorted(arbol.buscar(buscada, tolerancia)), todas)
+                    todas = sorted(
+                        (levenshtein(buscada, p), p)
+                        for p in set(palabras)
+                        if levenshtein(buscada, p) <= tolerancia
+                    )
+                    self.assertEqual(
+                        sorted(arbol.buscar(buscada, tolerancia)), todas
+                    )
 
     def test_no_compara_contra_todo_el_vocabulario(self):
         palabras = palabras_al_azar(500)
@@ -72,25 +83,44 @@ class ArbolBKTests(SimpleTestCase):
 
 class VocabularioTests(SimpleTestCase):
     vocabulario = Vocabulario(
-        ["Celular Samsung Galaxy A57", "Samsung", "Chocolate M&M's con maní", "Café molido", "Sal de mesa"]
+        [
+            "Celular Samsung Galaxy A57",
+            "Samsung",
+            "Chocolate M&M's con maní",
+            "Café molido",
+            "Sal de mesa",
+        ]
     )
 
     def test_corrige_cada_palabra_mal_escrita(self):
         self.assertEqual(self.vocabulario.corregir("sansun"), "samsung")
-        self.assertEqual(self.vocabulario.corregir("celular sansun galaxi"), "celular samsung galaxy")
+        self.assertEqual(
+            self.vocabulario.corregir("celular sansun galaxi"),
+            "celular samsung galaxy",
+        )
         self.assertEqual(self.vocabulario.corregir("chokolate"), "chocolate")
         self.assertEqual(self.vocabulario.corregir("caffe"), "cafe")
 
     def test_si_no_cambia_nada_no_hay_correccion(self):
         self.assertIsNone(self.vocabulario.corregir("samsung galaxy"))
         self.assertIsNone(self.vocabulario.corregir("Café"))
-        self.assertIsNone(self.vocabulario.corregir("televisor"))  # nada se le parece
+        self.assertIsNone(
+            self.vocabulario.corregir("televisor")
+        )  # nada se le parece
 
     def test_cuantos_cambios_se_aceptan(self):
-        self.assertIsNone(self.vocabulario.corregir("sol"))  # 3 letras: hay demasiadas parecidas
-        self.assertEqual(self.vocabulario.corregir("mesas"), "mesa")  # 5 letras: 1 cambio
-        self.assertIsNone(self.vocabulario.corregir("mosas"))  # 5 letras: 2 cambios son demasiados
-        self.assertIsNone(self.vocabulario.corregir("a58"))  # con números no se corrige
+        self.assertIsNone(
+            self.vocabulario.corregir("sol")
+        )  # 3 letras: hay demasiadas parecidas
+        self.assertEqual(
+            self.vocabulario.corregir("mesas"), "mesa"
+        )  # 5 letras: 1 cambio
+        self.assertIsNone(
+            self.vocabulario.corregir("mosas")
+        )  # 5 letras: 2 cambios son demasiados
+        self.assertIsNone(
+            self.vocabulario.corregir("a58")
+        )  # con números no se corrige
 
     def test_entre_dos_igual_de_parecidas_gana_la_que_mas_sale(self):
         vocabulario = Vocabulario(["cosa", "cosa", "cosa", "casa"])
@@ -116,9 +146,15 @@ class TrigramasTests(SimpleTestCase):
 class CorreccionEnLaBusquedaTests(CatalogoTestCase):
     def setUp(self):
         olvidar_vocabulario()
-        samsung = Brands.objects.create(name="Samsung", slug="samsung", **fechas())
-        self.celular = self.producto("Celular Galaxy A57", samsung, self.lacteos)
-        self.variante_celular = self.variante(self.celular, "8806094000017")  # la búsqueda muestra variantes
+        samsung = Brands.objects.create(
+            name="Samsung", slug="samsung", **fechas()
+        )
+        self.celular = self.producto(
+            "Celular Galaxy A57", samsung, self.lacteos
+        )
+        self.variante_celular = self.variante(
+            self.celular, "8806094000017"
+        )  # la búsqueda muestra variantes
 
     def buscar(self, palabra):
         return self.client.get(reverse("buscar_productos"), {"q": palabra})
@@ -130,7 +166,9 @@ class CorreccionEnLaBusquedaTests(CatalogoTestCase):
         respuesta = self.buscar("sansun")
         self.assertContains(respuesta, "Mostrando resultados para «samsung»")
         self.assertContains(respuesta, "Usted escribió «sansun»")
-        self.assertEqual(list(respuesta.context["variantes"]), [self.variante_celular])
+        self.assertEqual(
+            list(respuesta.context["variantes"]), [self.variante_celular]
+        )
 
     def test_si_encuentra_algo_no_corrige(self):
         respuesta = self.buscar("samsung")
@@ -139,15 +177,27 @@ class CorreccionEnLaBusquedaTests(CatalogoTestCase):
 
     def test_si_no_hay_nada_parecido_dice_que_no_encontro(self):
         respuesta = self.buscar("televisor")
-        self.assertContains(respuesta, "No encontramos productos con «televisor»")
+        self.assertContains(
+            respuesta, "No encontramos productos con «televisor»"
+        )
         self.assertNotContains(respuesta, "Mostrando resultados")
 
     def test_el_vocabulario_se_vuelve_a_armar_cada_dia(self):
-        with mock.patch("products.correccion.time.monotonic", return_value=1000.0):
+        with mock.patch(
+            "products.correccion.time.monotonic", return_value=1000.0
+        ):
             primero = vocabulario_del_catalogo()
         self.assertNotIn("xiaomi", primero.frecuencia)
         self.producto("Celular Xiaomi Redmi", self.dos_pinos, self.lacteos)
-        with mock.patch("products.correccion.time.monotonic", return_value=1000.0 + VIGENCIA_DEL_VOCABULARIO - 1):
-            self.assertIs(vocabulario_del_catalogo(), primero)  # todavía no ha pasado un día
-        with mock.patch("products.correccion.time.monotonic", return_value=1000.0 + VIGENCIA_DEL_VOCABULARIO + 1):
+        with mock.patch(
+            "products.correccion.time.monotonic",
+            return_value=1000.0 + VIGENCIA_DEL_VOCABULARIO - 1,
+        ):
+            self.assertIs(
+                vocabulario_del_catalogo(), primero
+            )  # todavía no ha pasado un día
+        with mock.patch(
+            "products.correccion.time.monotonic",
+            return_value=1000.0 + VIGENCIA_DEL_VOCABULARIO + 1,
+        ):
             self.assertIn("xiaomi", vocabulario_del_catalogo().frecuencia)

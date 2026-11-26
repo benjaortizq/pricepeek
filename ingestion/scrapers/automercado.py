@@ -49,7 +49,9 @@ def estado_de_la_pagina(html):
     try:
         return json.loads(lector.contenido)
     except ValueError:
-        raise PrecioNoEncontrado(f"El bloque {ID_ESTADO} no es JSON válido.") from None
+        raise PrecioNoEncontrado(
+            f"El bloque {ID_ESTADO} no es JSON válido."
+        ) from None
 
 
 def _id_de_la_url(url):
@@ -60,14 +62,27 @@ def _id_de_la_url(url):
 def extraer(url, http):
     estado = estado_de_la_pagina(http.texto(url))
     try:
-        resultados = estado["product-detail.ssr-algolia"]["products"][0]["hits"]
+        resultados = estado["product-detail.ssr-algolia"]["products"][0][
+            "hits"
+        ]
     except (KeyError, IndexError, TypeError):
-        raise PrecioNoEncontrado("El estado de la página no tiene el detalle del producto.") from None
+        raise PrecioNoEncontrado(
+            "El estado de la página no tiene el detalle del producto."
+        ) from None
     if not resultados:
-        raise ProductoNoEncontrado("La tienda ya no tiene este producto en su catálogo.")
+        raise ProductoNoEncontrado(
+            "La tienda ya no tiene este producto en su catálogo."
+        )
 
     id_url = _id_de_la_url(url)
-    producto = next((r for r in resultados if str(r.get("productID", "")).lower() == id_url), resultados[0])
+    producto = next(
+        (
+            r
+            for r in resultados
+            if str(r.get("productID", "")).lower() == id_url
+        ),
+        resultados[0],
+    )
     return [oferta_del_producto(producto)]
 
 

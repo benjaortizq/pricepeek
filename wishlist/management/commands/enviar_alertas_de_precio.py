@@ -1,3 +1,5 @@
+"""Comando de administración enviar_alertas_de_precio para la aplicación wishlist."""
+
 from django.core.management.base import BaseCommand
 
 from wishlist.alertas import revisar_alertas_de_baja_de_precio
@@ -15,4 +17,6 @@ class Command(BaseCommand):
             f"Errores: {resultado.errores}."
         )
         if resultado.errores:
-            self.stderr.write("Algunos correos no se pudieron enviar; se reintentarán en la próxima revisión.")
+            self.stderr.write(
+                "Algunos correos no se pudieron enviar; se reintentarán en la próxima revisión."
+            )

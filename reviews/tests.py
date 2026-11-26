@@ -1,3 +1,5 @@
+"""Pruebas automatizadas de tests para la aplicación reviews."""
+
 from io import BytesIO
 from pathlib import Path
 import tempfile
@@ -28,7 +30,9 @@ from products.models import (
 
 class ReviewFormTests(TestCase):
     def test_acepta_calificacion_y_comentario_validos(self):
-        form = ReviewForm(data={"rating": "5", "content": "Muy buen producto."})
+        form = ReviewForm(
+            data={"rating": "5", "content": "Muy buen producto."}
+        )
 
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["rating"], 5)
@@ -36,7 +40,9 @@ class ReviewFormTests(TestCase):
     def test_rechaza_calificaciones_fuera_del_rango_de_una_a_cinco(self):
         for rating in ("0", "6"):
             with self.subTest(rating=rating):
-                form = ReviewForm(data={"rating": rating, "content": "Comentario."})
+                form = ReviewForm(
+                    data={"rating": rating, "content": "Comentario."}
+                )
                 self.assertFalse(form.is_valid())
                 self.assertIn("rating", form.errors)
 
@@ -122,7 +128,9 @@ class ReviewSubmissionTests(TestCase):
 
     def setUp(self):
         self.media_directory = tempfile.TemporaryDirectory()
-        self.override_media = override_settings(MEDIA_ROOT=self.media_directory.name)
+        self.override_media = override_settings(
+            MEDIA_ROOT=self.media_directory.name
+        )
         self.override_media.enable()
         self.addCleanup(self.override_media.disable)
         self.addCleanup(self.media_directory.cleanup)
@@ -140,7 +148,9 @@ class ReviewSubmissionTests(TestCase):
         self.assertEqual(resena.score, 5)
         self.assertEqual(resena.content, "Excelente producto.")
 
-    def test_no_permite_publicar_otra_resena_para_el_producto_en_otra_variante(self):
+    def test_no_permite_publicar_otra_resena_para_el_producto_en_otra_variante(
+        self,
+    ):
         now = timezone.now()
         Reviews.objects.create(
             user_id=self.user.pk,
@@ -157,8 +167,12 @@ class ReviewSubmissionTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Ya publicaste una reseña para este producto.")
-        self.assertEqual(Reviews.objects.filter(user_id=self.user.pk).count(), 1)
+        self.assertContains(
+            response, "Ya publicaste una reseña para este producto."
+        )
+        self.assertEqual(
+            Reviews.objects.filter(user_id=self.user.pk).count(), 1
+        )
 
     def test_cliente_puede_adjuntar_una_foto(self):
         image_buffer = BytesIO()
@@ -182,13 +196,17 @@ class ReviewSubmissionTests(TestCase):
         foto = ReviewPhoto.objects.get()
         self.assertTrue(foto.image.name.startswith("reviews/"))
 
-    def test_error_al_guardar_foto_revierte_la_resena_y_elimina_el_archivo(self):
+    def test_error_al_guardar_foto_revierte_la_resena_y_elimina_el_archivo(
+        self,
+    ):
         image_buffer = BytesIO()
         Image.new("RGB", (1, 1)).save(image_buffer, format="PNG")
         image_buffer.seek(0)
         self.client.raise_request_exception = False
 
-        with patch("reviews.models.ReviewPhoto.save", side_effect=DatabaseError):
+        with patch(
+            "reviews.models.ReviewPhoto.save", side_effect=DatabaseError
+        ):
             response = self.client.post(
                 self.url,
                 {
@@ -205,4 +223,6 @@ class ReviewSubmissionTests(TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertFalse(Reviews.objects.filter(user_id=self.user.pk).exists())
         self.assertFalse(ReviewPhoto.objects.exists())
-        self.assertEqual(list(Path(self.media_directory.name).rglob("*.png")), [])
+        self.assertEqual(
+            list(Path(self.media_directory.name).rglob("*.png")), []
+        )

@@ -1,3 +1,5 @@
+"""Configuración de la aplicación Django de la aplicación wishlist."""
+
 from django.apps import AppConfig
 
 

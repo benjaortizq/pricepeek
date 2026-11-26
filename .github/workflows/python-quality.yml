@@ -1,0 +1,25 @@
+name: Calidad de Python
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Instalar Ruff
+        run: python -m pip install -r requirements-dev.txt
+      - name: Revisar estilo y documentación
+        run: ruff check .
+      - name: Verificar formato
+        run: ruff format --check .

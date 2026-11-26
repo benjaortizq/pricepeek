@@ -56,7 +56,9 @@ def enviar_correo(cliente, bajas):
     sitio = settings.SITE_URL.rstrip("/")
     lineas = []
     for item, anterior, nuevo, tienda in bajas:
-        enlace = reverse("detalle_producto", kwargs={"pk": item.variant.product_id})
+        enlace = reverse(
+            "detalle_producto", kwargs={"pk": item.variant.product_id}
+        )
         lineas.append(
             f"- {item.variant.product.name}: de {colones(anterior)} a {colones(nuevo)} en {tienda}\n"
             f"  {sitio}{enlace}#precio-{item.variant.gtin}"
@@ -109,9 +111,13 @@ def revisar_alertas_de_baja_de_precio(ahora=None):
         nuevo, tienda = actual
         anterior = item.baseline_price
         if anterior is not None and nuevo < anterior:
-            bajas_por_cliente[item.user].append((item, anterior, nuevo, tienda))
+            bajas_por_cliente[item.user].append(
+                (item, anterior, nuevo, tienda)
+            )
         elif anterior != nuevo:
-            item.baseline_price = nuevo  # primer precio registrado, o el precio subió
+            item.baseline_price = (
+                nuevo  # primer precio registrado, o el precio subió
+            )
             por_actualizar.append(item)
 
     for cliente, bajas in bajas_por_cliente.items():
@@ -120,7 +126,10 @@ def revisar_alertas_de_baja_de_precio(ahora=None):
         except Exception:
             # No se actualiza nada: la baja se vuelve a detectar en la próxima revisión.
             resultado.errores += 1
-            logger.exception("No se pudo enviar la alerta de baja de precio a %s", cliente.email)
+            logger.exception(
+                "No se pudo enviar la alerta de baja de precio a %s",
+                cliente.email,
+            )
             continue
         for item, _anterior, nuevo, _tienda in bajas:
             item.baseline_price = nuevo
@@ -131,6 +140,7 @@ def revisar_alertas_de_baja_de_precio(ahora=None):
         resultado.productos_con_baja += len(bajas)
 
     WishlistItem.objects.bulk_update(
-        por_actualizar, ["baseline_price", "last_notified_price", "last_notified_at"]
+        por_actualizar,
+        ["baseline_price", "last_notified_price", "last_notified_at"],
     )
     return resultado

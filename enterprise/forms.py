@@ -120,7 +120,9 @@ class ListaURLsImagenesField(forms.Field):
             ) from error
         except ValueError as error:
             raise forms.ValidationError(
-                translate_text_lazy("No se permiten enlaces de imagen duplicados.")
+                translate_text_lazy(
+                    "No se permiten enlaces de imagen duplicados."
+                )
             ) from error
 
 
@@ -155,7 +157,9 @@ class PrecioEmpresaForm(forms.Form):
         required=False,
         max_length=2000,
         label=translate_text_lazy("Enlace del producto"),
-        help_text=translate_text_lazy("Use un enlace que comience con http:// o https://."),
+        help_text=translate_text_lazy(
+            "Use un enlace que comience con http:// o https://."
+        ),
     )
 
     def clean_discount(self):
@@ -166,7 +170,9 @@ class PrecioEmpresaForm(forms.Form):
         url = self.cleaned_data.get("product_web_url", "").strip()
         if url and not _url_http_valida(url):
             raise forms.ValidationError(
-                translate_text_lazy("El enlace debe comenzar con http:// o https://.")
+                translate_text_lazy(
+                    "El enlace debe comenzar con http:// o https://."
+                )
             )
         return url
 
@@ -214,7 +220,9 @@ class ProductoEmpresaForm(forms.Form):
         required=False,
         queryset=Brands.objects.order_by("name"),
         error_messages={
-            "invalid_choice": translate_text_lazy("Seleccione una opción válida.")
+            "invalid_choice": translate_text_lazy(
+                "Seleccione una opción válida."
+            )
         },
         label=translate_text_lazy("Marca"),
         help_text=translate_text_lazy("Obligatoria cuando el GTIN es nuevo."),
@@ -223,7 +231,9 @@ class ProductoEmpresaForm(forms.Form):
         required=False,
         queryset=Categories.objects.order_by("name"),
         error_messages={
-            "invalid_choice": translate_text_lazy("Seleccione una opción válida.")
+            "invalid_choice": translate_text_lazy(
+                "Seleccione una opción válida."
+            )
         },
         label=translate_text_lazy("Categoría"),
         help_text=translate_text_lazy("Obligatoria cuando el GTIN es nuevo."),
@@ -232,7 +242,9 @@ class ProductoEmpresaForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"rows": 4}),
         label=translate_text_lazy("Descripción"),
-        help_text=translate_text_lazy("Se usa únicamente cuando el GTIN es nuevo."),
+        help_text=translate_text_lazy(
+            "Se usa únicamente cuando el GTIN es nuevo."
+        ),
     )
     attributes = forms.CharField(
         required=False,
@@ -297,14 +309,18 @@ class ProductoEmpresaForm(forms.Form):
             return analizar_atributos_json(texto)
         except ValueError as error:
             raise forms.ValidationError(
-                translate_text_lazy("Las características deben ser un objeto JSON válido.")
+                translate_text_lazy(
+                    "Las características deben ser un objeto JSON válido."
+                )
             ) from error
 
     def clean_product_web_url(self):
         url = self.cleaned_data.get("product_web_url", "").strip()
         if url and not _url_http_valida(url):
             raise forms.ValidationError(
-                translate_text_lazy("El enlace debe comenzar con http:// o https://.")
+                translate_text_lazy(
+                    "El enlace debe comenzar con http:// o https://."
+                )
             )
         return url
 
@@ -404,10 +420,14 @@ class ImagenesEmpresaForm(forms.Form):
                 ),
             )
 
-        if not self.errors and len(set(existentes + nuevas)) != len(existentes + nuevas):
+        if not self.errors and len(set(existentes + nuevas)) != len(
+            existentes + nuevas
+        ):
             self.add_error(
                 "new_image_urls",
-                translate_text_lazy("No se permiten enlaces de imagen duplicados."),
+                translate_text_lazy(
+                    "No se permiten enlaces de imagen duplicados."
+                ),
             )
         return datos
 
@@ -430,7 +450,9 @@ class TiendaEmpresaForm(forms.Form):
         widget=forms.TextInput(attrs={"class": CLASE_CAMPO}),
         label=translate_text_lazy("Nombre de la tienda"),
         error_messages={
-            "required": translate_text_lazy("El nombre de la tienda es obligatorio."),
+            "required": translate_text_lazy(
+                "El nombre de la tienda es obligatorio."
+            ),
             "max_length": translate_text_lazy(
                 "El nombre de la tienda no puede superar %(limit_value)d caracteres."
             ),

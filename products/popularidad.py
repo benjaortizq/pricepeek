@@ -56,7 +56,9 @@ def registrar_visita(request, producto_id):
             ProductView.objects.bulk_create([visita], ignore_conflicts=True)
     except DatabaseError:
         # Contar la visita no puede dejar a la persona sin ver el producto.
-        logger.exception("No se pudo guardar la visita al producto %s", producto_id)
+        logger.exception(
+            "No se pudo guardar la visita al producto %s", producto_id
+        )
 
 
 def popularidad_reciente(producto="pk"):
@@ -67,12 +69,16 @@ def popularidad_reciente(producto="pk"):
     """
     desde = timezone.now() - timedelta(days=DIAS_DE_POPULARIDAD)
     visitantes = (
-        ProductView.objects.filter(product_id=OuterRef(producto), hour__gte=desde)
+        ProductView.objects.filter(
+            product_id=OuterRef(producto), hour__gte=desde
+        )
         .values("product_id")
         .annotate(total=Count("visitor", distinct=True))
         .values("total")
     )
-    return Coalesce(Subquery(visitantes, output_field=IntegerField()), Value(0))
+    return Coalesce(
+        Subquery(visitantes, output_field=IntegerField()), Value(0)
+    )
 
 
 def mas_populares(productos):
@@ -81,4 +87,6 @@ def mas_populares(productos):
     Le pone a cada uno ``.popularidad``. No agrega consultas: la popularidad va dentro de la misma
     consulta de los productos.
     """
-    return productos.annotate(popularidad=popularidad_reciente()).order_by("-popularidad", "name")
+    return productos.annotate(popularidad=popularidad_reciente()).order_by(
+        "-popularidad", "name"
+    )

@@ -28,9 +28,14 @@ class Ficha:
 
 def urls_del_sitemap(xml):
     """Las URLs de las etiquetas <loc> de un sitemap (o de un índice de sitemaps)."""
-    return [html.unescape(url.strip()) for url in re.findall(r"<loc>(.*?)</loc>", xml, re.S)]
+    return [
+        html.unescape(url.strip())
+        for url in re.findall(r"<loc>(.*?)</loc>", xml, re.S)
+    ]
 
 
 def ruta_de_busqueda(texto):
     """La categoría como sale en la URL de la tienda: "Electrónica/Línea Blanca" -> "electronica/linea-blanca"."""
-    return "/".join(slugify(parte) for parte in str(texto).split("/") if slugify(parte))
+    return "/".join(
+        slugify(parte) for parte in str(texto).split("/") if slugify(parte)
+    )

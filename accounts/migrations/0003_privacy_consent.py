@@ -1,3 +1,5 @@
+"""Migración de base de datos 0003_privacy_consent para la aplicación accounts."""
+
 import django.utils.timezone
 from django.conf import settings
 from django.db import migrations, models
@@ -5,7 +7,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("accounts", "0002_user_suspension"),
@@ -25,7 +26,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("policy_version", models.CharField(max_length=20)),
-                ("accepted_at", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "accepted_at",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
                 ("revoked_at", models.DateTimeField(blank=True, null=True)),
                 (
                     "user",

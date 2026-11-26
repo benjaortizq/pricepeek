@@ -1,3 +1,5 @@
+"""Lógica de translations de la aplicación core."""
+
 import json
 import re
 from functools import lru_cache
@@ -36,8 +38,12 @@ def _dynamic_templates(language):
             parts.append(f"(?P<{field.group(1)}>.*)")
             position = field.end()
         parts.append(re.escape(source[position:]))
-        templates.append((len(source), re.compile("^" + "".join(parts) + "$"), translated))
-    return tuple(sorted(templates, key=lambda template: template[0], reverse=True))
+        templates.append(
+            (len(source), re.compile("^" + "".join(parts) + "$"), translated)
+        )
+    return tuple(
+        sorted(templates, key=lambda template: template[0], reverse=True)
+    )
 
 
 def _translate_dynamic(text, language):

@@ -16,7 +16,9 @@ def url_api(url_producto):
     partes = urlsplit(url_producto)
     ruta = partes.path.rstrip("/")
     if not ruta.endswith("/p") or ruta == "/p":
-        raise PrecioNoEncontrado("La URL no tiene el formato de VTEX (…/nombre-del-producto/p).")
+        raise PrecioNoEncontrado(
+            "La URL no tiene el formato de VTEX (…/nombre-del-producto/p)."
+        )
     slug = ruta.removesuffix("/p").strip("/")
     return f"{partes.scheme}://{partes.netloc}/api/catalog_system/pub/products/search/{slug}/p"
 
@@ -25,16 +27,23 @@ def producto_de_la_api(url, http):
     """El producto (el primer resultado de la API) de esa URL."""
     productos = http.json(url_api(url))
     if not isinstance(productos, list):
-        raise PrecioNoEncontrado("La API de VTEX devolvió algo que no es una lista de productos.")
+        raise PrecioNoEncontrado(
+            "La API de VTEX devolvió algo que no es una lista de productos."
+        )
     if not productos:
-        raise ProductoNoEncontrado("La tienda ya no tiene este producto en su catálogo.")
+        raise ProductoNoEncontrado(
+            "La tienda ya no tiene este producto en su catálogo."
+        )
     return productos[0]
 
 
 def oferta_del_item(item):
     """La Oferta del vendedor principal de una presentación, o None si no tiene vendedor."""
     vendedores = item.get("sellers") or []
-    vendedor = next((v for v in vendedores if v.get("sellerDefault")), vendedores[0] if vendedores else None)
+    vendedor = next(
+        (v for v in vendedores if v.get("sellerDefault")),
+        vendedores[0] if vendedores else None,
+    )
     if vendedor is None:
         return None
     detalle = vendedor.get("commertialOffer") or {}
@@ -48,7 +57,13 @@ def oferta_del_item(item):
 
 def extraer(url, http):
     producto = producto_de_la_api(url, http)
-    ofertas = [oferta for oferta in map(oferta_del_item, producto.get("items") or []) if oferta is not None]
+    ofertas = [
+        oferta
+        for oferta in map(oferta_del_item, producto.get("items") or [])
+        if oferta is not None
+    ]
     if not ofertas:
-        raise PrecioNoEncontrado("La API de VTEX no trae precios para este producto.")
+        raise PrecioNoEncontrado(
+            "La API de VTEX no trae precios para este producto."
+        )
     return ofertas

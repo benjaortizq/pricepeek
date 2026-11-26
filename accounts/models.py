@@ -1,7 +1,10 @@
+"""Modelos de datos de la aplicación accounts."""
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
+
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -30,7 +33,9 @@ class UserManager(BaseUserManager):
     def suspender_cliente(self, pk, admin, motivo):
         """Suspende la cuenta activa de un cliente. Devuelve False si no había nada que suspender."""
         return bool(
-            self.filter(pk=pk, role=self.model.Role.CLIENT, is_active=True).update(
+            self.filter(
+                pk=pk, role=self.model.Role.CLIENT, is_active=True
+            ).update(
                 is_active=False,
                 suspended_at=timezone.now(),
                 suspended_by=admin,
@@ -41,8 +46,13 @@ class UserManager(BaseUserManager):
     def reactivar_cliente(self, pk):
         """Levanta la suspensión de un cliente. Devuelve False si la cuenta no estaba suspendida."""
         return bool(
-            self.filter(pk=pk, role=self.model.Role.CLIENT, is_active=False).update(
-                is_active=True, suspended_at=None, suspended_by=None, suspension_reason=""
+            self.filter(
+                pk=pk, role=self.model.Role.CLIENT, is_active=False
+            ).update(
+                is_active=True,
+                suspended_at=None,
+                suspended_by=None,
+                suspension_reason="",
             )
         )
 
@@ -55,12 +65,20 @@ class User(AbstractUser):
 
     username = None
     email = models.EmailField("email address", unique=True)
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.CLIENT)
+    role = models.CharField(
+        max_length=20, choices=Role.choices, default=Role.CLIENT
+    )
     active_alerts = models.BooleanField(default=True)  # RF-24
-    last_password_change = models.DateTimeField("last password change", default=timezone.now)
+    last_password_change = models.DateTimeField(
+        "last password change", default=timezone.now
+    )
     suspended_at = models.DateTimeField("suspended at", null=True, blank=True)
     suspended_by = models.ForeignKey(
-        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
     )
     suspension_reason = models.TextField("suspension reason", blank=True)
     USERNAME_FIELD = "email"
@@ -109,13 +127,22 @@ class AccountsUser(models.Model):
     role = models.CharField(max_length=20)
     active_alerts = models.BooleanField()
     suspended_at = models.DateTimeField(blank=True, null=True)
-    suspended_by = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True)
+    suspended_by = models.ForeignKey(
+        "self", models.DO_NOTHING, blank=True, null=True
+    )
     suspension_reason = models.TextField()
-    from_store = models.ForeignKey('Stores', models.DO_NOTHING, db_column='from_store', blank=True, null=True)
+    from_store = models.ForeignKey(
+        "Stores",
+        models.DO_NOTHING,
+        db_column="from_store",
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         managed = False
-        db_table = 'accounts_user'
+        db_table = "accounts_user"
+
 
 class Stores(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -125,28 +152,29 @@ class Stores(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'stores'
+        db_table = "stores"
+
 
 class AccountsUserGroups(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(AccountsUser, models.DO_NOTHING)
-    group = models.ForeignKey('AuthGroup', models.DO_NOTHING)
+    group = models.ForeignKey("AuthGroup", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'accounts_user_groups'
-        unique_together = (('user', 'group'),)
+        db_table = "accounts_user_groups"
+        unique_together = (("user", "group"),)
 
 
 class AccountsUserUserPermissions(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(AccountsUser, models.DO_NOTHING)
-    permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
+    permission = models.ForeignKey("AuthPermission", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'accounts_user_user_permissions'
-        unique_together = (('user', 'permission'),)
+        db_table = "accounts_user_user_permissions"
+        unique_together = (("user", "permission"),)
 
 
 class AuthGroup(models.Model):
@@ -154,29 +182,30 @@ class AuthGroup(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'auth_group'
+        db_table = "auth_group"
 
 
 class AuthGroupPermissions(models.Model):
     id = models.BigAutoField(primary_key=True)
     group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
-    permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
+    permission = models.ForeignKey("AuthPermission", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'auth_group_permissions'
-        unique_together = (('group', 'permission'),)
+        db_table = "auth_group_permissions"
+        unique_together = (("group", "permission"),)
 
 
 class AuthPermission(models.Model):
     name = models.CharField(max_length=255)
-    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
+    content_type = models.ForeignKey("DjangoContentType", models.DO_NOTHING)
     codename = models.CharField(max_length=100)
 
     class Meta:
         managed = False
-        db_table = 'auth_permission'
-        unique_together = (('content_type', 'codename'),)
+        db_table = "auth_permission"
+        unique_together = (("content_type", "codename"),)
+
 
 class DjangoAdminLog(models.Model):
     action_time = models.DateTimeField()
@@ -184,12 +213,14 @@ class DjangoAdminLog(models.Model):
     object_repr = models.CharField(max_length=200)
     action_flag = models.SmallIntegerField()
     change_message = models.TextField()
-    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING, blank=True, null=True)
+    content_type = models.ForeignKey(
+        "DjangoContentType", models.DO_NOTHING, blank=True, null=True
+    )
     user = models.ForeignKey(AccountsUser, models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'django_admin_log'
+        db_table = "django_admin_log"
 
 
 class DjangoContentType(models.Model):
@@ -198,8 +229,8 @@ class DjangoContentType(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'django_content_type'
-        unique_together = (('app_label', 'model'),)
+        db_table = "django_content_type"
+        unique_together = (("app_label", "model"),)
 
 
 class DjangoMigrations(models.Model):
@@ -210,7 +241,7 @@ class DjangoMigrations(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'django_migrations'
+        db_table = "django_migrations"
 
 
 class DjangoSession(models.Model):
@@ -220,4 +251,4 @@ class DjangoSession(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'django_session'
+        db_table = "django_session"

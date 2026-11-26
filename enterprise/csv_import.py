@@ -98,7 +98,9 @@ def _urls_imagenes_csv(valores):
     for nombre in valores:
         coincidencia = re.fullmatch(r"image_url_(\d+)", str(nombre or ""))
         if coincidencia:
-            numeradas.append((int(coincidencia.group(1)), str(valores[nombre] or "")))
+            numeradas.append(
+                (int(coincidencia.group(1)), str(valores[nombre] or ""))
+            )
     for _, url in sorted(numeradas):
         if url:
             partes.append(url)
@@ -124,14 +126,14 @@ def procesar_csv(archivo, store):
         contenido = archivo.read().decode("utf-8-sig")
     except UnicodeDecodeError as error:
         raise ErrorEmpresa(
-            translate_text_lazy("El archivo CSV debe estar codificado en UTF-8.")
+            translate_text_lazy(
+                "El archivo CSV debe estar codificado en UTF-8."
+            )
         ) from error
 
     lector = csv.DictReader(io.StringIO(contenido))
     if not lector.fieldnames:
-        raise ErrorEmpresa(
-            translate_text_lazy("El archivo CSV está vacío.")
-        )
+        raise ErrorEmpresa(translate_text_lazy("El archivo CSV está vacío."))
 
     encabezados_originales = [
         str(nombre or "").strip().lower() for nombre in lector.fieldnames
@@ -145,7 +147,9 @@ def procesar_csv(archivo, store):
     # aceptar espacios y mayúsculas sin romper la lectura de los valores.
     lector.fieldnames = encabezados_originales
     encabezados = set(encabezados_originales)
-    faltantes = [columna for columna in ("gtin", "price") if columna not in encabezados]
+    faltantes = [
+        columna for columna in ("gtin", "price") if columna not in encabezados
+    ]
     if faltantes:
         raise ErrorEmpresa(
             translate_text_lazy(
@@ -164,7 +168,11 @@ def procesar_csv(archivo, store):
             resultado.errores.append(str(error))
         except (InvalidOperation, TypeError, ValueError):
             resultado.errores.append(
-                str(translate_text_lazy("La fila contiene un valor numérico o booleano inválido."))
+                str(
+                    translate_text_lazy(
+                        "La fila contiene un valor numérico o booleano inválido."
+                    )
+                )
             )
         resultados.append(resultado)
     return resultados
@@ -177,7 +185,9 @@ def _procesar_fila(valores, store, resultado, vistos):
     if codigo:
         candidatos = dict.fromkeys((codigo, normalizar_gtin(codigo)))
         for candidato in candidatos:
-            variante_existente = ProductVariants.objects.filter(gtin=candidato).first()
+            variante_existente = ProductVariants.objects.filter(
+                gtin=candidato
+            ).first()
             if variante_existente is not None:
                 break
 
@@ -209,24 +219,32 @@ def _procesar_fila(valores, store, resultado, vistos):
         descuento = _decimal(valores.get("discount"))
     except InvalidOperation as error:
         raise ErrorEmpresa(
-            translate_text_lazy("El descuento debe ser un decimal entre 0 y 1.")
+            translate_text_lazy(
+                "El descuento debe ser un decimal entre 0 y 1."
+            )
         ) from error
     if descuento < 0 or descuento > 1:
         raise ErrorEmpresa(
-            translate_text_lazy("El descuento debe ser un decimal entre 0 y 1.")
+            translate_text_lazy(
+                "El descuento debe ser un decimal entre 0 y 1."
+            )
         )
 
     try:
         disponible = _booleano(valores.get("is_available"))
     except ValueError as error:
         raise ErrorEmpresa(
-            translate_text_lazy("La disponibilidad debe ser verdadero o falso.")
+            translate_text_lazy(
+                "La disponibilidad debe ser verdadero o falso."
+            )
         ) from error
 
     url = _texto(valores, "product_web_url")
     if not _url_valida(url):
         raise ErrorEmpresa(
-            translate_text_lazy("El enlace debe comenzar con http:// o https://.")
+            translate_text_lazy(
+                "El enlace debe comenzar con http:// o https://."
+            )
         )
 
     atributos_texto = _texto(valores, "attributes")
@@ -234,10 +252,14 @@ def _procesar_fila(valores, store, resultado, vistos):
         atributos = analizar_atributos_json(atributos_texto)
     except ValueError as error:
         raise ErrorEmpresa(
-            translate_text_lazy("Las características deben ser un objeto JSON válido.")
+            translate_text_lazy(
+                "Las características deben ser un objeto JSON válido."
+            )
         ) from error
 
-    variante = variante_existente or ProductVariants.objects.filter(gtin=gtin).first()
+    variante = (
+        variante_existente or ProductVariants.objects.filter(gtin=gtin).first()
+    )
     producto_datos = None
     urls_imagenes = []
     if variante is None:
@@ -288,7 +310,9 @@ def _procesar_fila(valores, store, resultado, vistos):
 
     if gtin in vistos:
         raise ErrorEmpresa(
-            translate_text_lazy("El GTIN ya aparece en otra fila de este archivo.")
+            translate_text_lazy(
+                "El GTIN ya aparece en otra fila de este archivo."
+            )
         )
 
     creado = crear_precio_empresa(

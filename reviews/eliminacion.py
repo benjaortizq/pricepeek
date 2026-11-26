@@ -25,7 +25,9 @@ class NoSePuedeEliminar(Exception):
 class Eliminacion:
     registro: ReviewDeletion
     suspendido: bool
-    foto_sin_borrar: bool  # el archivo de la foto no se pudo borrar del almacenamiento
+    foto_sin_borrar: (
+        bool  # el archivo de la foto no se pudo borrar del almacenamiento
+    )
 
 
 def eliminar_resena(resena, administrador, politica, razon, suspender=False):
@@ -35,15 +37,21 @@ def eliminar_resena(resena, administrador, politica, razon, suspender=False):
     """
     razon = (razon or "").strip()
     if politica not in POLITICAS:
-        raise NoSePuedeEliminar("Elija la política de uso que incumple la reseña.")
+        raise NoSePuedeEliminar(
+            "Elija la política de uso que incumple la reseña."
+        )
     if not razon:
         raise NoSePuedeEliminar("Indique el motivo de la eliminación.")
 
     archivo = None
     with transaction.atomic():
-        pendientes = ReviewReport.objects.filter(review_id=resena.pk, status=ReviewReport.Status.PENDING)
+        pendientes = ReviewReport.objects.filter(
+            review_id=resena.pk, status=ReviewReport.Status.PENDING
+        )
         reportes = pendientes.count()
-        suspendido = bool(suspender) and User.objects.suspender_cliente(resena.user_id, administrador, razon)
+        suspendido = bool(suspender) and User.objects.suspender_cliente(
+            resena.user_id, administrador, razon
+        )
         registro = ReviewDeletion.objects.create(
             review_id=resena.pk,
             author_id=resena.user_id,

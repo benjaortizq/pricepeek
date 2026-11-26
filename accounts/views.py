@@ -1,3 +1,5 @@
+"""Vistas HTTP de la aplicación accounts."""
+
 import secrets
 
 from django.conf import settings
@@ -21,12 +23,16 @@ from ingestion.models import Incident
 from ingestion.resolucion import EXTRACCION_FALLIDA
 from ingestion.views import ICONOS
 from products.busqueda import buscar_productos
-from products.models import Products
-from products.ofertas import categorias_del_inicio, mejores_ofertas, ultima_verificacion
+from products.models import ProductView, Products
+from products.ofertas import (
+    categorias_del_inicio,
+    mejores_ofertas,
+    ultima_verificacion,
+)
 from products.popularidad import mas_populares
 from reviews.indicadores import resumen_de_moderacion
 from reviews.models import ReviewDeletion, ReviewReport, Reviews
-from reviews.models import ReviewPhoto, ReviewReport, Reviews
+from reviews.models import ReviewPhoto
 
 from .decorators import role_required
 from .forms import (
@@ -60,7 +66,9 @@ def registro(request):
                     policy_version=PRIVACY_POLICY_VERSION,
                     accepted_at=timezone.now(),
                 )
-            messages.success(request, "Su cuenta fue creada. Ya puede iniciar sesión.")
+            messages.success(
+                request, "Su cuenta fue creada. Ya puede iniciar sesión."
+            )
             return redirect("login")
     else:
         form = RegistroClienteForm()
@@ -88,7 +96,9 @@ def consentimiento_privacidad(request):
             return redirect("panel")
     else:
         form = ConsentimientoPrivacidadForm()
-    return render(request, "accounts/consentimiento_privacidad.html", {"form": form})
+    return render(
+        request, "accounts/consentimiento_privacidad.html", {"form": form}
+    )
 
 
 @login_required
@@ -100,7 +110,9 @@ def panel(request):
     return redirect("inicio_cliente")
 
 
-PRODUCTOS_EN_INICIO = 5  # las búsquedas rápidas debajo del buscador, como en el diseño
+PRODUCTOS_EN_INICIO = (
+    5  # las búsquedas rápidas debajo del buscador, como en el diseño
+)
 
 
 def mostrar_inicio(request, titulo):
@@ -150,10 +162,14 @@ def resenas_en_la_cola(limite):
         .order_by("-fecha")[:limite]
     )
     grupos = {grupo["review_id"]: grupo for grupo in pendientes}
-    resenas = Reviews.objects.select_related("variant__product", "user").filter(pk__in=list(grupos))
+    resenas = Reviews.objects.select_related(
+        "variant__product", "user"
+    ).filter(pk__in=list(grupos))
     motivos = {}
     for review_id, motivo in (
-        ReviewReport.objects.filter(status=ReviewReport.Status.PENDING, review_id__in=list(grupos))
+        ReviewReport.objects.filter(
+            status=ReviewReport.Status.PENDING, review_id__in=list(grupos)
+        )
         .order_by("created_at")
         .values_list("review_id", "reason")
     ):
@@ -171,9 +187,16 @@ def resenas_en_la_cola(limite):
 
 
 def incidencias_en_la_cola(limite):
-    pendientes = Incident.objects.filter(kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING)
+    pendientes = Incident.objects.filter(
+        kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING
+    )
     return [
-        {"tipo": "incidencia", "incidencia": incidencia, "fecha": incidencia.created_at, "icono": ICONOS.get(incidencia.kind, "report")}
+        {
+            "tipo": "incidencia",
+            "incidencia": incidencia,
+            "fecha": incidencia.created_at,
+            "icono": ICONOS.get(incidencia.kind, "report"),
+        }
         for incidencia in pendientes.order_by("-created_at")[:limite]
     ]
 
@@ -197,10 +220,21 @@ def inicio_administrador(request):
         elementos += resenas_en_la_cola(ELEMENTOS_EN_LA_COLA)
     if cola in ("", "datos"):
         elementos += incidencias_en_la_cola(ELEMENTOS_EN_LA_COLA)
-    elementos = sorted(elementos, key=lambda elemento: elemento["fecha"], reverse=True)[:ELEMENTOS_EN_LA_COLA]
-    en_la_cola = {"": total_resenas + total_incidencias, "resenas": total_resenas, "datos": total_incidencias}[cola]
+    elementos = sorted(
+        elementos, key=lambda elemento: elemento["fecha"], reverse=True
+    )[:ELEMENTOS_EN_LA_COLA]
+    en_la_cola = {
+        "": total_resenas + total_incidencias,
+        "resenas": total_resenas,
+        "datos": total_incidencias,
+    }[cola]
 
-    hoy = moderacion["reportes_hoy"] + incidencias_pendientes.filter(created_at__gte=inicio_de_hoy()).count()
+    hoy = (
+        moderacion["reportes_hoy"]
+        + incidencias_pendientes.filter(
+            created_at__gte=inicio_de_hoy()
+        ).count()
+    )
     tiempo = moderacion["tiempo_promedio"] or ("—", "")
     tasa = moderacion["tasa_eliminacion"]
     clientes = User.objects.filter(role=User.Role.CLIENT)
@@ -220,8 +254,14 @@ def inicio_administrador(request):
                     insignia=f"+{hoy} hoy",
                     tono="alerta" if hoy else "",
                     icono="arrow_upward" if hoy else "",
-                    pie_izq=plural(total_resenas, "reseña reportada", "reseñas reportadas"),
-                    pie_der=plural(total_incidencias, "extracción fallida", "extracciones fallidas"),
+                    pie_izq=plural(
+                        total_resenas, "reseña reportada", "reseñas reportadas"
+                    ),
+                    pie_der=plural(
+                        total_incidencias,
+                        "extracción fallida",
+                        "extracciones fallidas",
+                    ),
                     destacada=True,
                 ),
                 indicador(
@@ -229,29 +269,47 @@ def inicio_administrador(request):
                     tiempo[0],
                     unidad=tiempo[1],
                     insignia="Reseñas",
-                    pie_izq="Últimos 30 días" if moderacion["tiempo_promedio"] else "Sin datos",
+                    pie_izq="Últimos 30 días"
+                    if moderacion["tiempo_promedio"]
+                    else "Sin datos",
                 ),
                 indicador(
                     "Tasa de eliminación",
                     "—" if tasa is None else tasa,
                     unidad="" if tasa is None else "%",
                     insignia="Últimos 30 días",
-                    pie_izq=plural(moderacion["eliminadas_30"], "reseña eliminada", "reseñas eliminadas"),
-                    pie_der=plural(moderacion["mantenidas_30"], "reseña mantenida", "reseñas mantenidas"),
+                    pie_izq=plural(
+                        moderacion["eliminadas_30"],
+                        "reseña eliminada",
+                        "reseñas eliminadas",
+                    ),
+                    pie_der=plural(
+                        moderacion["mantenidas_30"],
+                        "reseña mantenida",
+                        "reseñas mantenidas",
+                    ),
                 ),
                 indicador(
                     "Cuentas suspendidas",
                     suspendidas,
                     insignia="Clientes",
                     tono="marca",
-                    pie_izq=plural(clientes.count(), "cliente registrado", "clientes registrados"),
+                    pie_izq=plural(
+                        clientes.count(),
+                        "cliente registrado",
+                        "clientes registrados",
+                    ),
                 ),
             ],
             "pestanas": pestanas(
                 reverse("inicio_administrador"),
                 "cola",
                 [
-                    ("", "Todos los pendientes", total_resenas + total_incidencias),
+                    (
+                        "",
+                        "Todos los pendientes",
+                        total_resenas + total_incidencias,
+                    ),
                     ("resenas", "Reseñas reportadas", total_resenas),
                     ("datos", "Extracciones fallidas", total_incidencias),
                 ],
@@ -264,13 +322,17 @@ def inicio_administrador(request):
 # --- Suspensión de cuentas de clientes (RF-42) ---
 
 CLIENTES_POR_PAGINA = 20
-INFRACCIONES_REITERADAS = 2  # desde cuántas reseñas eliminadas se resalta al cliente
+INFRACCIONES_REITERADAS = (
+    2  # desde cuántas reseñas eliminadas se resalta al cliente
+)
 
 
 def clientes_con_infracciones():
     """Clientes con la cantidad de reseñas suyas que el administrador eliminó por incumplir políticas."""
     # Cada eliminación queda en ReviewDeletion, venga o no de un reporte.
-    return User.objects.filter(role=User.Role.CLIENT).annotate(infracciones=Count("resenas_eliminadas", distinct=True))
+    return User.objects.filter(role=User.Role.CLIENT).annotate(
+        infracciones=Count("resenas_eliminadas", distinct=True)
+    )
 
 
 @role_required(User.Role.ADMIN)
@@ -280,7 +342,9 @@ def clientes(request):
     lista = clientes_con_infracciones()
     if busqueda:
         lista = lista.filter(
-            Q(email__icontains=busqueda) | Q(first_name__icontains=busqueda) | Q(last_name__icontains=busqueda)
+            Q(email__icontains=busqueda)
+            | Q(first_name__icontains=busqueda)
+            | Q(last_name__icontains=busqueda)
         )
     if estado == "activas":
         lista = lista.filter(is_active=True)
@@ -289,13 +353,15 @@ def clientes(request):
     else:
         estado = ""
     # Los clientes con más infracciones aparecen primero.
-    pagina = Paginator(lista.order_by("-infracciones", "email"), CLIENTES_POR_PAGINA).get_page(
-        request.GET.get("pagina")
-    )
+    pagina = Paginator(
+        lista.order_by("-infracciones", "email"), CLIENTES_POR_PAGINA
+    ).get_page(request.GET.get("pagina"))
     todos = clientes_con_infracciones()
     total = todos.count()
     activas = todos.filter(is_active=True).count()
-    reiterados = todos.filter(infracciones__gte=INFRACCIONES_REITERADAS).count()
+    reiterados = todos.filter(
+        infracciones__gte=INFRACCIONES_REITERADAS
+    ).count()
     return render(
         request,
         "accounts/clientes.html",
@@ -305,8 +371,19 @@ def clientes(request):
             "estado": estado,
             "reiteradas": INFRACCIONES_REITERADAS,
             "kpis": [
-                indicador("Clientes registrados", total, pie_izq="Cuentas de cliente", destacada=True),
-                indicador("Cuentas activas", activas, insignia="Pueden usar el sitio", tono="bien", icono="check_circle"),
+                indicador(
+                    "Clientes registrados",
+                    total,
+                    pie_izq="Cuentas de cliente",
+                    destacada=True,
+                ),
+                indicador(
+                    "Cuentas activas",
+                    activas,
+                    insignia="Pueden usar el sitio",
+                    tono="bien",
+                    icono="check_circle",
+                ),
                 indicador(
                     "Cuentas suspendidas",
                     total - activas,
@@ -324,17 +401,27 @@ def clientes(request):
             "pestanas": pestanas(
                 reverse("clientes"),
                 "estado",
-                [("", "Todas las cuentas", total), ("activas", "Activas", activas), ("suspendidas", "Suspendidas", total - activas)],
+                [
+                    ("", "Todas las cuentas", total),
+                    ("activas", "Activas", activas),
+                    ("suspendidas", "Suspendidas", total - activas),
+                ],
                 estado,
                 conservar={"q": busqueda},
             ),
-            "total_texto": plural(pagina.paginator.count, "cliente", "clientes"),
+            "total_texto": plural(
+                pagina.paginator.count, "cliente", "clientes"
+            ),
         },
     )
 
 
 def mostrar_detalle_cliente(request, cliente, form=None):
-    infracciones = list(ReviewDeletion.objects.filter(author=cliente).select_related("deleted_by"))
+    infracciones = list(
+        ReviewDeletion.objects.filter(author=cliente).select_related(
+            "deleted_by"
+        )
+    )
     return render(
         request,
         "accounts/detalle_cliente.html",
@@ -348,7 +435,11 @@ def mostrar_detalle_cliente(request, cliente, form=None):
 
 
 def obtener_cliente(pk):
-    return get_object_or_404(User.objects.select_related("suspended_by"), pk=pk, role=User.Role.CLIENT)
+    return get_object_or_404(
+        User.objects.select_related("suspended_by"),
+        pk=pk,
+        role=User.Role.CLIENT,
+    )
 
 
 @role_required(User.Role.ADMIN)
@@ -363,8 +454,12 @@ def suspender_cliente(request, pk):
     form = SuspenderClienteForm(request.POST)
     if not form.is_valid():
         return mostrar_detalle_cliente(request, cliente, form)
-    if User.objects.suspender_cliente(cliente.pk, request.user, form.cleaned_data["motivo"]):
-        messages.success(request, f"La cuenta de {cliente.email} fue suspendida.")
+    if User.objects.suspender_cliente(
+        cliente.pk, request.user, form.cleaned_data["motivo"]
+    ):
+        messages.success(
+            request, f"La cuenta de {cliente.email} fue suspendida."
+        )
     else:
         messages.error(request, "Esa cuenta ya estaba suspendida.")
     return redirect("detalle_cliente", pk=cliente.pk)
@@ -375,7 +470,9 @@ def suspender_cliente(request, pk):
 def reactivar_cliente(request, pk):
     cliente = obtener_cliente(pk)
     if User.objects.reactivar_cliente(cliente.pk):
-        messages.success(request, f"La cuenta de {cliente.email} fue reactivada.")
+        messages.success(
+            request, f"La cuenta de {cliente.email} fue reactivada."
+        )
     else:
         messages.error(request, "Esa cuenta no estaba suspendida.")
     return redirect("detalle_cliente", pk=cliente.pk)
@@ -388,7 +485,9 @@ def eliminar_cuenta(request):
         if form.is_valid():
             usuario = request.user
             resenas_ids = list(
-                Reviews.objects.filter(user_id=usuario.pk).values_list("pk", flat=True)
+                Reviews.objects.filter(user_id=usuario.pk).values_list(
+                    "pk", flat=True
+                )
             )
             fotos = list(ReviewPhoto.objects.filter(review_id__in=resenas_ids))
             with transaction.atomic():
@@ -405,7 +504,9 @@ def eliminar_cuenta(request):
             for foto in fotos:
                 if foto.image.name:
                     foto.image.storage.delete(foto.image.name)
-            messages.success(request, "Su cuenta y sus datos fueron eliminados.")
+            messages.success(
+                request, "Su cuenta y sus datos fueron eliminados."
+            )
             return redirect("login")
     else:
         form = EliminarCuentaForm(request.user)
@@ -459,7 +560,9 @@ def descargar_datos_personales(request):
             "correo": usuario.email,
             "tipo": usuario.get_role_display(),
             "creada": usuario.date_joined.isoformat(),
-            "ultimo_acceso": usuario.last_login.isoformat() if usuario.last_login else None,
+            "ultimo_acceso": usuario.last_login.isoformat()
+            if usuario.last_login
+            else None,
             "ultimo_cambio_de_contrasena": usuario.last_password_change.isoformat(),
             "alertas_por_correo": usuario.active_alerts,
             "suspendida_desde": usuario.suspended_at.isoformat()
@@ -490,7 +593,9 @@ def descargar_datos_personales(request):
         ],
         "visitas_a_productos": [
             {"id_producto": visita.product_id, "hora": visita.hour.isoformat()}
-            for visita in ProductView.objects.filter(user=usuario).order_by("-hour")
+            for visita in ProductView.objects.filter(user=usuario).order_by(
+                "-hour"
+            )
         ],
         "consentimientos_de_privacidad": [
             {
@@ -503,15 +608,27 @@ def descargar_datos_personales(request):
             for consentimiento in PrivacyConsent.objects.filter(user=usuario)
         ],
     }
-    respuesta = JsonResponse(datos, json_dumps_params={"ensure_ascii": False, "indent": 2})
-    respuesta["Content-Disposition"] = 'attachment; filename="mis-datos-pricepeek.json"'
+    respuesta = JsonResponse(
+        datos, json_dumps_params={"ensure_ascii": False, "indent": 2}
+    )
+    respuesta["Content-Disposition"] = (
+        'attachment; filename="mis-datos-pricepeek.json"'
+    )
     return respuesta
 
 
 def enviar_codigo_cambio_contrasena(user, codigo):
-    contexto = {"user": user, "codigo": codigo, "minutos": settings.PASSWORD_CHANGE_CODE_TIMEOUT // 60}
-    asunto = render_to_string("registration/password_change_code_subject.txt", contexto)
-    cuerpo = render_to_string("registration/password_change_code_email.html", contexto)
+    contexto = {
+        "user": user,
+        "codigo": codigo,
+        "minutos": settings.PASSWORD_CHANGE_CODE_TIMEOUT // 60,
+    }
+    asunto = render_to_string(
+        "registration/password_change_code_subject.txt", contexto
+    )
+    cuerpo = render_to_string(
+        "registration/password_change_code_email.html", contexto
+    )
     send_mail("".join(asunto.splitlines()), cuerpo, None, [user.email])
 
 
@@ -525,7 +642,8 @@ def cambiar_contrasena(request):
             request.session[CAMBIO_PENDIENTE] = {
                 "password": make_password(form.cleaned_data["new_password1"]),
                 "codigo": make_password(codigo),
-                "expira": timezone.now().timestamp() + settings.PASSWORD_CHANGE_CODE_TIMEOUT,
+                "expira": timezone.now().timestamp()
+                + settings.PASSWORD_CHANGE_CODE_TIMEOUT,
                 "intentos": 0,
             }
             enviar_codigo_cambio_contrasena(request.user, codigo)
@@ -546,18 +664,30 @@ def confirmar_cambio_contrasena(request):
         if form.is_valid():
             if timezone.now().timestamp() > pendiente["expira"]:
                 del request.session[CAMBIO_PENDIENTE]
-                messages.error(request, "El código venció. Vuelva a solicitar el cambio de contraseña.")
+                messages.error(
+                    request,
+                    "El código venció. Vuelva a solicitar el cambio de contraseña.",
+                )
                 return redirect("password_change")
-            if not check_password(form.cleaned_data["codigo"], pendiente["codigo"]):
+            if not check_password(
+                form.cleaned_data["codigo"], pendiente["codigo"]
+            ):
                 pendiente["intentos"] += 1
-                if pendiente["intentos"] >= settings.PASSWORD_CHANGE_CODE_MAX_ATTEMPTS:
+                if (
+                    pendiente["intentos"]
+                    >= settings.PASSWORD_CHANGE_CODE_MAX_ATTEMPTS
+                ):
                     del request.session[CAMBIO_PENDIENTE]
                     messages.error(
-                        request, "Demasiados intentos fallidos. Vuelva a solicitar el cambio de contraseña."
+                        request,
+                        "Demasiados intentos fallidos. Vuelva a solicitar el cambio de contraseña.",
                     )
                     return redirect("password_change")
                 request.session[CAMBIO_PENDIENTE] = pendiente
-                restantes = settings.PASSWORD_CHANGE_CODE_MAX_ATTEMPTS - pendiente["intentos"]
+                restantes = (
+                    settings.PASSWORD_CHANGE_CODE_MAX_ATTEMPTS
+                    - pendiente["intentos"]
+                )
                 form.add_error(
                     "codigo",
                     f"El código no coincide. Revise el mensaje de correo e inténtelo de nuevo; le quedan {restantes} intento{'s' if restantes != 1 else ''}.",
@@ -566,7 +696,9 @@ def confirmar_cambio_contrasena(request):
                 usuario = request.user
                 usuario.password = pendiente["password"]
                 usuario.last_password_change = timezone.now()
-                usuario.save(update_fields=["password", "last_password_change"])
+                usuario.save(
+                    update_fields=["password", "last_password_change"]
+                )
                 update_session_auth_hash(request, usuario)
                 del request.session[CAMBIO_PENDIENTE]
                 messages.success(request, "Su contraseña fue cambiada.")
@@ -580,18 +712,29 @@ def confirmar_cambio_contrasena(request):
     )
 
 
-def mostrar_perfil(request, form_nombre=None, form_correo=None, form_confirmar=None, form_alertas=None):
+def mostrar_perfil(
+    request,
+    form_nombre=None,
+    form_correo=None,
+    form_confirmar=None,
+    form_alertas=None,
+):
     correo_pendiente = request.session.get(CORREO_PENDIENTE)
     if correo_pendiente:
-        form_confirmar = form_confirmar or ConfirmarCorreoForm(request.user, prefix="confirmar")
+        form_confirmar = form_confirmar or ConfirmarCorreoForm(
+            request.user, prefix="confirmar"
+        )
     return render(
         request,
         "accounts/editar_perfil.html",
         {
-            "form_nombre": form_nombre or EditarNombreForm(instance=request.user, prefix="nombre"),
-            "form_correo": form_correo or NuevoCorreoForm(request.user, prefix="correo"),
+            "form_nombre": form_nombre
+            or EditarNombreForm(instance=request.user, prefix="nombre"),
+            "form_correo": form_correo
+            or NuevoCorreoForm(request.user, prefix="correo"),
             "form_confirmar": form_confirmar,
-            "form_alertas": form_alertas or AlertasPrecioForm(instance=request.user, prefix="alertas"),
+            "form_alertas": form_alertas
+            or AlertasPrecioForm(instance=request.user, prefix="alertas"),
             "correo_pendiente": correo_pendiente,
         },
     )
@@ -602,30 +745,48 @@ def editar_perfil(request):
     if request.method == "POST":
         accion = request.POST.get("accion")
         if accion == "nombre":
-            form_nombre = EditarNombreForm(request.POST, instance=request.user, prefix="nombre")
+            form_nombre = EditarNombreForm(
+                request.POST, instance=request.user, prefix="nombre"
+            )
             if form_nombre.is_valid():
                 form_nombre.save()
                 messages.success(request, "Su nombre fue actualizado.")
                 return redirect("editar_perfil")
             return mostrar_perfil(request, form_nombre=form_nombre)
         if accion == "alertas" and request.user.role == User.Role.CLIENT:
-            form_alertas = AlertasPrecioForm(request.POST, instance=request.user, prefix="alertas")
+            form_alertas = AlertasPrecioForm(
+                request.POST, instance=request.user, prefix="alertas"
+            )
             if form_alertas.is_valid():
                 form_alertas.save()
-                estado = "activadas" if request.user.active_alerts else "desactivadas"
-                messages.success(request, f"Las alertas de baja de precio quedaron {estado}.")
+                estado = (
+                    "activadas"
+                    if request.user.active_alerts
+                    else "desactivadas"
+                )
+                messages.success(
+                    request,
+                    f"Las alertas de baja de precio quedaron {estado}.",
+                )
             return redirect("editar_perfil")
         if accion == "cancelar_correo":
             request.session.pop(CORREO_PENDIENTE, None)
             return redirect("editar_perfil")
-        if accion == "confirmar_correo" and request.session.get(CORREO_PENDIENTE):
-            form_confirmar = ConfirmarCorreoForm(request.user, request.POST, prefix="confirmar")
+        if accion == "confirmar_correo" and request.session.get(
+            CORREO_PENDIENTE
+        ):
+            form_confirmar = ConfirmarCorreoForm(
+                request.user, request.POST, prefix="confirmar"
+            )
             if not form_confirmar.is_valid():
                 return mostrar_perfil(request, form_confirmar=form_confirmar)
             email = request.session.pop(CORREO_PENDIENTE)
             # Se vuelve a revisar: otra cuenta pudo tomar el correo entre el paso 1 y el 2.
             if correo_en_uso(email, request.user):
-                messages.error(request, "Ese correo ya pertenece a otra cuenta. Intente con otro.")
+                messages.error(
+                    request,
+                    "Ese correo ya pertenece a otra cuenta. Intente con otro.",
+                )
                 return redirect("editar_perfil")
             request.user.email = email
             request.user.save(update_fields=["email"])

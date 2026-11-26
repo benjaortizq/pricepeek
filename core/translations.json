@@ -1157,7 +1157,7 @@
     "Ocultar la serie de {tienda}": "Hide the series for {tienda}",
     "La serie de cada tienda comienza cuando se registró su precio.": "Each store's series starts when its price was recorded.",
     "Los tramos en que una tienda no estuvo disponible se muestran como interrupciones.": "Periods when a store was unavailable are shown as gaps.",
-    "{tienda}, {fecha}. {tipo}. Precio final anterior: {anterior}. Precio final nuevo: {nuevo}. {estado}.": "{tienda}, {fecha}. {tipo}. Previous final price: {anterior}. New final price: {nuevo}. {estado}."
+    "{tienda}, {fecha}. {tipo}. Precio final anterior: {anterior}. Precio final nuevo: {nuevo}. {estado}.": "{tienda}, {fecha}. {tipo}. Previous final price: {anterior}. New final price: {nuevo}. {estado}.",
     "Comercios": "Stores",
     "Comercios asociados": "Partner stores",
     "Registre cada comercio con su cuenta de empresa, defina cómo se obtienen sus datos y actívelo o desactívelo. Los precios de un comercio desactivado no se muestran.": "Register each store with its business account, set how its data is obtained, and activate or deactivate it. A deactivated store's prices are not shown.",

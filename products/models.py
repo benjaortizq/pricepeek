@@ -59,7 +59,9 @@ class PreciosVisibles(models.Manager):
     """
 
     def get_queryset(self):
-        desactivados = PartnerStore.objects.filter(is_active=False).values("store_id")
+        desactivados = PartnerStore.objects.filter(is_active=False).values(
+            "store_id"
+        )
         return super().get_queryset().exclude(id_store_id__in=desactivados)
 
 
@@ -161,14 +163,24 @@ class PartnerStore(models.Model):
 
     # Sin restricción en la base: stores no la maneja Django (como ProductView.product_id).
     store = models.OneToOneField(
-        Stores, on_delete=models.DO_NOTHING, db_constraint=False, primary_key=True, related_name="asociado"
+        Stores,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        primary_key=True,
+        related_name="asociado",
     )
-    data_source = models.CharField("obtención de datos", max_length=20, choices=DataSource.choices)
+    data_source = models.CharField(
+        "obtención de datos", max_length=20, choices=DataSource.choices
+    )
     is_active = models.BooleanField("activo", default=True)
     # Quién lo activó o desactivó por última vez, y cuándo.
     status_changed_at = models.DateTimeField(null=True, blank=True)
     status_changed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

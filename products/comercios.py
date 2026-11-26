@@ -43,8 +43,14 @@ def comercios_con_lector():
     from ingestion.tiendas import TIENDAS
 
     nombres = {lector.NOMBRE.casefold() for lector in TIENDAS.values()}
-    ids = {tienda.pk for tienda in Stores.objects.all() if nombre_del_comercio(tienda).casefold() in nombres}
-    for tienda_id, url in Prices.objects.values_list("id_store_id", "product_web_url"):
+    ids = {
+        tienda.pk
+        for tienda in Stores.objects.all()
+        if nombre_del_comercio(tienda).casefold() in nombres
+    }
+    for tienda_id, url in Prices.objects.values_list(
+        "id_store_id", "product_web_url"
+    ):
         if tienda_id not in ids and extractor_para(url) is not None:
             ids.add(tienda_id)
     return ids
@@ -54,4 +60,8 @@ def mecanismo_de(tienda, perfil, con_lector):
     """El mecanismo que eligió el administrador o, si nunca lo eligió, el que se usa hoy."""
     if perfil is not None:
         return perfil.data_source
-    return PartnerStore.DataSource.SCRAPING if tienda.pk in con_lector else PartnerStore.DataSource.PROVIDED
+    return (
+        PartnerStore.DataSource.SCRAPING
+        if tienda.pk in con_lector
+        else PartnerStore.DataSource.PROVIDED
+    )

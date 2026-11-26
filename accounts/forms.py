@@ -244,15 +244,26 @@ class DatosDelComercioForm(forms.Form):
         label=translate_text_lazy("Descripción"),
         required=False,
         max_length=2000,
-        widget=forms.Textarea(attrs={"class": CLASE_CAMPO.replace("rounded-full", "rounded-2xl").replace("py-2.5", "py-3"), "rows": 3}),
+        widget=forms.Textarea(
+            attrs={
+                "class": CLASE_CAMPO.replace(
+                    "rounded-full", "rounded-2xl"
+                ).replace("py-2.5", "py-3"),
+                "rows": 3,
+            }
+        ),
     )
     data_source = forms.ChoiceField(
         label=translate_text_lazy("¿Cómo se obtienen sus datos?"),
         choices=PartnerStore.DataSource.choices,
         widget=forms.RadioSelect,
         error_messages={
-            "required": translate_text_lazy("Elija cómo se obtienen los datos del comercio."),
-            "invalid_choice": translate_text_lazy("Elija cómo se obtienen los datos del comercio."),
+            "required": translate_text_lazy(
+                "Elija cómo se obtienen los datos del comercio."
+            ),
+            "invalid_choice": translate_text_lazy(
+                "Elija cómo se obtienen los datos del comercio."
+            ),
         },
     )
 
@@ -262,9 +273,18 @@ class DatosDelComercioForm(forms.Form):
 
     def clean_name(self):
         nombre = " ".join(self.cleaned_data["name"].split())
-        otras = Stores.objects.exclude(pk=self.tienda.pk) if self.tienda else Stores.objects.all()
-        if any(" ".join(otra.name.split()).casefold() == nombre.casefold() for otra in otras.only("name")):
-            raise forms.ValidationError(translate_text_lazy("Ya hay un comercio con ese nombre."))
+        otras = (
+            Stores.objects.exclude(pk=self.tienda.pk)
+            if self.tienda
+            else Stores.objects.all()
+        )
+        if any(
+            " ".join(otra.name.split()).casefold() == nombre.casefold()
+            for otra in otras.only("name")
+        ):
+            raise forms.ValidationError(
+                translate_text_lazy("Ya hay un comercio con ese nombre.")
+            )
         return nombre
 
     def clean_description(self):
@@ -276,7 +296,9 @@ class CuentaDeEmpresaForm(forms.Form):
 
     email = forms.EmailField(
         label=translate_text_lazy("Correo de la cuenta"),
-        widget=forms.EmailInput(attrs={"class": CLASE_CAMPO, "autocomplete": "off"}),
+        widget=forms.EmailInput(
+            attrs={"class": CLASE_CAMPO, "autocomplete": "off"}
+        ),
     )
     first_name = forms.CharField(
         label=translate_text_lazy("Nombre de la persona encargada"),
@@ -292,9 +314,15 @@ class CuentaDeEmpresaForm(forms.Form):
     )
 
     def clean_email(self):
-        correo = User.objects.normalize_email(self.cleaned_data["email"]).lower()
+        correo = User.objects.normalize_email(
+            self.cleaned_data["email"]
+        ).lower()
         if User.objects.filter(email__iexact=correo).exists():
-            raise forms.ValidationError(translate_text_lazy("Ya existe una cuenta con este correo electrónico."))
+            raise forms.ValidationError(
+                translate_text_lazy(
+                    "Ya existe una cuenta con este correo electrónico."
+                )
+            )
         return correo
 
     def clean_first_name(self):

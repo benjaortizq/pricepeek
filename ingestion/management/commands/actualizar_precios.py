@@ -103,11 +103,15 @@ class Command(BaseCommand):
         guardar = not opciones["dry_run"]
         omitidos = sorted(
             nombre_del_comercio(perfil.store)
-            for perfil in PartnerStore.objects.filter(store_id__in=sin_obtencion_automatica()).select_related("store")
+            for perfil in PartnerStore.objects.filter(
+                store_id__in=sin_obtencion_automatica()
+            ).select_related("store")
         )
         if omitidos:
             self.stdout.write(
-                "Se omiten (desactivados o con datos provistos por el comercio): " + ", ".join(omitidos) + "."
+                "Se omiten (desactivados o con datos provistos por el comercio): "
+                + ", ".join(omitidos)
+                + "."
             )
         precios = (
             # Los comercios desactivados o que proveen sus datos no se revisan (products/comercios.py).

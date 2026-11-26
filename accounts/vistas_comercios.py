@@ -15,7 +15,11 @@ from django.views.decorators.http import require_POST
 
 from core.panel import indicador, pestanas, plural
 from core.translations import translate_text
-from products.comercios import comercios_con_lector, mecanismo_de, nombre_del_comercio
+from products.comercios import (
+    comercios_con_lector,
+    mecanismo_de,
+    nombre_del_comercio,
+)
 from products.models import PartnerStore, Prices, Stores
 
 from .comercios import (
@@ -28,7 +32,11 @@ from .comercios import (
     registrar_comercio as guardar_comercio_nuevo,
 )
 from .decorators import role_required
-from .forms import CuentaDeEmpresaForm, DatosDelComercioForm, RegistrarComercioForm
+from .forms import (
+    CuentaDeEmpresaForm,
+    DatosDelComercioForm,
+    RegistrarComercioForm,
+)
 from .models import AccountsUser, User
 
 COMERCIOS_POR_PAGINA = 20
@@ -41,7 +49,9 @@ FILTROS = {
 
 def filas_de_comercios():
     """Cada comercio con lo que muestra la lista, en pocas consultas (con Supabase cada una tarda ~80 ms)."""
-    perfiles = {perfil.store_id: perfil for perfil in PartnerStore.objects.all()}
+    perfiles = {
+        perfil.store_id: perfil for perfil in PartnerStore.objects.all()
+    }
     con_lector = comercios_con_lector()
     precios = {
         fila["id_store_id"]: fila
@@ -50,7 +60,9 @@ def filas_de_comercios():
         .annotate(total=Count("pk"), ultima=Max("updated_at"))
     }
     cuentas = dict(
-        AccountsUser.objects.filter(role=User.Role.ENTERPRISE, from_store__isnull=False)
+        AccountsUser.objects.filter(
+            role=User.Role.ENTERPRISE, from_store__isnull=False
+        )
         .order_by()
         .values("from_store_id")
         .annotate(total=Count("pk"))
@@ -81,14 +93,21 @@ def comercios(request):
     if estado not in FILTROS:
         estado = ""
     todas = filas_de_comercios()
-    cantidad = {clave: sum(map(filtro, todas)) for clave, filtro in FILTROS.items()}
+    cantidad = {
+        clave: sum(map(filtro, todas)) for clave, filtro in FILTROS.items()
+    }
     lista = [
         fila
         for fila in todas
-        if busqueda.casefold() in fila["nombre"].casefold() and (not estado or FILTROS[estado](fila))
+        if busqueda.casefold() in fila["nombre"].casefold()
+        and (not estado or FILTROS[estado](fila))
     ]
-    pagina = Paginator(lista, COMERCIOS_POR_PAGINA).get_page(request.GET.get("pagina"))
-    por_scraping = sum(fila["mecanismo"] == PartnerStore.DataSource.SCRAPING for fila in todas)
+    pagina = Paginator(lista, COMERCIOS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
+    por_scraping = sum(
+        fila["mecanismo"] == PartnerStore.DataSource.SCRAPING for fila in todas
+    )
     return render(
         request,
         "accounts/comercios.html",
@@ -104,16 +123,28 @@ def comercios(request):
                     pie_izq=f"{por_scraping} con web scraping · {len(todas) - por_scraping} con datos del comercio",
                     destacada=True,
                 ),
-                indicador("Activos", cantidad["activos"], insignia="Sus precios se muestran", tono="bien", icono="check_circle"),
+                indicador(
+                    "Activos",
+                    cantidad["activos"],
+                    insignia="Sus precios se muestran",
+                    tono="bien",
+                    icono="check_circle",
+                ),
                 indicador(
                     "Desactivados",
                     cantidad["desactivados"],
-                    insignia="Precios ocultos" if cantidad["desactivados"] else "",
+                    insignia="Precios ocultos"
+                    if cantidad["desactivados"]
+                    else "",
                     tono="alerta",
                     icono="visibility_off",
                     pie_izq="No se muestran ni se actualizan",
                 ),
-                indicador("Sin cuenta de empresa", cantidad["sin-cuenta"], pie_izq="Cada comercio necesita una"),
+                indicador(
+                    "Sin cuenta de empresa",
+                    cantidad["sin-cuenta"],
+                    pie_izq="Cada comercio necesita una",
+                ),
             ],
             "pestanas": pestanas(
                 reverse("comercios"),
@@ -122,12 +153,18 @@ def comercios(request):
                     ("", "Todos los comercios", len(todas)),
                     ("activos", "Activos", cantidad["activos"]),
                     ("desactivados", "Desactivados", cantidad["desactivados"]),
-                    ("sin-cuenta", "Sin cuenta de empresa", cantidad["sin-cuenta"]),
+                    (
+                        "sin-cuenta",
+                        "Sin cuenta de empresa",
+                        cantidad["sin-cuenta"],
+                    ),
                 ],
                 estado,
                 conservar={"q": busqueda},
             ),
-            "total_texto": plural(pagina.paginator.count, "comercio", "comercios"),
+            "total_texto": plural(
+                pagina.paginator.count, "comercio", "comercios"
+            ),
         },
     )
 
@@ -136,7 +173,10 @@ def _avisar_acceso(request, cuenta, tienda):
     if enviar_acceso(cuenta, tienda, request):
         messages.info(
             request,
-            translate_text("Se envió a {correo} el enlace para elegir su contraseña.", correo=cuenta.email),
+            translate_text(
+                "Se envió a {correo} el enlace para elegir su contraseña.",
+                correo=cuenta.email,
+            ),
         )
     else:
         messages.error(
@@ -163,17 +203,27 @@ def registrar_comercio(request):
                     administrador=request.user,
                 )
                 cuenta = crear_cuenta_de_empresa(
-                    tienda, correo=datos["email"], nombre=datos["first_name"], apellidos=datos["last_name"]
+                    tienda,
+                    correo=datos["email"],
+                    nombre=datos["first_name"],
+                    apellidos=datos["last_name"],
                 )
             messages.success(
                 request,
-                translate_text("Se registró el comercio «{comercio}» con su cuenta de empresa.", comercio=tienda.name),
+                translate_text(
+                    "Se registró el comercio «{comercio}» con su cuenta de empresa.",
+                    comercio=tienda.name,
+                ),
             )
             _avisar_acceso(request, cuenta, tienda)
             return redirect("detalle_comercio", pk=tienda.pk)
     else:
         form = RegistrarComercioForm(initial={"is_active": True})
-    return render(request, "accounts/registrar_comercio.html", {"form": form, "mecanismos": PartnerStore.DataSource})
+    return render(
+        request,
+        "accounts/registrar_comercio.html",
+        {"form": form, "mecanismos": PartnerStore.DataSource},
+    )
 
 
 def _mostrar_detalle(request, tienda, form_datos=None, form_cuenta=None):
@@ -183,10 +233,16 @@ def _mostrar_detalle(request, tienda, form_datos=None, form_cuenta=None):
     if form_datos is None:
         form_datos = DatosDelComercioForm(
             tienda=tienda,
-            initial={"name": nombre_del_comercio(tienda), "description": tienda.description or "", "data_source": mecanismo},
+            initial={
+                "name": nombre_del_comercio(tienda),
+                "description": tienda.description or "",
+                "data_source": mecanismo,
+            },
         )
     precios = Prices.objects.filter(id_store_id=tienda.pk).aggregate(
-        total=Count("pk"), disponibles=Count("pk", filter=Q(is_available=True)), ultima=Max("updated_at")
+        total=Count("pk"),
+        disponibles=Count("pk", filter=Q(is_available=True)),
+        ultima=Max("updated_at"),
     )
     return render(
         request,
@@ -216,11 +272,19 @@ def detalle_comercio(request, pk):
         if form.is_valid():
             datos = form.cleaned_data
             if guardar_datos_del_comercio(
-                tienda, nombre=datos["name"], descripcion=datos["description"], mecanismo=datos["data_source"]
+                tienda,
+                nombre=datos["name"],
+                descripcion=datos["description"],
+                mecanismo=datos["data_source"],
             ):
-                messages.success(request, translate_text("Se guardaron los datos del comercio."))
+                messages.success(
+                    request,
+                    translate_text("Se guardaron los datos del comercio."),
+                )
             else:
-                messages.info(request, translate_text("No había cambios que guardar."))
+                messages.info(
+                    request, translate_text("No había cambios que guardar.")
+                )
             return redirect("detalle_comercio", pk=tienda.pk)
         return _mostrar_detalle(request, tienda, form_datos=form)
     return _mostrar_detalle(request, tienda)
@@ -233,12 +297,19 @@ def estado_comercio(request, pk):
     activo = request.POST.get("activo") == "1"
     nombre = nombre_del_comercio(tienda)
     if not cambiar_estado(tienda, activo=activo, administrador=request.user):
-        texto = "El comercio «{comercio}» ya estaba activo." if activo else "El comercio «{comercio}» ya estaba desactivado."
+        texto = (
+            "El comercio «{comercio}» ya estaba activo."
+            if activo
+            else "El comercio «{comercio}» ya estaba desactivado."
+        )
         messages.info(request, translate_text(texto, comercio=nombre))
     elif activo:
         messages.success(
             request,
-            translate_text("Se activó el comercio «{comercio}». Sus precios vuelven a mostrarse.", comercio=nombre),
+            translate_text(
+                "Se activó el comercio «{comercio}». Sus precios vuelven a mostrarse.",
+                comercio=nombre,
+            ),
         )
     else:
         messages.success(
@@ -260,9 +331,17 @@ def crear_cuenta_comercio(request, pk):
         return _mostrar_detalle(request, tienda, form_cuenta=form)
     datos = form.cleaned_data
     cuenta = crear_cuenta_de_empresa(
-        tienda, correo=datos["email"], nombre=datos["first_name"], apellidos=datos["last_name"]
+        tienda,
+        correo=datos["email"],
+        nombre=datos["first_name"],
+        apellidos=datos["last_name"],
     )
-    messages.success(request, translate_text("Se creó la cuenta de empresa {correo}.", correo=cuenta.email))
+    messages.success(
+        request,
+        translate_text(
+            "Se creó la cuenta de empresa {correo}.", correo=cuenta.email
+        ),
+    )
     _avisar_acceso(request, cuenta, tienda)
     return redirect("detalle_comercio", pk=tienda.pk)
 

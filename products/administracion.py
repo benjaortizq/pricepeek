@@ -267,7 +267,11 @@ def editar_producto(request, pk):
             "precios": precios,
             "cantidad_tiendas": len(tiendas),
             # Los comercios desactivados tienen precio, pero no se muestra (products/comercios.py).
-            "desactivados": set(PartnerStore.objects.filter(is_active=False).values_list("store_id", flat=True)),
+            "desactivados": set(
+                PartnerStore.objects.filter(is_active=False).values_list(
+                    "store_id", flat=True
+                )
+            ),
             "imagen": imagen_actual(producto),
             "marcas": Brands.objects.order_by("name").values_list(
                 "name", flat=True

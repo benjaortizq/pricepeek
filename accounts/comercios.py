@@ -22,7 +22,11 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from ingestion.catalogo import arreglar_secuencias, secuencias_atrasadas
-from products.comercios import comercios_con_lector, mecanismo_de, nombre_del_comercio
+from products.comercios import (
+    comercios_con_lector,
+    mecanismo_de,
+    nombre_del_comercio,
+)
 from products.models import PartnerStore, Stores
 
 from .models import AccountsUser, User
@@ -30,7 +34,9 @@ from .models import AccountsUser, User
 
 def cuentas_de_empresa(tienda):
     """Las cuentas de empresa del comercio, la más antigua primero."""
-    ids = AccountsUser.objects.filter(from_store_id=tienda.pk, role=User.Role.ENTERPRISE).values("pk")
+    ids = AccountsUser.objects.filter(
+        from_store_id=tienda.pk, role=User.Role.ENTERPRISE
+    ).values("pk")
     return User.objects.filter(pk__in=ids).order_by("date_joined", "pk")
 
 
@@ -39,12 +45,19 @@ def perfil_de(tienda):
 
 
 @transaction.atomic
-def registrar_comercio(*, nombre, descripcion, mecanismo, activo, administrador):
+def registrar_comercio(
+    *, nombre, descripcion, mecanismo, activo, administrador
+):
     """Crea el comercio (stores) y su PartnerStore. Devuelve la tienda."""
     ahora = timezone.now()
     # Si alguien insertó tiendas con el id escrito a mano, el contador quedó atrás (ingestion/catalogo.py).
     arreglar_secuencias(secuencias_atrasadas([Stores]))
-    tienda = Stores.objects.create(name=nombre, description=descripcion or None, created_at=ahora, updated_at=ahora)
+    tienda = Stores.objects.create(
+        name=nombre,
+        description=descripcion or None,
+        created_at=ahora,
+        updated_at=ahora,
+    )
     PartnerStore.objects.create(
         store=tienda,
         data_source=mecanismo,
@@ -59,13 +72,25 @@ def registrar_comercio(*, nombre, descripcion, mecanismo, activo, administrador)
 def guardar_datos_del_comercio(tienda, *, nombre, descripcion, mecanismo):
     """Cambia el nombre, la descripción y el mecanismo de obtención de datos. Devuelve si cambió algo."""
     perfil = perfil_de(tienda)
-    actual = mecanismo_de(tienda, perfil, comercios_con_lector() if perfil is None else set())
+    actual = mecanismo_de(
+        tienda, perfil, comercios_con_lector() if perfil is None else set()
+    )
     # «Walmart\n» y «Walmart» son el mismo nombre: la obtención de datos compara sin espacios ni mayúsculas.
-    if (nombre_del_comercio(tienda), tienda.description or None, actual) == (nombre, descripcion or None, mecanismo):
+    if (nombre_del_comercio(tienda), tienda.description or None, actual) == (
+        nombre,
+        descripcion or None,
+        mecanismo,
+    ):
         return False
-    tienda.name, tienda.description, tienda.updated_at = nombre, descripcion or None, timezone.now()
+    tienda.name, tienda.description, tienda.updated_at = (
+        nombre,
+        descripcion or None,
+        timezone.now(),
+    )
     tienda.save(update_fields=["name", "description", "updated_at"])
-    PartnerStore.objects.update_or_create(store=tienda, defaults={"data_source": mecanismo})
+    PartnerStore.objects.update_or_create(
+        store=tienda, defaults={"data_source": mecanismo}
+    )
     return True
 
 
@@ -75,7 +100,11 @@ def cambiar_estado(tienda, *, activo, administrador):
     perfil = perfil_de(tienda)
     if (perfil.is_active if perfil else True) == activo:
         return False
-    mecanismo = perfil.data_source if perfil else mecanismo_de(tienda, None, comercios_con_lector())
+    mecanismo = (
+        perfil.data_source
+        if perfil
+        else mecanismo_de(tienda, None, comercios_con_lector())
+    )
     PartnerStore.objects.update_or_create(
         store=tienda,
         defaults={
@@ -114,8 +143,14 @@ def enviar_acceso(cuenta, tienda, request):
             },
         )
     )
-    contexto = {"cuenta": cuenta, "comercio": " ".join(tienda.name.split()), "enlace": enlace}
-    asunto = render_to_string("accounts/correo_cuenta_empresa_asunto.txt", contexto)
+    contexto = {
+        "cuenta": cuenta,
+        "comercio": " ".join(tienda.name.split()),
+        "enlace": enlace,
+    }
+    asunto = render_to_string(
+        "accounts/correo_cuenta_empresa_asunto.txt", contexto
+    )
     cuerpo = render_to_string("accounts/correo_cuenta_empresa.txt", contexto)
     try:
         send_mail("".join(asunto.splitlines()), cuerpo, None, [cuenta.email])

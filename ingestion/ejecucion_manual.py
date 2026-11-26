@@ -91,7 +91,9 @@ def comercios_con_scraping():
     )
     comercios = []
     # Los desactivados y los que proveen sus propios datos no se obtienen por web scraping (products/comercios.py).
-    for tienda in Stores.objects.filter(pk__in=list(filas)).exclude(pk__in=sin_obtencion_automatica()):
+    for tienda in Stores.objects.filter(pk__in=list(filas)).exclude(
+        pk__in=sin_obtencion_automatica()
+    ):
         nombre = tienda.name.strip()
         comercios.append(
             {

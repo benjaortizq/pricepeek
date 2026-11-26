@@ -223,15 +223,18 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-SECURE_SSL_REDIRECT = os.environ.get(
-    "SECURE_SSL_REDIRECT", "False" if DEBUG else "True"
-).lower() == "true"
+SECURE_SSL_REDIRECT = (
+    os.environ.get("SECURE_SSL_REDIRECT", "False" if DEBUG else "True").lower()
+    == "true"
+)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = (
     os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "False").lower() == "true"
 )
-SECURE_HSTS_PRELOAD = os.environ.get("SECURE_HSTS_PRELOAD", "False").lower() == "true"
+SECURE_HSTS_PRELOAD = (
+    os.environ.get("SECURE_HSTS_PRELOAD", "False").lower() == "true"
+)
 
 PASSWORD_RESET_TIMEOUT = (
     60 * 60 * 24

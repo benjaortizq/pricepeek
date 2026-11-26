@@ -32,7 +32,7 @@ def mejores_ofertas(cantidad=OFERTAS_EN_INICIO):
     una oferta.
     """
     precios = (
-        anotar_precio_final(Prices.objects.filter(is_available=True, price__isnull=False))
+        anotar_precio_final(Prices.visibles.filter(is_available=True, price__isnull=False))
         .select_related("id_store")
         .only("id", "gtin", "price", "discount", "updated_at", "id_store", "id_store__name")
     )

@@ -39,6 +39,7 @@
     <nav class="flex flex-col gap-1" aria-label="{% t 'Panel de administración' %}">
       {% include "panel/enlace_lateral.html" with url_name="inicio_administrador" icono="dashboard" texto="Resumen" activo_si="inicio_administrador" %}
       {% include "panel/enlace_lateral.html" with url_name="clientes" icono="group" texto="Clientes" activo_si="clientes detalle_cliente" %}
+      {% include "panel/enlace_lateral.html" with url_name="comercios" icono="storefront" texto="Comercios" activo_si="comercios registrar_comercio detalle_comercio crear_cuenta_comercio" %}
       {% include "panel/enlace_lateral.html" with url_name="resenas_reportadas" icono="rate_review" texto="Reseñas reportadas" activo_si="resenas_reportadas" contador=pendientes.resenas %}
       {% include "panel/enlace_lateral.html" with url_name="todas_las_resenas" icono="reviews" texto="Todas las reseñas" activo_si="todas_las_resenas" %}
       {% include "panel/enlace_lateral.html" with url_name="catalogo_de_productos" icono="inventory_2" texto="Productos" activo_si="catalogo_de_productos editar_producto" %}
@@ -102,6 +103,7 @@
     <nav class="lg:hidden flex gap-1.5 overflow-x-auto px-4 pb-3" aria-label="{% t 'Panel de administración' %}">
       {% include "panel/enlace_movil.html" with url_name="inicio_administrador" texto="Resumen" activo_si="inicio_administrador" %}
       {% include "panel/enlace_movil.html" with url_name="clientes" texto="Clientes" activo_si="clientes detalle_cliente" %}
+      {% include "panel/enlace_movil.html" with url_name="comercios" texto="Comercios" activo_si="comercios registrar_comercio detalle_comercio crear_cuenta_comercio" %}
       {% include "panel/enlace_movil.html" with url_name="resenas_reportadas" texto="Reseñas reportadas" activo_si="resenas_reportadas" contador=pendientes.resenas %}
       {% include "panel/enlace_movil.html" with url_name="todas_las_resenas" texto="Todas las reseñas" activo_si="todas_las_resenas" %}
       {% include "panel/enlace_movil.html" with url_name="catalogo_de_productos" texto="Productos" activo_si="catalogo_de_productos editar_producto" %}

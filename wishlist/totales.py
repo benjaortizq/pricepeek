@@ -42,7 +42,7 @@ def totales_por_tienda(items):
 def _comparar(productos):
     moneda = productos[0].currency
     precios = (
-        Prices.objects.filter(
+        Prices.visibles.filter(
             gtin__in=[item.variant.gtin for item in productos],
             currency_id=moneda.pk,
             is_available=True,

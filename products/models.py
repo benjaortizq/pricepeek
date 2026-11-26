@@ -48,7 +48,23 @@ class Currencies(models.Model):
         db_table = 'currencies'
 
 
+class PreciosVisibles(models.Manager):
+    """Los precios que se le muestran al usuario final: sin los de comercios desactivados.
+
+    Lo usan las pantallas y la API del sitio (Prices.visibles). Prices.objects los trae todos:
+    lo siguen usando el portal de empresas (cada tienda ve los suyos aunque esté desactivada),
+    la obtención de datos y el panel de administración.
+    """
+
+    def get_queryset(self):
+        desactivados = PartnerStore.objects.filter(is_active=False).values("store_id")
+        return super().get_queryset().exclude(id_store_id__in=desactivados)
+
+
 class Prices(models.Model):
+    objects = models.Manager()  # el primero es el de siempre: Django lo usa en las relaciones y el admin
+    visibles = PreciosVisibles()
+
     id = models.BigAutoField(primary_key=True)
     id_store = models.ForeignKey('Stores', models.DO_NOTHING, db_column='id_store')
     gtin = models.ForeignKey('ProductVariants', models.DO_NOTHING, db_column='gtin', to_field='gtin')
@@ -118,6 +134,39 @@ class Stores(models.Model):
     class Meta:
         managed = False
         db_table = 'stores'
+
+
+class PartnerStore(models.Model):
+    """Un comercio asociado, como lo administra PricePeek: cómo se obtienen sus datos y si está activo.
+
+    stores es una tabla de Supabase (managed = False): lo que agrega PricePeek va en esta tabla
+    aparte, una fila por comercio. Un comercio sin fila (los que ya existían) está activo y su
+    mecanismo se deduce de si PricePeek sabe leer su página (ver products/comercios.py).
+    """
+
+    class DataSource(models.TextChoices):
+        SCRAPING = "scraping", "Web scraping"
+        PROVIDED = "comercio", "Datos provistos por el comercio"
+
+    # Sin restricción en la base: stores no la maneja Django (como ProductView.product_id).
+    store = models.OneToOneField(
+        Stores, on_delete=models.DO_NOTHING, db_constraint=False, primary_key=True, related_name="asociado"
+    )
+    data_source = models.CharField("obtención de datos", max_length=20, choices=DataSource.choices)
+    is_active = models.BooleanField("activo", default=True)
+    # Quién lo activó o desactivó por última vez, y cuándo.
+    status_changed_at = models.DateTimeField(null=True, blank=True)
+    status_changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "partner_stores"
+
+    def __str__(self):
+        return self.store.name.strip()
 
 
 class ProductView(models.Model):

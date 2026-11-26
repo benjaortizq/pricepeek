@@ -25,7 +25,7 @@ from core.translations import translate_text
 from .busqueda import con_imagen
 from .edicion import CARPETA_DE_IMAGENES, NOMBRE_DE_IMAGEN, editar_producto as guardar_edicion, imagen_actual
 from .forms import EditarProductoForm
-from .models import Brands, Categories, Prices, ProductImages, Products, ProductVariants
+from .models import Brands, Categories, PartnerStore, Prices, ProductImages, Products, ProductVariants
 
 PRODUCTOS_POR_PAGINA = 20
 
@@ -200,6 +200,8 @@ def editar_producto(request, pk):
             "presentaciones": presentaciones,
             "precios": precios,
             "cantidad_tiendas": len(tiendas),
+            # Los comercios desactivados tienen precio, pero no se muestra (products/comercios.py).
+            "desactivados": set(PartnerStore.objects.filter(is_active=False).values_list("store_id", flat=True)),
             "imagen": imagen_actual(producto),
             "marcas": Brands.objects.order_by("name").values_list("name", flat=True),
             "volver": volver,

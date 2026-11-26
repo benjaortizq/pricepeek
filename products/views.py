@@ -79,7 +79,7 @@ def _expresion_tienda_limpia() -> ExpressionWrapper:
 def _existe_precio_mejor_por_gtin() -> QuerySet:
     """Busca en la base otro precio disponible mejor para el mismo GTIN."""
     return (
-        Prices.objects.filter(
+        Prices.visibles.filter(
             gtin_id=OuterRef("gtin_id"),
             is_available=True,
             price__isnull=False,
@@ -98,7 +98,7 @@ def _existe_precio_mejor_por_gtin() -> QuerySet:
 def _precio_minimo_disponible_por_gtin() -> QuerySet:
     """Devuelve el precio disponible más bajo de cada GTIN."""
     return (
-        Prices.objects.filter(
+        Prices.visibles.filter(
             gtin_id=OuterRef("gtin_id"),
             is_available=True,
             price__isnull=False,
@@ -112,7 +112,7 @@ def _precio_minimo_disponible_por_gtin() -> QuerySet:
 def _consulta_precios_detalle(producto_id) -> QuerySet:
     """Prepara los precios y las diferencias de cada GTIN para el detalle."""
     precios = _anotar_precio_final(
-        Prices.objects.filter(gtin__product_id=producto_id).select_related(
+        Prices.visibles.filter(gtin__product_id=producto_id).select_related(
             "id_store", "currency", "gtin"
         )
     ).annotate(

@@ -1,0 +1,36 @@
+{% load site_i18n %}
+{% comment %}
+  El mecanismo de adquisición de datos, como dos tarjetas para elegir.
+  campo: el BoundField data_source; mecanismos: PartnerStore.DataSource;
+  sin_lector: True si PricePeek todavía no sabe leer la página del comercio.
+{% endcomment %}
+<fieldset>
+  <legend class="block text-body-sm font-semibold text-on-surface mb-2">{{ campo.label }} <span class="text-error">*</span></legend>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    {% for opcion in campo %}
+      <label class="flex items-start gap-3 p-4 rounded-2xl border border-outline-variant cursor-pointer hover:bg-surface-container-low has-[:checked]:border-on-surface has-[:checked]:bg-surface-container-low has-[:checked]:ring-1 has-[:checked]:ring-on-surface transition-colors" for="{{ opcion.id_for_label }}">
+        <input class="mt-1 text-on-surface focus:ring-on-surface" type="radio" name="{{ opcion.data.name }}" value="{{ opcion.data.value }}" id="{{ opcion.id_for_label }}"{% if opcion.data.selected %} checked{% endif %}>
+        <span class="min-w-0">
+          <span class="flex items-center gap-1.5 font-semibold text-on-surface">
+            <span class="material-symbols-outlined text-[18px] text-primary" aria-hidden="true">{% if opcion.data.value == mecanismos.SCRAPING %}travel_explore{% else %}upload_file{% endif %}</span>
+            {% t opcion.choice_label %}
+          </span>
+          <span class="block mt-1 text-body-sm text-secondary">
+            {% if opcion.data.value == mecanismos.SCRAPING %}
+              {% t 'PricePeek revisa cada hora los precios en la página del comercio.' %}
+            {% else %}
+              {% t 'El comercio carga sus precios desde el portal de empresas (formulario o archivo CSV). La obtención de datos no los toca.' %}
+            {% endif %}
+          </span>
+          {% if opcion.data.value == mecanismos.SCRAPING and sin_lector %}
+            <span class="mt-2 flex items-start gap-1.5 text-body-sm text-on-surface bg-primary-fixed/40 rounded-lg px-2 py-1.5">
+              <span class="material-symbols-outlined text-[16px] shrink-0" aria-hidden="true">info</span>
+              {% t 'PricePeek todavía no sabe leer la página de este comercio: hasta que el equipo de desarrollo agregue su lector, no se obtendrán precios así.' %}
+            </span>
+          {% endif %}
+        </span>
+      </label>
+    {% endfor %}
+  </div>
+  {% for error in campo.errors %}<p class="mt-1.5 text-body-sm text-error">{{ error }}</p>{% endfor %}
+</fieldset>

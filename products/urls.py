@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import administracion, views, vistas_historial
+from . import administracion, views
 
 urlpatterns = [
     path("comparar/", views.comparar_precios, name="comparar_precios"),
@@ -20,17 +20,6 @@ urlpatterns = [
         "catalogo/<int:pk>/editar/",
         administracion.editar_producto,
         name="editar_producto",
-    ),
-    # Panel de administración: el historial de precios de las tiendas.
-    path(
-        "historial/",
-        vistas_historial.historial_de_precios,
-        name="historial_de_precios",
-    ),
-    path(
-        "historial/<str:gtin>/",
-        vistas_historial.historial_de_presentacion,
-        name="historial_de_presentacion",
     ),
     path(
         "imagenes/<path:nombre>",

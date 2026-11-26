@@ -51,6 +51,55 @@
   </article>
 </section>
 
+<section class="mt-space-lg rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6" aria-labelledby="historial-precios-heading">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-headline-md font-headline-md" id="historial-precios-heading">{% t 'Historial de cambios de precio' %}</h2>
+      <p class="mt-1 text-body-sm text-secondary">{% t 'Consulta los cambios de precio y disponibilidad de esta oferta.' %}</p>
+    </div>
+    <span class="rounded-full bg-surface-container-high px-2.5 py-1 text-body-sm font-bold">{{ historial|length }}</span>
+  </div>
+
+  {% if historial %}
+  <ol class="mt-5 space-y-3">
+    {% for cambio in historial %}
+    <li class="rounded-xl border border-outline-variant/60 bg-surface-container-low p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <time class="font-bold" datetime="{{ cambio.created_at|date:'c' }}">{{ cambio.created_at|date:"d/m/Y H:i" }}</time>
+        {% if cambio.solo_disponibilidad %}
+        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-body-sm font-bold {% if cambio.is_active %}bg-tertiary-container/40 text-tertiary{% else %}bg-surface-container-high text-secondary{% endif %}">
+          <span class="material-symbols-outlined text-[17px]">{% if cambio.is_active %}restart_alt{% else %}visibility_off{% endif %}</span>
+          {{ cambio.etiqueta_disponibilidad }}
+        </span>
+        {% endif %}
+      </div>
+      <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Precio' %}</dt>
+          <dd class="mt-1 font-bold">{{ cambio.old_price|money:precio.currency.symbol }} → {{ cambio.new_price|money:precio.currency.symbol }}</dd>
+        </div>
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Descuento' %}</dt>
+          {% widthratio cambio.old_discount 1 100 as descuento_anterior %}{% widthratio cambio.new_discount 1 100 as descuento_nuevo %}
+          <dd class="mt-1 font-bold">{{ descuento_anterior }} % → {{ descuento_nuevo }} %</dd>
+        </div>
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Disponibilidad' %}</dt>
+          <dd class="mt-1 font-bold">{{ cambio.disponibilidad }}</dd>
+        </div>
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Autor' %}</dt>
+          <dd class="mt-1 font-bold">{{ cambio.autor }}</dd>
+        </div>
+      </dl>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <div class="mt-5 rounded-xl bg-surface-container-low p-4 text-body-sm text-secondary">{% t 'No se han registrado cambios' %}</div>
+  {% endif %}
+</section>
+
 <section class="mt-space-lg grid grid-cols-1 xl:grid-cols-2 gap-space-md">
   <article class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-5 sm:p-6">
     <h2 class="text-headline-md font-headline-md">{% t 'Información del producto' %}</h2>

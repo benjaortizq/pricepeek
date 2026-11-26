@@ -31,6 +31,7 @@ from .selectors import (
     PRODUCTOS_POR_PAGINA,
     catalogo_de_tienda,
     estadisticas_catalogo,
+    historial_precios_de_tienda,
     obtener_precio_de_tienda,
     problemas_de_precio,
 )
@@ -226,7 +227,12 @@ def editar_producto(request, price_id):
         form = PrecioEmpresaForm(request.POST)
         if form.is_valid():
             try:
-                editar_precio_empresa(store, price_id, form.cleaned_data)
+                editar_precio_empresa(
+                    store,
+                    price_id,
+                    form.cleaned_data,
+                    usuario=request.user,
+                )
             except ErrorEmpresa as error:
                 messages.error(request, str(error))
             else:
@@ -330,6 +336,7 @@ def detalle_producto(request, price_id):
         imagen.url_ingresada_valida = url_imagen_valida(imagen.url_ingresada)
 
     imagen = next((item for item in imagenes if item.is_main), None)
+    historial = historial_precios_de_tienda(store, precio)
     return render(
         request,
         "enterprise/producto_detalle.html",
@@ -341,6 +348,7 @@ def detalle_producto(request, price_id):
             "imagenes_form": form,
             "nuevas_urls": nuevas_urls,
             "problemas": problemas_de_precio(precio),
+            "historial": historial,
         },
     )
 
@@ -398,7 +406,7 @@ def desactivar_producto(request, price_id):
         )
     if request.method == "POST":
         try:
-            desactivar_precio_empresa(store, price_id)
+            desactivar_precio_empresa(store, price_id, usuario=request.user)
         except ErrorEmpresa as error:
             messages.error(request, str(error))
         else:
@@ -431,7 +439,11 @@ def cargar_csv(request):
         form = CargarCSVForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                resultados = procesar_csv(form.cleaned_data["archivo"], store)
+                resultados = procesar_csv(
+                    form.cleaned_data["archivo"],
+                    store,
+                    usuario=request.user,
+                )
             except ErrorCSV as error:
                 messages.error(request, str(error))
             else:

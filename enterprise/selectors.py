@@ -17,8 +17,13 @@ from django.db.models import (
 )
 from django.utils import timezone
 
-from core.translations import translate_text_lazy
-from products.models import Prices
+from accounts.models import User
+from core.translations import translate_text, translate_text_lazy
+from products.auditoria import (
+    es_cambio_solo_disponibilidad,
+    etiqueta_cambio_disponibilidad,
+)
+from products.models import AuditPriceChanges, Prices
 from products.precios import expresion_precio_final
 
 COMPETITIVIDAD_VERDE = "green"
@@ -148,6 +153,51 @@ def obtener_precio_de_tienda(store, price_id):
         .filter(pk=price_id)
         .first()
     )
+
+
+def historial_precios_de_tienda(store, precio):
+    """Devuelve el historial de una oferta, limitado a la tienda de la empresa."""
+    cambios = list(
+        AuditPriceChanges.objects.filter(
+            id_store_id=store.pk,
+            gtin_id=precio.gtin_id,
+        ).order_by("-created_at", "-id")
+    )
+
+    ids_usuarios = {
+        cambio.id_requested_by
+        for cambio in cambios
+        if cambio.id_requested_by is not None
+    }
+    usuarios = {
+        usuario["id"]: usuario
+        for usuario in User.objects.filter(pk__in=ids_usuarios).values(
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+        )
+    }
+
+    for cambio in cambios:
+        cambio.solo_disponibilidad = es_cambio_solo_disponibilidad(cambio)
+        cambio.etiqueta_disponibilidad = etiqueta_cambio_disponibilidad(cambio)
+        cambio.disponibilidad = translate_text(
+            "Disponible" if cambio.is_active else "No disponible"
+        )
+        if cambio.id_requested_by is None:
+            cambio.autor = translate_text("Automático")
+            continue
+        usuario = usuarios.get(cambio.id_requested_by)
+        if usuario is None:
+            cambio.autor = translate_text("Usuario no disponible")
+            continue
+        nombre = " ".join(
+            parte for parte in (usuario["first_name"], usuario["last_name"]) if parte
+        ).strip()
+        cambio.autor = nombre or usuario["email"] or translate_text("Usuario no disponible")
+
+    return cambios
 
 
 def limite_precio_desactualizado(ahora=None):

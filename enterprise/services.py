@@ -7,6 +7,7 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from core.translations import translate_text_lazy
+from products.auditoria import registrar_cambio_precio
 from products.models import Currencies, Prices, ProductImages, ProductVariants, Products
 
 from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
@@ -69,6 +70,20 @@ def _datos_precio(datos, precio):
         "is_available": bool(datos.get("is_available")) and precio is not None,
         "product_web_url": datos.get("product_web_url") or "",
     }
+
+
+def _estado_precio(precio):
+    return {
+        "price": precio.price,
+        "discount": precio.discount,
+        "is_available": precio.is_available,
+    }
+
+
+def _id_usuario(usuario):
+    if usuario is None or not getattr(usuario, "is_authenticated", False):
+        return None
+    return usuario.pk
 
 
 def _urls_imagenes_empresa(urls):
@@ -298,7 +313,7 @@ def editar_imagenes_empresa(
         return precio
 
 
-def editar_precio_empresa(store, price_id, datos):
+def editar_precio_empresa(store, price_id, datos, usuario=None):
     """Actualiza únicamente la fila ``Prices`` de la tienda."""
     with transaction.atomic():
         precio = (
@@ -309,6 +324,7 @@ def editar_precio_empresa(store, price_id, datos):
         if precio is None:
             raise ErrorEmpresa(translate_text_lazy("El precio no existe o no pertenece a su tienda."))
 
+        antes = _estado_precio(precio)
         valores = _datos_precio(datos, datos.get("price"))
         precio.price = valores["price"]
         precio.discount = valores["discount"]
@@ -323,6 +339,12 @@ def editar_precio_empresa(store, price_id, datos):
                 "product_web_url",
                 "updated_at",
             ]
+        )
+        registrar_cambio_precio(
+            precio,
+            antes,
+            _estado_precio(precio),
+            id_requested_by=_id_usuario(usuario),
         )
         return precio
 
@@ -347,7 +369,7 @@ def quitar_precio_empresa(store, price_id):
         return precio
 
 
-def desactivar_precio_empresa(store, price_id):
+def desactivar_precio_empresa(store, price_id, usuario=None):
     """Desactiva solamente el precio propio de la tienda."""
     with transaction.atomic():
         precio = (
@@ -357,9 +379,16 @@ def desactivar_precio_empresa(store, price_id):
         )
         if precio is None:
             raise ErrorEmpresa(translate_text_lazy("El precio no existe o no pertenece a su tienda."))
+        antes = _estado_precio(precio)
         precio.is_available = False
         precio.updated_at = timezone.now()
         precio.save(update_fields=["is_available", "updated_at"])
+        registrar_cambio_precio(
+            precio,
+            antes,
+            _estado_precio(precio),
+            id_requested_by=_id_usuario(usuario),
+        )
         return precio
 
 

@@ -1,5 +1,7 @@
+from datetime import timedelta
 from decimal import Decimal
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.db import connection
 from django.test import TestCase
@@ -10,8 +12,9 @@ from accounts.models import User
 from reviews.models import Reviews
 
 
+from .auditoria import limite_historial_publico
 from .correccion import olvidar_vocabulario
-from .models import Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
+from .models import AuditPriceChanges, Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
 
 from .busqueda import buscar_productos, con_imagen, con_imagen_variante
 from .views import _serializar_precio, buscar_variantes_por_nombre, obtener_precios_por_gtin
@@ -19,7 +22,7 @@ from .views import _serializar_precio, buscar_variantes_por_nombre, obtener_prec
 # Los modelos son managed = False (las tablas viven en Supabase),
 # así que en la base de pruebas hay que crear las tablas a mano.
 # accounts_user ya existe porque User sí es managed.
-MODELOS = [Brands, Categories, Currencies, Stores, Products, ProductVariants, ProductImages, Prices, Reviews]
+MODELOS = [Brands, Categories, Currencies, Stores, Products, ProductVariants, ProductImages, Prices, AuditPriceChanges, Reviews]
 
 
 def fechas():
@@ -243,6 +246,143 @@ class DetalleProductoTests(CatalogoTestCase):
         resenas = html.index('id="resenas-heading"')
         self.assertLess(precios, descripcion)
         self.assertLess(descripcion, resenas)
+
+
+class HistorialPreciosPublicoTests(CatalogoTestCase):
+    def url(self):
+        return reverse("detalle_producto", kwargs={"pk": self.leche.pk})
+
+    def crear_oferta(self, nombre="Tienda Historial"):
+        tienda = Stores.objects.create(name=nombre, **fechas())
+        oferta = self.precio(self.variante_leche, tienda, 1760, "0.10")
+        return tienda, oferta
+
+    def crear_auditoria(
+        self,
+        tienda,
+        *,
+        old_price=1760,
+        new_price=1900,
+        old_discount="0.10",
+        new_discount="0.05",
+        is_active=True,
+        created_at=None,
+        autor=None,
+    ):
+        return AuditPriceChanges.objects.create(
+            old_price=old_price,
+            new_price=new_price,
+            old_discount=Decimal(old_discount),
+            new_discount=Decimal(new_discount),
+            id_requested_by=autor.pk if autor is not None else None,
+            created_at=created_at or timezone.now(),
+            is_active=is_active,
+            gtin_id=self.variante_leche.gtin,
+            id_store_id=tienda.pk,
+        )
+
+    def test_el_historial_publico_no_expone_actor_ni_identificadores_internos(self):
+        tienda, oferta = self.crear_oferta()
+        autor = User.objects.create_user(
+            email="actor-privado@example.com",
+            password="ClaveSegura123",
+            role=User.Role.CLIENT,
+        )
+        self.crear_auditoria(tienda, autor=autor)
+
+        respuesta = self.client.get(self.url())
+
+        self.assertEqual(respuesta.status_code, 200)
+        precio_publicado = next(
+            precio for precio in respuesta.context["precios"] if precio.pk == oferta.pk
+        )
+        historial = respuesta.context["historiales_precio"][precio_publicado.historial_clave]
+        self.assertEqual(len(historial), 1)
+        self.assertEqual(
+            set(historial[0]),
+            {
+                "fecha",
+                "precio_anterior",
+                "precio_nuevo",
+                "descuento_anterior",
+                "descuento_nuevo",
+            },
+        )
+        self.assertNotContains(respuesta, autor.email)
+        self.assertNotContains(respuesta, "id_requested_by")
+
+    def test_el_historial_publico_muestra_reactivacion_y_desactivacion(self):
+        tienda, oferta = self.crear_oferta()
+        self.crear_auditoria(
+            tienda,
+            old_price=1760,
+            new_price=1760,
+            old_discount="0.10",
+            new_discount="0.10",
+            is_active=True,
+        )
+        self.crear_auditoria(
+            tienda,
+            old_price=1760,
+            new_price=1760,
+            old_discount="0.10",
+            new_discount="0.10",
+            is_active=False,
+        )
+
+        respuesta = self.client.get(self.url())
+
+        precio_publicado = next(
+            precio for precio in respuesta.context["precios"] if precio.pk == oferta.pk
+        )
+        historial = respuesta.context["historiales_precio"][precio_publicado.historial_clave]
+        self.assertEqual(
+            {cambio["cambio_disponibilidad"] for cambio in historial},
+            {"Reactivación", "Desactivación"},
+        )
+
+    def test_el_historial_publico_cubre_exactamente_seis_meses_calendarios(self):
+        tienda, oferta = self.crear_oferta()
+        ahora = timezone.localtime(timezone.now())
+        limite = limite_historial_publico(ahora)
+        self.crear_auditoria(tienda, created_at=limite)
+        self.crear_auditoria(
+            tienda,
+            created_at=limite - timedelta(seconds=1),
+        )
+
+        with patch("products.auditoria.timezone.now", return_value=ahora):
+            respuesta = self.client.get(self.url())
+
+        precio_publicado = next(
+            precio for precio in respuesta.context["precios"] if precio.pk == oferta.pk
+        )
+        historial = respuesta.context["historiales_precio"][precio_publicado.historial_clave]
+        self.assertEqual(len(historial), 1)
+        fecha = historial[0]["fecha"]
+        self.assertIn("T", fecha)
+        self.assertTrue(fecha.endswith("-06:00") or fecha.endswith("+00:00"))
+
+    def test_el_precio_es_el_elemento_interactivo_del_modal(self):
+        self.crear_oferta()
+
+        respuesta = self.client.get(self.url())
+
+        self.assertContains(respuesta, 'id="price-history-dialog"')
+        self.assertContains(respuesta, "data-price-history-trigger")
+        self.assertContains(respuesta, "data-price-history-close")
+        self.assertContains(respuesta, "No se han registrado cambios")
+        self.assertContains(respuesta, 'evento.key === "Escape"')
+
+    def test_el_modal_publico_se_traduce_al_ingles(self):
+        self.crear_oferta()
+        self.client.cookies["django_language"] = "en"
+
+        respuesta = self.client.get(self.url())
+
+        self.assertContains(respuesta, "Price change history")
+        self.assertContains(respuesta, "No changes have been recorded")
+        self.assertContains(respuesta, "Previous price")
 
 
 class DetalleMarcaTests(CatalogoTestCase):

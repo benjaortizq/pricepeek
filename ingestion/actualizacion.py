@@ -8,8 +8,10 @@ falla, el precio no se toca y queda una incidencia para revisarla.
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from django.db import transaction
 from django.utils import timezone
 
+from products.auditoria import registrar_cambio_precio
 from products.barcodes import calcular_digito_verificador
 from products.models import Prices
 
@@ -126,15 +128,20 @@ def es_sospechoso(precio, oferta):
     return Decimal(abs(oferta.precio_final - antes)) / antes > CAMBIO_SOSPECHOSO
 
 
-def cambios_para(precio, oferta):
-    """Los campos que cambian. Si la oferta no trae precio, se conserva el último conocido."""
+def _objetivo_oferta(oferta):
+    """Los valores que la oferta quiere dejar en ``prices``."""
     nuevos = {"is_available": oferta.disponible}
     if oferta.precio_final is not None:
         nuevos["price"] = oferta.precio_lista
         nuevos["discount"] = oferta.descuento
+    return nuevos
+
+
+def cambios_para(precio, oferta):
+    """Los campos que cambian. Si la oferta no trae precio, se conserva el último conocido."""
     return {
         campo: (getattr(precio, campo), valor)
-        for campo, valor in nuevos.items()
+        for campo, valor in _objetivo_oferta(oferta).items()
         if getattr(precio, campo) != valor
     }
 
@@ -182,17 +189,62 @@ def revisar(precio, http, guardar=True, permitir_cambio_grande=False):
     return _aplicar(precio, oferta, guardar)
 
 
-def guardar_cambios(precio, cambios):
-    """Escribe los cambios en prices. updated_at queda como la última vez que se verificó el
-    precio, aunque no haya cambiado."""
-    nuevos = {campo: despues for campo, (_, despues) in cambios.items()}
-    Prices.objects.filter(pk=precio.pk).update(updated_at=timezone.now(), **nuevos)
+def guardar_cambios(precio, cambios, valores_objetivo=None):
+    """Bloquea el precio, escribe los cambios y registra la auditoría.
+
+    La comparación se hace sobre la fila bloqueada para que el valor anterior
+    de la auditoría sea siempre el que estaba realmente guardado. La escritura
+    y el registro comparten la misma transacción. ``updated_at`` queda como la
+    última vez que se verificó el precio, aunque no haya cambiado.
+    """
+    with transaction.atomic():
+        fila = Prices.objects.select_for_update().get(pk=precio.pk)
+        if valores_objetivo is None:
+            objetivo = {
+                campo: despues for campo, (_, despues) in cambios.items()
+            }
+        else:
+            objetivo = dict(valores_objetivo)
+
+        cambios_reales = {
+            campo: (getattr(fila, campo), valor)
+            for campo, valor in objetivo.items()
+            if getattr(fila, campo) != valor
+        }
+        ahora = timezone.now()
+        if cambios_reales:
+            antes = {
+                "price": fila.price,
+                "discount": fila.discount,
+                "is_available": fila.is_available,
+            }
+            for campo, (_, valor) in cambios_reales.items():
+                setattr(fila, campo, valor)
+            fila.updated_at = ahora
+            fila.save(update_fields=[*cambios_reales, "updated_at"])
+            registrar_cambio_precio(
+                fila,
+                antes,
+                {
+                    "price": fila.price,
+                    "discount": fila.discount,
+                    "is_available": fila.is_available,
+                },
+                id_requested_by=None,
+            )
+        else:
+            Prices.objects.filter(pk=fila.pk).update(updated_at=ahora)
+
+        for campo, (_, valor) in cambios_reales.items():
+            setattr(precio, campo, valor)
+        precio.updated_at = ahora
+        return cambios_reales
 
 
 def _aplicar(precio, oferta, guardar):
     cambios = cambios_para(precio, oferta)
     if guardar:
-        guardar_cambios(precio, cambios)
+        cambios = guardar_cambios(precio, cambios, _objetivo_oferta(oferta))
     return Revision(precio, ACTUALIZADO if cambios else SIN_CAMBIOS, cambios)
 
 

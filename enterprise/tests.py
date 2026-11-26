@@ -16,6 +16,7 @@ from accounts.privacy import PRIVACY_POLICY_VERSION
 from enterprise.forms import TIENDA_DESCRIPCION_MAX_LENGTH, TIENDA_NOMBRE_MAX_LENGTH
 from enterprise.reports import construir_historia, datos_reporte
 from products.models import (
+    AuditPriceChanges,
     Brands,
     Categories,
     Currencies,
@@ -36,6 +37,7 @@ MODELOS = [
     ProductVariants,
     ProductImages,
     Prices,
+    AuditPriceChanges,
 ]
 
 
@@ -481,6 +483,45 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         self.assertEqual(self.precio.discount, Decimal("0.10"))
         self.assertEqual(otro_precio.price, 800)
 
+        auditoria = AuditPriceChanges.objects.get()
+        self.assertEqual(auditoria.old_price, 1000)
+        self.assertEqual(auditoria.new_price, 1250)
+        self.assertEqual(auditoria.old_discount, Decimal("0.20"))
+        self.assertEqual(auditoria.new_discount, Decimal("0.10"))
+        self.assertEqual(auditoria.id_requested_by, self.usuario.pk)
+        self.assertTrue(auditoria.is_active)
+        self.assertEqual(auditoria.gtin_id, self.variante.gtin)
+        self.assertEqual(auditoria.id_store_id, self.store.pk)
+
+    def test_editar_sin_variaciones_no_registra_auditoria(self):
+        self.client.post(
+            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            {
+                "price": "1000",
+                "discount": "0.20",
+                "is_available": "on",
+                "product_web_url": "https://tienda.test/7441001234569",
+            },
+        )
+
+        self.assertFalse(AuditPriceChanges.objects.exists())
+
+    def test_un_cambio_solo_de_descuento_tambien_se_audita(self):
+        self.client.post(
+            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            {
+                "price": "1000",
+                "discount": "0.25",
+                "is_available": "on",
+                "product_web_url": "https://tienda.test/7441001234569",
+            },
+        )
+
+        auditoria = AuditPriceChanges.objects.get()
+        self.assertEqual((auditoria.old_price, auditoria.new_price), (1000, 1000))
+        self.assertEqual(auditoria.old_discount, Decimal("0.20"))
+        self.assertEqual(auditoria.new_discount, Decimal("0.25"))
+
     def test_descuento_vacio_se_guarda_como_cero(self):
         self.client.post(
             reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
@@ -523,6 +564,7 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         self.assertIsNone(self.precio.price)
         self.assertFalse(self.precio.is_available)
         self.assertTrue(ProductVariants.objects.filter(pk=self.variante.pk).exists())
+        self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_desactivar_conserva_el_precio_de_la_tienda(self):
         self.client.post(
@@ -532,6 +574,14 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         self.assertEqual(self.precio.price, 1000)
         self.assertEqual(self.precio.discount, Decimal("0.20"))
         self.assertFalse(self.precio.is_available)
+
+        auditoria = AuditPriceChanges.objects.get()
+        self.assertEqual(auditoria.old_price, 1000)
+        self.assertEqual(auditoria.new_price, 1000)
+        self.assertEqual(auditoria.old_discount, Decimal("0.20"))
+        self.assertEqual(auditoria.new_discount, Decimal("0.20"))
+        self.assertFalse(auditoria.is_active)
+        self.assertEqual(auditoria.id_requested_by, self.usuario.pk)
 
     def test_la_confirmacion_por_get_no_modifica_el_precio(self):
         respuesta = self.client.get(
@@ -555,6 +605,97 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         self.precio.refresh_from_db()
         self.assertTrue(self.precio.is_available)
         self.assertEqual(self.precio.price, 1000)
+
+
+class HistorialPreciosEmpresaTests(EmpresaTestCase):
+    def crear_auditoria(
+        self,
+        store,
+        autor=None,
+        is_active=True,
+        nuevo_precio=1100,
+        descuento_anterior=Decimal("0.20"),
+        descuento_nuevo=Decimal("0.10"),
+    ):
+        return AuditPriceChanges.objects.create(
+            old_price=1000,
+            new_price=nuevo_precio,
+            old_discount=descuento_anterior,
+            new_discount=descuento_nuevo,
+            id_requested_by=autor.pk if autor is not None else None,
+            created_at=timezone.now(),
+            is_active=is_active,
+            gtin_id=self.variante.gtin,
+            id_store_id=store.pk,
+        )
+
+    def test_muestra_solo_el_historial_de_la_tienda_y_su_autor(self):
+        self.crear_auditoria(self.store, autor=self.usuario)
+        self.crear_auditoria(self.otra_store, autor=self.usuario_sin_tienda)
+
+        respuesta = self.client.get(
+            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(len(respuesta.context["historial"]), 1)
+        self.assertContains(respuesta, "Historial de cambios de precio")
+        self.assertContains(respuesta, "Empresa")
+        self.assertContains(respuesta, "₡1.000")
+        self.assertContains(respuesta, "₡1.100")
+        self.assertContains(respuesta, "Disponible")
+        self.assertNotContains(respuesta, self.usuario_sin_tienda.email)
+
+    def test_muestra_reactivacion_o_desactivacion_y_autor_automatico(self):
+        self.crear_auditoria(
+            self.store,
+            is_active=False,
+            nuevo_precio=1000,
+            descuento_anterior=Decimal("0.20"),
+            descuento_nuevo=Decimal("0.20"),
+        )
+
+        respuesta = self.client.get(
+            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+        )
+
+        self.assertContains(respuesta, "Desactivación")
+        self.assertContains(respuesta, "Automático")
+        self.assertContains(respuesta, "No disponible")
+
+    def test_muestra_reactivacion_cuando_vuelve_a_disponerse(self):
+        self.crear_auditoria(
+            self.store,
+            is_active=True,
+            nuevo_precio=1000,
+            descuento_anterior=Decimal("0.20"),
+            descuento_nuevo=Decimal("0.20"),
+        )
+
+        respuesta = self.client.get(
+            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+        )
+
+        self.assertContains(respuesta, "Reactivación")
+        self.assertContains(respuesta, "Disponible")
+
+    def test_el_historial_enterprise_se_traduce_al_ingles(self):
+        self.crear_auditoria(
+            self.store,
+            is_active=False,
+            nuevo_precio=1000,
+            descuento_anterior=Decimal("0.20"),
+            descuento_nuevo=Decimal("0.20"),
+        )
+        self.client.cookies["django_language"] = "en"
+
+        respuesta = self.client.get(
+            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+        )
+
+        self.assertContains(respuesta, "Price change history")
+        self.assertContains(respuesta, "Deactivation")
+        self.assertContains(respuesta, "Automatic")
 
 
 class AltaProductosEmpresaTests(EmpresaTestCase):
@@ -588,6 +729,7 @@ class AltaProductosEmpresaTests(EmpresaTestCase):
         self.assertEqual(variante_existente.attributes, {})
         nuevo = Prices.objects.get(id_store=self.store, gtin=variante_existente)
         self.assertEqual(nuevo.price, 1500)
+        self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_gtin_existente_heredado_acepta_su_registro_sin_revalidarlo(self):
         variante_heredada = self.crear_variante("7441001234567", "GTIN heredado")
@@ -865,6 +1007,39 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         producto = ProductVariants.objects.get(gtin="7441001234576").product
         self.assertEqual(producto.brand_id, self.marca.pk)
         self.assertEqual(producto.category_id, self.categoria.pk)
+        self.assertFalse(AuditPriceChanges.objects.exists())
+
+    def test_actualiza_el_precio_existente_de_la_tienda_y_lo_audita(self):
+        contenido = (
+            "gtin,price,discount,is_available,product_web_url\n"
+            f"{self.variante.gtin},1250,0.10,true,https://tienda.test/actualizado\n"
+        )
+        respuesta = self.client.post(
+            reverse("enterprise:cargar_csv"),
+            {"archivo": self._subir(contenido)},
+        )
+
+        self.assertTrue(respuesta.context["resultados"][0].importado)
+        self.precio.refresh_from_db()
+        self.assertEqual(self.precio.price, 1250)
+        self.assertEqual(self.precio.discount, Decimal("0.10"))
+        auditoria = AuditPriceChanges.objects.get()
+        self.assertEqual((auditoria.old_price, auditoria.new_price), (1000, 1250))
+        self.assertEqual(auditoria.id_requested_by, self.usuario.pk)
+        self.assertEqual(auditoria.id_store_id, self.store.pk)
+
+    def test_no_audita_un_precio_existente_sin_variaciones(self):
+        contenido = (
+            "gtin,price,discount,is_available,product_web_url\n"
+            f"{self.variante.gtin},1000,0.20,true,https://tienda.test/{self.variante.gtin}\n"
+        )
+        respuesta = self.client.post(
+            reverse("enterprise:cargar_csv"),
+            {"archivo": self._subir(contenido)},
+        )
+
+        self.assertTrue(respuesta.context["resultados"][0].importado)
+        self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_una_fila_invalida_no_bloquea_la_siguiente_del_mismo_gtin(self):
         variante_existente = self.crear_variante("7441001234583", "GTIN existente")

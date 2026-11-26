@@ -132,9 +132,19 @@
                         {% t 'Mejor precio disponible' %}
                       </span>
                     </div>
-                    <div class="font-price-hero text-price-hero text-on-primary-container font-bold tracking-tight">
-                      {{ grupo.mejor.currency.symbol }}{{ grupo.mejor.final|miles }}
-                    </div>
+                    <button
+                      type="button"
+                      class="group inline-flex items-center gap-2 text-left font-price-hero text-price-hero text-on-primary-container font-bold tracking-tight hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-on-primary-container"
+                      data-price-history-trigger
+                      data-history-key="{{ grupo.mejor.historial_clave }}"
+                      data-history-currency="{{ grupo.mejor.currency.symbol }}"
+                      aria-haspopup="dialog"
+                      aria-controls="price-history-dialog"
+                    >
+                      <span>{{ grupo.mejor.currency.symbol }}{{ grupo.mejor.final|miles }}</span>
+                      <span class="material-symbols-outlined text-[22px] opacity-70 group-hover:opacity-100" aria-hidden="true">history</span>
+                      <span class="sr-only">{% t 'Ver historial de precios de {tienda}' tienda=grupo.mejor.tienda %}</span>
+                    </button>
                     {% if grupo.mejor.desactualizado %}
                       <span class="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900" role="status" title="{% t 'El precio lleva más de 48 horas sin actualizarse.' %}">
                         <span class="material-symbols-outlined text-sm" aria-hidden="true">schedule</span>
@@ -231,7 +241,19 @@
                     </div>
                     <div class="md:col-span-2 md:text-right">
                       {% if precio.final_price is not None %}
-                        <span class="font-price-row text-price-row text-on-surface font-bold tracking-tight">{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
+                        <button
+                          type="button"
+                          class="group inline-flex items-center gap-1 font-price-row text-price-row text-on-surface font-bold tracking-tight hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                          data-price-history-trigger
+                          data-history-key="{{ precio.historial_clave }}"
+                          data-history-currency="{{ precio.currency.symbol }}"
+                          aria-haspopup="dialog"
+                          aria-controls="price-history-dialog"
+                        >
+                          <span>{{ precio.currency.symbol }}{{ precio.final|miles }}</span>
+                          <span class="material-symbols-outlined text-[15px] opacity-60 group-hover:opacity-100" aria-hidden="true">history</span>
+                          <span class="sr-only">{% t 'Ver historial de precios de {tienda}' tienda=precio.tienda %}</span>
+                        </button>
                         {% if precio.desactualizado %}
                           <span class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900" role="status" title="{% t 'El precio lleva más de 48 horas sin actualizarse.' %}">
                             <span class="material-symbols-outlined text-sm" aria-hidden="true">schedule</span>
@@ -273,6 +295,64 @@
     {% endif %}
   </div>
 
+  <dialog
+    id="price-history-dialog"
+    class="m-auto w-[min(44rem,calc(100%_-_2rem))] max-w-[calc(100%_-_2rem)] max-h-[85dvh] overflow-hidden rounded-2xl border border-outline-variant bg-surface-container-lowest p-0 text-on-surface shadow-2xl backdrop:bg-black/50"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="price-history-title"
+  >
+    <div class="flex max-h-[85dvh] flex-col">
+      <div class="flex items-start justify-between gap-4 border-b border-outline-variant/60 px-5 py-4 sm:px-6">
+        <div>
+          <h2 class="font-headline-md text-headline-md font-bold" id="price-history-title">{% t 'Historial de cambios de precio' %}</h2>
+          <p class="mt-1 text-body-sm text-secondary">{% t 'Consulta los cambios de los últimos seis meses.' %}</p>
+        </div>
+        <button
+          type="button"
+          class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-outline-variant text-secondary hover:border-on-surface hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          data-price-history-close
+          aria-label="{% t 'Cerrar' %}"
+        >
+          <span class="material-symbols-outlined text-[20px]" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="overflow-y-auto px-5 py-5 sm:px-6" data-price-history-content>
+        <p class="rounded-xl bg-surface-container-low p-4 text-body-sm text-secondary" data-price-history-empty hidden>{% t 'No se han registrado cambios' %}</p>
+        <div class="space-y-3" data-price-history-items></div>
+      </div>
+    </div>
+  </dialog>
+
+  <template data-price-history-item-template>
+    <article class="rounded-xl border border-outline-variant/60 bg-surface-container-low p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <time class="font-bold" data-history-date></time>
+        <span class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 text-body-sm font-bold" data-history-availability hidden></span>
+      </div>
+      <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Precio anterior' %}</dt>
+          <dd class="mt-1 font-bold" data-history-old-price></dd>
+        </div>
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Precio nuevo' %}</dt>
+          <dd class="mt-1 font-bold" data-history-new-price></dd>
+        </div>
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Descuento anterior' %}</dt>
+          <dd class="mt-1 font-bold" data-history-old-discount></dd>
+        </div>
+        <div>
+          <dt class="text-body-sm font-semibold text-secondary">{% t 'Descuento nuevo' %}</dt>
+          <dd class="mt-1 font-bold" data-history-new-discount></dd>
+        </div>
+      </dl>
+    </article>
+  </template>
+
+  {{ historiales_precio|json_script:"datos-historial-precios" }}
+
   {% if grupos_precios %}
     <script>
       (() => {
@@ -312,6 +392,97 @@
 
         const gtinDesdeHash = window.location.hash.replace(/^#precio-/, "");
         activar(gtinDesdeHash || tabs[0]?.dataset.gtinTab);
+      })();
+    </script>
+    <script>
+      (() => {
+        const dialog = document.getElementById("price-history-dialog");
+        const dataElement = document.getElementById("datos-historial-precios");
+        const emptyState = dialog?.querySelector("[data-price-history-empty]");
+        const itemsContainer = dialog?.querySelector("[data-price-history-items]");
+        const itemTemplate = document.querySelector("[data-price-history-item-template]");
+        const closeButton = dialog?.querySelector("[data-price-history-close]");
+        if (!dialog || !dataElement || !itemsContainer || !itemTemplate) return;
+
+        let historiales = {};
+        try {
+          historiales = JSON.parse(dataElement.textContent) || {};
+        } catch (_error) {
+          historiales = {};
+        }
+
+        const locale = document.documentElement.lang || "es";
+        const formatoPrecio = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+        const formatoDescuento = new Intl.NumberFormat(locale, {
+          style: "percent",
+          maximumFractionDigits: 2,
+        });
+        const formatoFecha = new Intl.DateTimeFormat(locale, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        });
+        let triggerActivo = null;
+
+        const pintarHistorial = (historial, simbolo) => {
+          itemsContainer.replaceChildren();
+          const elementos = Array.isArray(historial) ? historial : [];
+          if (emptyState) emptyState.hidden = elementos.length > 0;
+          if (!elementos.length) return;
+
+          const fragmento = document.createDocumentFragment();
+          elementos.forEach((cambio) => {
+            const contenido = itemTemplate.content.cloneNode(true);
+            const fecha = contenido.querySelector("[data-history-date]");
+            const disponibilidad = contenido.querySelector("[data-history-availability]");
+            if (fecha) {
+              fecha.dateTime = cambio.fecha;
+              const fechaCambio = new Date(cambio.fecha);
+              fecha.textContent = Number.isNaN(fechaCambio.valueOf())
+                ? cambio.fecha
+                : formatoFecha.format(fechaCambio);
+            }
+            if (disponibilidad) {
+              disponibilidad.hidden = !cambio.cambio_disponibilidad;
+              disponibilidad.textContent = cambio.cambio_disponibilidad || "";
+            }
+            const precioAnterior = contenido.querySelector("[data-history-old-price]");
+            const precioNuevo = contenido.querySelector("[data-history-new-price]");
+            const descuentoAnterior = contenido.querySelector("[data-history-old-discount]");
+            const descuentoNuevo = contenido.querySelector("[data-history-new-discount]");
+            if (precioAnterior) precioAnterior.textContent = `${simbolo}${formatoPrecio.format(cambio.precio_anterior)}`;
+            if (precioNuevo) precioNuevo.textContent = `${simbolo}${formatoPrecio.format(cambio.precio_nuevo)}`;
+            if (descuentoAnterior) descuentoAnterior.textContent = formatoDescuento.format(Number(cambio.descuento_anterior));
+            if (descuentoNuevo) descuentoNuevo.textContent = formatoDescuento.format(Number(cambio.descuento_nuevo));
+            fragmento.appendChild(contenido);
+          });
+          itemsContainer.appendChild(fragmento);
+        };
+
+        document.querySelectorAll("[data-price-history-trigger]").forEach((trigger) => {
+          trigger.addEventListener("click", () => {
+            triggerActivo = trigger;
+            pintarHistorial(
+              historiales[trigger.dataset.historyKey] || [],
+              trigger.dataset.historyCurrency || "",
+            );
+            if (!dialog.open) dialog.showModal();
+          });
+        });
+
+        closeButton?.addEventListener("click", () => dialog.close());
+        dialog.addEventListener("click", (evento) => {
+          if (evento.target === dialog) dialog.close();
+        });
+        document.addEventListener("keydown", (evento) => {
+          if (evento.key === "Escape" && dialog.open) {
+            evento.preventDefault();
+            dialog.close();
+          }
+        });
+        dialog.addEventListener("close", () => {
+          triggerActivo?.focus();
+          triggerActivo = null;
+        });
       })();
     </script>
   {% endif %}

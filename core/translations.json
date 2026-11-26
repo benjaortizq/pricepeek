@@ -50,7 +50,25 @@
     "La marca '{nombre}' no existe en el catálogo.": "La marca '{nombre}' no existe en el catálogo.",
     "La categoría '{nombre}' no existe en el catálogo.": "La categoría '{nombre}' no existe en el catálogo.",
     "La marca '{nombre}' coincide con más de una marca del catálogo.": "La marca '{nombre}' coincide con más de una marca del catálogo.",
-    "La categoría '{nombre}' coincide con más de una categoría del catálogo.": "La categoría '{nombre}' coincide con más de una categoría del catálogo."
+    "La categoría '{nombre}' coincide con más de una categoría del catálogo.": "La categoría '{nombre}' coincide con más de una categoría del catálogo.",
+    "Historial de cambios de precio": "Historial de cambios de precio",
+    "Consulta los cambios de precio y disponibilidad de esta oferta.": "Consulta los cambios de precio y disponibilidad de esta oferta.",
+    "Consulta los cambios de los últimos seis meses.": "Consulta los cambios de los últimos seis meses.",
+    "Precio": "Precio",
+    "Descuento": "Descuento",
+    "Disponibilidad": "Disponibilidad",
+    "Autor": "Autor",
+    "No se han registrado cambios": "No se han registrado cambios",
+    "Ver historial de precios de {tienda}": "Ver historial de precios de {tienda}",
+    "Precio anterior": "Precio anterior",
+    "Precio nuevo": "Precio nuevo",
+    "Descuento anterior": "Descuento anterior",
+    "Descuento nuevo": "Descuento nuevo",
+    "Cerrar": "Cerrar",
+    "Reactivación": "Reactivación",
+    "Desactivación": "Desactivación",
+    "Automático": "Automático",
+    "Usuario no disponible": "Usuario no disponible"
   },
   "en": {
     "Activar modo oscuro": "Enable dark mode",
@@ -1096,6 +1114,19 @@
     "la marca": "the brand",
     "la categoría": "the category",
     "la descripción": "the description",
-    "la imagen": "the image"
+    "la imagen": "the image",
+    "Historial de cambios de precio": "Price change history",
+    "Consulta los cambios de precio y disponibilidad de esta oferta.": "Review the price and availability changes for this offer.",
+    "Consulta los cambios de los últimos seis meses.": "Review changes from the last six months.",
+    "No se han registrado cambios": "No changes have been recorded",
+    "Ver historial de precios de {tienda}": "View price history for {tienda}",
+    "Precio anterior": "Previous price",
+    "Precio nuevo": "New price",
+    "Descuento anterior": "Previous discount",
+    "Descuento nuevo": "New discount",
+    "Cerrar": "Close",
+    "Reactivación": "Reactivation",
+    "Desactivación": "Deactivation",
+    "Usuario no disponible": "User unavailable"
   }
 }

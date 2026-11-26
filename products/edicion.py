@@ -26,7 +26,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 
-from ingestion.catalogo import _clave, arreglar_secuencias, secuencias_atrasadas
+from ingestion.catalogo import (
+    _clave,
+    arreglar_secuencias,
+    secuencias_atrasadas,
+)
 
 from .correccion import olvidar_vocabulario
 from .models import Brands, ProductImages, ProductVariants
@@ -34,7 +38,12 @@ from .models import Brands, ProductImages, ProductVariants
 CARPETA_DE_IMAGENES = "productos/"
 # El nombre de una imagen subida, sin la carpeta: «<id del producto>/<32 letras hexadecimales>.<extensión>».
 NOMBRE_DE_IMAGEN = re.compile(r"\d+/[0-9a-f]{32}\.(?:jpg|png|webp|gif)")
-EXTENSION_POR_FORMATO = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp", "GIF": "gif"}
+EXTENSION_POR_FORMATO = {
+    "JPEG": "jpg",
+    "PNG": "png",
+    "WEBP": "webp",
+    "GIF": "gif",
+}
 
 
 def url_de_imagen_subida(nombre):
@@ -45,8 +54,14 @@ def url_de_imagen_subida(nombre):
 def nombre_de_imagen_subida(url):
     """Lo contrario de url_de_imagen_subida: el nombre en el almacenamiento, o None si es de una tienda."""
     base = url_de_imagen_subida("x")[:-1]
-    nombre = (url or "").removeprefix(base) if (url or "").startswith(base) else ""
-    return CARPETA_DE_IMAGENES + nombre if NOMBRE_DE_IMAGEN.fullmatch(nombre) else None
+    nombre = (
+        (url or "").removeprefix(base) if (url or "").startswith(base) else ""
+    )
+    return (
+        CARPETA_DE_IMAGENES + nombre
+        if NOMBRE_DE_IMAGEN.fullmatch(nombre)
+        else None
+    )
 
 
 def marca_con_nombre(nombre):
@@ -63,13 +78,17 @@ def marca_con_nombre(nombre):
     while slug in slugs:
         slug, numero = f"{base}-{numero}", numero + 1
     ahora = timezone.now()
-    return Brands(name=nombre.strip(), slug=slug, created_at=ahora, updated_at=ahora), True
+    return Brands(
+        name=nombre.strip(), slug=slug, created_at=ahora, updated_at=ahora
+    ), True
 
 
 def imagen_actual(producto):
     """La imagen que muestra el detalle del producto: la principal de su primera presentación."""
     return (
-        ProductImages.objects.filter(variant__product_id=producto.pk, is_main=True)
+        ProductImages.objects.filter(
+            variant__product_id=producto.pk, is_main=True
+        )
         .order_by("id")
         .values_list("image_url", flat=True)
         .first()
@@ -78,11 +97,22 @@ def imagen_actual(producto):
 
 @dataclass
 class Edicion:
-    cambios: list = field(default_factory=list)  # en español, para el mensaje: ["el nombre", "la marca"]
+    cambios: list = field(
+        default_factory=list
+    )  # en español, para el mensaje: ["el nombre", "la marca"]
     marca_nueva: bool = False
 
 
-def editar_producto(producto, *, nombre, marca, categoria, descripcion, imagen=None, imagen_url=""):
+def editar_producto(
+    producto,
+    *,
+    nombre,
+    marca,
+    categoria,
+    descripcion,
+    imagen=None,
+    imagen_url="",
+):
     """Guarda los datos generales del producto. imagen: un archivo de forms.ImageField; imagen_url: un enlace.
 
     Si el producto tiene varias presentaciones, la imagen nueva queda como la principal de todas.
@@ -96,14 +126,23 @@ def editar_producto(producto, *, nombre, marca, categoria, descripcion, imagen=N
         "la categoría": (producto.category_id, categoria.pk),
         "la descripción": (producto.description or None, descripcion),
     }
-    edicion.cambios = [campo for campo, (antes, despues) in anteriores.items() if antes != despues]
+    edicion.cambios = [
+        campo
+        for campo, (antes, despues) in anteriores.items()
+        if antes != despues
+    ]
 
     subida = None
     if imagen:
         # Se sube antes de la transacción: es una petición a Supabase Storage y no debe dejar la base esperando.
         extension = EXTENSION_POR_FORMATO[imagen.image.format]
-        subida = default_storage.save(f"{CARPETA_DE_IMAGENES}{producto.pk}/{uuid.uuid4().hex}.{extension}", imagen)
-        imagen_url = url_de_imagen_subida(subida.removeprefix(CARPETA_DE_IMAGENES))
+        subida = default_storage.save(
+            f"{CARPETA_DE_IMAGENES}{producto.pk}/{uuid.uuid4().hex}.{extension}",
+            imagen,
+        )
+        imagen_url = url_de_imagen_subida(
+            subida.removeprefix(CARPETA_DE_IMAGENES)
+        )
 
     try:
         with transaction.atomic():
@@ -112,10 +151,27 @@ def editar_producto(producto, *, nombre, marca, categoria, descripcion, imagen=N
                 _arreglar_secuencia(Brands)
                 marca.save()
             if edicion.cambios:
-                producto.name, producto.brand, producto.category, producto.description = nombre, marca, categoria, descripcion
+                (
+                    producto.name,
+                    producto.brand,
+                    producto.category,
+                    producto.description,
+                ) = nombre, marca, categoria, descripcion
                 producto.updated_at = ahora
-                producto.save(update_fields=["name", "brand", "category", "description", "updated_at"])
-            reemplazadas = _cambiar_imagen(producto, imagen_url, ahora) if imagen_url else None
+                producto.save(
+                    update_fields=[
+                        "name",
+                        "brand",
+                        "category",
+                        "description",
+                        "updated_at",
+                    ]
+                )
+            reemplazadas = (
+                _cambiar_imagen(producto, imagen_url, ahora)
+                if imagen_url
+                else None
+            )
     except Exception:
         if subida:
             default_storage.delete(subida)
@@ -134,11 +190,19 @@ def _cambiar_imagen(producto, url, ahora):
     Devuelve los enlaces que se reemplazaron, para borrar del almacenamiento las imágenes subidas
     que ya nadie usa.
     """
-    variantes = list(ProductVariants.objects.filter(product_id=producto.pk).values_list("id", flat=True))
-    principales = ProductImages.objects.filter(variant_id__in=variantes, is_main=True)
+    variantes = list(
+        ProductVariants.objects.filter(product_id=producto.pk).values_list(
+            "id", flat=True
+        )
+    )
+    principales = ProductImages.objects.filter(
+        variant_id__in=variantes, is_main=True
+    )
     actuales = list(principales.values_list("variant_id", "image_url"))
     con_imagen = {variante for variante, _ in actuales}
-    sin_imagen = [variante for variante in variantes if variante not in con_imagen]
+    sin_imagen = [
+        variante for variante in variantes if variante not in con_imagen
+    ]
     if not sin_imagen and all(actual == url for _, actual in actuales):
         return None
     principales.exclude(image_url=url).update(image_url=url, updated_at=ahora)

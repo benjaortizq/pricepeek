@@ -1,3 +1,5 @@
+"""Etiquetas de plantilla de Django para la aplicación core."""
+
 from django import template
 from django.utils import translation
 

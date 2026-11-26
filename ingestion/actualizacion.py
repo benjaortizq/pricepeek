@@ -67,7 +67,11 @@ def expandir_upc_e(codigo):
     else:
         expandido = cuerpo[:5] + "0000" + ultimo
     upc_a = sistema + expandido + verificador
-    return upc_a if calcular_digito_verificador(upc_a[:-1]) == int(verificador) else None
+    return (
+        upc_a
+        if calcular_digito_verificador(upc_a[:-1]) == int(verificador)
+        else None
+    )
 
 
 def formas_del_codigo(codigo):
@@ -87,11 +91,15 @@ def elegir_oferta(ofertas, gtin, aceptados=()):
     alguno de `aceptados`: los que una persona confirmó para esta página en el admin).
     Si no reporta ninguno (Automercado) y la página tiene una sola oferta, se confía en la URL.
     """
-    buscado = formas_del_codigo(gtin).union(*(formas_del_codigo(c) for c in aceptados))
+    buscado = formas_del_codigo(gtin).union(
+        *(formas_del_codigo(c) for c in aceptados)
+    )
     for oferta in ofertas:
         if any(buscado & formas_del_codigo(codigo) for codigo in oferta.gtins):
             return oferta
-    reportados = sorted({codigo for oferta in ofertas for codigo in oferta.gtins})
+    reportados = sorted(
+        {codigo for oferta in ofertas for codigo in oferta.gtins}
+    )
     if reportados:
         raise CodigoDistinto(
             f"La página es del código {', '.join(reportados)}, pero el precio guardado es del {gtin}.",
@@ -99,14 +107,18 @@ def elegir_oferta(ofertas, gtin, aceptados=()):
         )
     if len(ofertas) == 1:
         return ofertas[0]
-    raise PrecioNoEncontrado("La página tiene varias presentaciones sin código de barras y no se sabe cuál es.")
+    raise PrecioNoEncontrado(
+        "La página tiene varias presentaciones sin código de barras y no se sabe cuál es."
+    )
 
 
 def codigos_confirmados(url):
     """Los códigos que publica la tienda en esa página, si una persona confirmó en el admin que
     es la variante guardada aunque el código sea otro (Ingestion › Productos de tiendas)."""
     return (
-        StoreProduct.objects.filter(url=url, status=StoreProduct.Status.CONFIRMED)
+        StoreProduct.objects.filter(
+            url=url, status=StoreProduct.Status.CONFIRMED
+        )
         .values_list("barcodes", flat=True)
         .first()
         or []
@@ -123,7 +135,9 @@ def es_sospechoso(precio, oferta):
     antes = precio_final_guardado(precio)
     if not antes or oferta.precio_final is None:
         return False
-    return Decimal(abs(oferta.precio_final - antes)) / antes > CAMBIO_SOSPECHOSO
+    return (
+        Decimal(abs(oferta.precio_final - antes)) / antes > CAMBIO_SOSPECHOSO
+    )
 
 
 def cambios_para(precio, oferta):
@@ -151,19 +165,39 @@ def revisar(precio, http, guardar=True, permitir_cambio_grande=False):
 
     aceptados = codigos_confirmados(precio.product_web_url)
     try:
-        oferta = elegir_oferta(extractor(precio.product_web_url, http), precio.gtin_id, aceptados)
+        oferta = elegir_oferta(
+            extractor(precio.product_web_url, http), precio.gtin_id, aceptados
+        )
     except ProductoNoEncontrado as error:
         # La tienda ya no lo vende: queda como no disponible, con su último precio.
         revision = _aplicar(precio, Oferta(None, None, False), guardar)
-        revision.incidencia = _incidencia(precio, Incident.Kind.PRODUCT_NOT_FOUND, error, guardar)
+        revision.incidencia = _incidencia(
+            precio, Incident.Kind.PRODUCT_NOT_FOUND, error, guardar
+        )
         return revision
     except ErrorExtraccion as error:
-        tipo = next(t for clase, t in TIPOS_DE_INCIDENCIA if isinstance(error, clase))
-        detalles = {"codigos": list(error.codigos)} if isinstance(error, CodigoDistinto) else {}
-        return Revision(precio, FALLO, incidencia=_incidencia(precio, tipo, error, guardar, detalles))
+        tipo = next(
+            t for clase, t in TIPOS_DE_INCIDENCIA if isinstance(error, clase)
+        )
+        detalles = (
+            {"codigos": list(error.codigos)}
+            if isinstance(error, CodigoDistinto)
+            else {}
+        )
+        return Revision(
+            precio,
+            FALLO,
+            incidencia=_incidencia(precio, tipo, error, guardar, detalles),
+        )
     except Exception as error:  # un formato inesperado no debe detener la revisión de las demás
         motivo = f"Error inesperado al leer la página ({error.__class__.__name__}: {error})."
-        return Revision(precio, FALLO, incidencia=_incidencia(precio, Incident.Kind.PRICE_NOT_FOUND, motivo, guardar))
+        return Revision(
+            precio,
+            FALLO,
+            incidencia=_incidencia(
+                precio, Incident.Kind.PRICE_NOT_FOUND, motivo, guardar
+            ),
+        )
 
     if not permitir_cambio_grande and es_sospechoso(precio, oferta):
         motivo = (
@@ -176,7 +210,9 @@ def revisar(precio, http, guardar=True, permitir_cambio_grande=False):
             "precio_final": oferta.precio_final,
             "disponible": oferta.disponible,
         }
-        incidencia = _incidencia(precio, Incident.Kind.SUSPICIOUS_PRICE, motivo, guardar, detalles)
+        incidencia = _incidencia(
+            precio, Incident.Kind.SUSPICIOUS_PRICE, motivo, guardar, detalles
+        )
         return Revision(precio, FALLO, incidencia=incidencia)
 
     return _aplicar(precio, oferta, guardar)
@@ -186,7 +222,9 @@ def guardar_cambios(precio, cambios):
     """Escribe los cambios en prices. updated_at queda como la última vez que se verificó el
     precio, aunque no haya cambiado."""
     nuevos = {campo: despues for campo, (_, despues) in cambios.items()}
-    Prices.objects.filter(pk=precio.pk).update(updated_at=timezone.now(), **nuevos)
+    Prices.objects.filter(pk=precio.pk).update(
+        updated_at=timezone.now(), **nuevos
+    )
 
 
 def _aplicar(precio, oferta, guardar):

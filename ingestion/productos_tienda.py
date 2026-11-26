@@ -8,7 +8,12 @@ from django.utils import timezone
 from products.models import Currencies, Prices, ProductVariants, Stores
 
 from .actualizacion import formas_del_codigo
-from .emparejamiento import PUNTAJE_PARA_SUGERIR, candidatas, mejor_coincidencia, rasgos
+from .emparejamiento import (
+    PUNTAJE_PARA_SUGERIR,
+    candidatas,
+    mejor_coincidencia,
+    rasgos,
+)
 from .models import Incident, StoreProduct
 from .scrapers import Oferta
 
@@ -33,7 +38,14 @@ def _por_codigo_de_barras(codigos, candidatas_):
     if not codigos:
         return None
     buscadas = set().union(*(formas_del_codigo(c) for c in codigos))
-    return next((c for c in candidatas_ if formas_del_codigo(c.variante.gtin) & buscadas), None)
+    return next(
+        (
+            c
+            for c in candidatas_
+            if formas_del_codigo(c.variante.gtin) & buscadas
+        ),
+        None,
+    )
 
 
 def sugerir(producto, candidatas_):
@@ -42,7 +54,9 @@ def sugerir(producto, candidatas_):
     if por_codigo is not None:
         mejor = (por_codigo, 100, MOTIVO_MISMO_CODIGO)
     else:
-        rasgos_tienda = rasgos(producto.name, producto.product_model, producto.color)
+        rasgos_tienda = rasgos(
+            producto.name, producto.product_model, producto.color
+        )
         mejor = mejor_coincidencia(rasgos_tienda, producto.brand, candidatas_)
         if mejor is not None and producto.barcodes:
             # El nombre coincide pero el código no: puede ser otra versión (el iPhone de Gollo es
@@ -50,9 +64,18 @@ def sugerir(producto, candidatas_):
             candidata, puntaje, motivo = mejor
             aviso = f"código distinto: la tienda dice {', '.join(producto.barcodes)} y el catálogo {candidata.variante.gtin}"
             puntaje -= CASTIGO_CODIGO_DISTINTO
-            mejor = (candidata, puntaje, f"{aviso} · {motivo}") if puntaje >= PUNTAJE_PARA_SUGERIR else None
+            mejor = (
+                (candidata, puntaje, f"{aviso} · {motivo}")
+                if puntaje >= PUNTAJE_PARA_SUGERIR
+                else None
+            )
     if mejor is None:
-        producto.status, producto.suggested_gtin, producto.score, producto.match_reason = Status.NO_MATCH, "", None, ""
+        (
+            producto.status,
+            producto.suggested_gtin,
+            producto.score,
+            producto.match_reason,
+        ) = Status.NO_MATCH, "", None, ""
     else:
         candidata, puntaje, motivo = mejor
         producto.status = Status.SUGGESTED
@@ -68,7 +91,9 @@ def _recortar(texto, largo):
 
 def guardar_ficha(ficha, tienda, candidatas_, guardar=True):
     """Crea o actualiza el producto de la tienda (por su URL) y le busca coincidencia."""
-    producto = StoreProduct.objects.filter(url=ficha.url).first() or StoreProduct(url=ficha.url)
+    producto = StoreProduct.objects.filter(
+        url=ficha.url
+    ).first() or StoreProduct(url=ficha.url)
     producto.store_name = tienda
     producto.sku = _recortar(ficha.sku, 64)
     producto.name = _recortar(ficha.nombre, 255)
@@ -76,7 +101,9 @@ def guardar_ficha(ficha, tienda, candidatas_, guardar=True):
     producto.product_model = _recortar(ficha.modelo, 100)
     producto.color = _recortar(ficha.color, 60)
     producto.category = _recortar(ficha.categoria, 255)
-    producto.image_url = ficha.imagen_url if len(ficha.imagen_url) <= 1000 else ""
+    producto.image_url = (
+        ficha.imagen_url if len(ficha.imagen_url) <= 1000 else ""
+    )
     producto.list_price = ficha.oferta.precio_lista
     producto.final_price = ficha.oferta.precio_final
     producto.is_available = ficha.oferta.disponible
@@ -111,7 +138,9 @@ def tienda_del_catalogo(nombre):
         if tienda.name.strip().lower() == nombre.strip().lower():
             return tienda
     ahora = timezone.now()
-    return Stores.objects.create(name=nombre, created_at=ahora, updated_at=ahora)
+    return Stores.objects.create(
+        name=nombre, created_at=ahora, updated_at=ahora
+    )
 
 
 @transaction.atomic
@@ -121,7 +150,9 @@ def confirmar(producto):
     if variante is None:
         raise NoSePuedeVincular("Elija primero la variante del catálogo.")
     tienda = tienda_del_catalogo(producto.store_name)
-    precio = Prices.objects.filter(id_store=tienda, gtin_id=variante.gtin).first()
+    precio = Prices.objects.filter(
+        id_store=tienda, gtin_id=variante.gtin
+    ).first()
     if precio is not None and precio.product_web_url != producto.url:
         raise NoSePuedeVincular(
             f"«{variante.name}» ya tiene precio en {tienda.name.strip()} con otro enlace: {precio.product_web_url}"
@@ -131,11 +162,22 @@ def confirmar(producto):
     if precio is None:
         colones = Currencies.objects.filter(name__iexact="colones").first()
         if colones is None:
-            raise NoSePuedeVincular("No existe la moneda «colones» en la tabla currencies.")
-        precio = Prices(id_store=tienda, gtin=variante, currency=colones, price=None, discount=Decimal("0.00"), created_at=ahora)
+            raise NoSePuedeVincular(
+                "No existe la moneda «colones» en la tabla currencies."
+            )
+        precio = Prices(
+            id_store=tienda,
+            gtin=variante,
+            currency=colones,
+            price=None,
+            discount=Decimal("0.00"),
+            created_at=ahora,
+        )
     if producto.final_price is not None:
         precio.price = producto.list_price or producto.final_price
-        precio.discount = Oferta(producto.list_price, producto.final_price, True).descuento
+        precio.discount = Oferta(
+            producto.list_price, producto.final_price, True
+        ).descuento
     precio.is_available = producto.is_available
     precio.product_web_url = producto.url
     precio.updated_at = ahora

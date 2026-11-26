@@ -39,7 +39,12 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "product_views",
-                "indexes": [models.Index(fields=["product_id", "hour"], name="product_views_por_producto")],
+                "indexes": [
+                    models.Index(
+                        fields=["product_id", "hour"],
+                        name="product_views_por_producto",
+                    )
+                ],
                 "constraints": [
                     models.UniqueConstraint(
                         fields=("product_id", "visitor", "hour"),

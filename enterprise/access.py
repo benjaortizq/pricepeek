@@ -11,9 +11,7 @@ from accounts.models import AccountsUser, User
 from core.translations import translate_text_lazy
 from products.models import Stores
 
-MENSAJE_SIN_TIENDA = (
-    "Su cuenta de empresa no tiene una tienda asignada. Contacte al administrador."
-)
+MENSAJE_SIN_TIENDA = "Su cuenta de empresa no tiene una tienda asignada. Contacte al administrador."
 
 
 def tienda_del_usuario(user):
@@ -37,4 +35,6 @@ def tienda_del_usuario(user):
     try:
         return Stores.objects.get(pk=store_id)
     except Stores.DoesNotExist as error:
-        raise PermissionDenied(translate_text_lazy(MENSAJE_SIN_TIENDA)) from error
+        raise PermissionDenied(
+            translate_text_lazy(MENSAJE_SIN_TIENDA)
+        ) from error

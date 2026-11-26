@@ -1,3 +1,5 @@
+"""Pruebas automatizadas de test_barcodes para la aplicación products."""
+
 from django.test import SimpleTestCase
 
 from .barcodes import calcular_digito_verificador, validar_codigo_barras
@@ -7,12 +9,19 @@ EAN_13 = "4006381333931"
 UPC_A = "036000291452"  # empieza con 0: no se puede tratar como número
 EAN_8 = "96385074"
 GTIN_14 = "10012345678902"  # el 1 inicial indica que es una caja o paquete
-UPC_A_COMO_EAN_13 = "0036000291452"  # el mismo producto que UPC_A, con un 0 adelante
+UPC_A_COMO_EAN_13 = (
+    "0036000291452"  # el mismo producto que UPC_A, con un 0 adelante
+)
 
 
 class ValidarCodigoBarrasTests(SimpleTestCase):
     def test_acepta_ean13_upca_y_ean8_validos(self):
-        casos = {EAN_13: "EAN-13", UPC_A: "UPC-A", EAN_8: "EAN-8", GTIN_14: "GTIN-14"}
+        casos = {
+            EAN_13: "EAN-13",
+            UPC_A: "UPC-A",
+            EAN_8: "EAN-8",
+            GTIN_14: "GTIN-14",
+        }
         for codigo, formato in casos.items():
             with self.subTest(codigo=codigo):
                 resultado = validar_codigo_barras(codigo)
@@ -41,14 +50,25 @@ class ValidarCodigoBarrasTests(SimpleTestCase):
         self.assertIn("1", resultado.motivo)  # indica el dígito esperado
 
     def test_rechaza_longitudes_que_no_son_8_12_ni_13(self):
-        for codigo in ["1", "1234567", "123456789", "12345678901", "123456789012345"]:
+        for codigo in [
+            "1",
+            "1234567",
+            "123456789",
+            "12345678901",
+            "123456789012345",
+        ]:
             with self.subTest(codigo=codigo):
                 resultado = validar_codigo_barras(codigo)
                 self.assertFalse(resultado.valido)
                 self.assertIn("8, 12, 13 o 14", resultado.motivo)
 
     def test_rechaza_caracteres_que_no_son_digitos(self):
-        for codigo in ["40063813339A1", "4006-3813-3393", "4006 3813 3393", "١٢٣٤٥٦٧٨"]:
+        for codigo in [
+            "40063813339A1",
+            "4006-3813-3393",
+            "4006 3813 3393",
+            "١٢٣٤٥٦٧٨",
+        ]:
             with self.subTest(codigo=codigo):
                 resultado = validar_codigo_barras(codigo)
                 self.assertFalse(resultado.valido)
@@ -68,7 +88,9 @@ class ValidarCodigoBarrasTests(SimpleTestCase):
     def test_todos_los_motivos_estan_en_espanol_y_dicen_como_corregir(self):
         for codigo in [None, "ABC", "123", "4006381333932"]:
             with self.subTest(codigo=codigo):
-                self.assertTrue(validar_codigo_barras(codigo).motivo.endswith("."))
+                self.assertTrue(
+                    validar_codigo_barras(codigo).motivo.endswith(".")
+                )
 
 
 class NormalizarCodigoBarrasTests(SimpleTestCase):
@@ -81,7 +103,9 @@ class NormalizarCodigoBarrasTests(SimpleTestCase):
         }
         for codigo, esperado in casos.items():
             with self.subTest(codigo=codigo):
-                self.assertEqual(validar_codigo_barras(codigo).normalizado, esperado)
+                self.assertEqual(
+                    validar_codigo_barras(codigo).normalizado, esperado
+                )
 
     def test_upca_y_su_ean13_con_cero_adelante_son_el_mismo_producto(self):
         upc = validar_codigo_barras(UPC_A)
@@ -91,7 +115,9 @@ class NormalizarCodigoBarrasTests(SimpleTestCase):
 
     def test_un_gtin14_con_indicador_distinto_de_cero_es_otro_producto(self):
         caja = validar_codigo_barras(GTIN_14)
-        unidad = validar_codigo_barras("0012345678905")  # EAN-13 sin el indicador
+        unidad = validar_codigo_barras(
+            "0012345678905"
+        )  # EAN-13 sin el indicador
         self.assertNotEqual(caja.normalizado, unidad.normalizado)
 
     def test_el_codigo_normalizado_sigue_siendo_valido(self):

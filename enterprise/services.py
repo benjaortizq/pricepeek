@@ -7,7 +7,13 @@ from django.db import IntegrityError, connection, transaction
 from django.utils import timezone
 
 from core.translations import translate_text_lazy
-from products.models import Currencies, Prices, ProductImages, ProductVariants, Products
+from products.models import (
+    Currencies,
+    Prices,
+    ProductImages,
+    ProductVariants,
+    Products,
+)
 
 from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
 
@@ -57,7 +63,9 @@ def moneda_para_tienda(store):
         moneda = Currencies.objects.order_by("id").first()
     if moneda is None:
         raise ErrorEmpresa(
-            translate_text_lazy("No hay una moneda configurada para registrar el precio.")
+            translate_text_lazy(
+                "No hay una moneda configurada para registrar el precio."
+            )
         )
     return moneda
 
@@ -88,9 +96,9 @@ def _urls_imagenes_empresa(urls):
 
 def _imagenes_bloqueadas(product_id):
     """Devuelve las imágenes del producto bloqueadas para escritura."""
-    variant_ids = ProductVariants.objects.filter(product_id=product_id).values_list(
-        "id", flat=True
-    )
+    variant_ids = ProductVariants.objects.filter(
+        product_id=product_id
+    ).values_list("id", flat=True)
     return list(
         ProductImages.objects.select_for_update()
         .filter(variant_id__in=variant_ids)
@@ -134,7 +142,9 @@ def _agregar_imagenes(variante, urls, ahora, imagenes_existentes=None):
     return creadas
 
 
-def crear_precio_empresa(store, gtin, datos, producto_datos=None, image_urls=None):
+def crear_precio_empresa(
+    store, gtin, datos, producto_datos=None, image_urls=None
+):
     """Crea el precio propio para un GTIN existente o nuevo.
 
     Para un GTIN existente solo se crea ``Prices`` y nunca se modifican sus
@@ -152,7 +162,9 @@ def crear_precio_empresa(store, gtin, datos, producto_datos=None, image_urls=Non
             )
             if variante is not None:
                 gtin_ya_existia = True
-                if Prices.objects.filter(id_store_id=store.pk, gtin_id=gtin).exists():
+                if Prices.objects.filter(
+                    id_store_id=store.pk, gtin_id=gtin
+                ).exists():
                     raise ErrorEmpresa(
                         translate_text_lazy(
                             "Esta tienda ya tiene un precio para este GTIN. Edítelo en lugar de agregarlo otra vez."
@@ -177,7 +189,8 @@ def crear_precio_empresa(store, gtin, datos, producto_datos=None, image_urls=Non
                         )
                     )
                 producto = Products.objects.create(
-                    name=datos_producto.get("product_name") or datos_producto.get("variant_name"),
+                    name=datos_producto.get("product_name")
+                    or datos_producto.get("variant_name"),
                     description=datos_producto.get("description") or "",
                     brand=marca,
                     category=categoria,
@@ -307,7 +320,11 @@ def editar_precio_empresa(store, price_id, datos):
             .first()
         )
         if precio is None:
-            raise ErrorEmpresa(translate_text_lazy("El precio no existe o no pertenece a su tienda."))
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "El precio no existe o no pertenece a su tienda."
+                )
+            )
 
         valores = _datos_precio(datos, datos.get("price"))
         precio.price = valores["price"]
@@ -339,7 +356,11 @@ def quitar_precio_empresa(store, price_id):
             .first()
         )
         if precio is None:
-            raise ErrorEmpresa(translate_text_lazy("El precio no existe o no pertenece a su tienda."))
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "El precio no existe o no pertenece a su tienda."
+                )
+            )
         precio.price = None
         precio.is_available = False
         precio.updated_at = timezone.now()
@@ -356,7 +377,11 @@ def desactivar_precio_empresa(store, price_id):
             .first()
         )
         if precio is None:
-            raise ErrorEmpresa(translate_text_lazy("El precio no existe o no pertenece a su tienda."))
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "El precio no existe o no pertenece a su tienda."
+                )
+            )
         precio.is_available = False
         precio.updated_at = timezone.now()
         precio.save(update_fields=["is_available", "updated_at"])

@@ -28,12 +28,23 @@ def es_url_de_producto(url):
     partes = urlsplit(url)
     ruta = partes.path
     # /catalog/... está prohibido en su robots.txt
-    return partes.netloc == DOMINIO and not partes.query and ruta.endswith("/p") and ruta.count("/") == 2
+    return (
+        partes.netloc == DOMINIO
+        and not partes.query
+        and ruta.endswith("/p")
+        and ruta.count("/") == 2
+    )
 
 
 def listar_urls(http, avisar=None):
     """Las URLs de producto del sitemap, en su orden y sin repetir."""
-    return list(dict.fromkeys(u for u in urls_del_sitemap(http.texto(SITEMAP)) if es_url_de_producto(u)))
+    return list(
+        dict.fromkeys(
+            u
+            for u in urls_del_sitemap(http.texto(SITEMAP))
+            if es_url_de_producto(u)
+        )
+    )
 
 
 def obtener_ficha(url, http):
@@ -47,7 +58,11 @@ def obtener_ficha(url, http):
     _, motivo = paginas.codigo_de_barras(gtin_publicado)
     marca = producto.get("brand")
     marca = marca.get("name") if isinstance(marca, dict) else marca
-    modelo = " ".join(dict.fromkeys(m for m in (specs.get("Modelo comercial"), specs.get("MPN")) if m))
+    modelo = " ".join(
+        dict.fromkeys(
+            m for m in (specs.get("Modelo comercial"), specs.get("MPN")) if m
+        )
+    )
     return Ficha(
         url=url,
         nombre=str(producto.get("name") or "").strip(),

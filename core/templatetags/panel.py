@@ -18,7 +18,9 @@ def pendientes_del_panel():
             kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING
         ).count(),
         # Las ejecuciones manuales de la obtención de datos que todavía no terminan.
-        "ejecuciones": ManualRun.objects.filter(status__in=ManualRun.ACTIVE).count(),
+        "ejecuciones": ManualRun.objects.filter(
+            status__in=ManualRun.ACTIVE
+        ).count(),
     }
 
 

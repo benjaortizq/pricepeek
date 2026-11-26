@@ -1,8 +1,13 @@
+"""Pruebas automatizadas de tests para la aplicación accounts."""
+
 import re
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
+from django.contrib.auth.tokens import (
+    PasswordResetTokenGenerator,
+    default_token_generator,
+)
 from django.core import mail
 from django.db import connection
 from django.test import TestCase
@@ -12,7 +17,14 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from . import views
-from products.models import Brands, Categories, Currencies, ProductVariants, Products, Stores
+from products.models import (
+    Brands,
+    Categories,
+    Currencies,
+    ProductVariants,
+    Products,
+    Stores,
+)
 
 from .models import User
 
@@ -30,18 +42,26 @@ class RegistroClienteTests(TestCase):
 
     def test_crea_cuenta_de_cliente_con_nombre_correo_y_contrasena(self):
         respuesta = self.client.post(reverse("register"), self.datos())
-        self.assertRedirects(respuesta, reverse("login"), fetch_redirect_response=False)
+        self.assertRedirects(
+            respuesta, reverse("login"), fetch_redirect_response=False
+        )
         user = User.objects.get(email="ana@correo.com")
         self.assertEqual(user.first_name, "Ana")
         self.assertEqual(user.role, User.Role.CLIENT)
         self.assertTrue(user.check_password("Clave2026segura"))
 
     def test_no_permite_correo_duplicado(self):
-        User.objects.create_user(email="ana@correo.com", password="Otra2026clave")
-        respuesta = self.client.post(reverse("register"), self.datos(email="ANA@correo.com"))
+        User.objects.create_user(
+            email="ana@correo.com", password="Otra2026clave"
+        )
+        respuesta = self.client.post(
+            reverse("register"), self.datos(email="ANA@correo.com")
+        )
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Ya existe una cuenta con este correo")
-        self.assertEqual(User.objects.filter(email__iexact="ana@correo.com").count(), 1)
+        self.assertEqual(
+            User.objects.filter(email__iexact="ana@correo.com").count(), 1
+        )
 
 
 class RecuperarContrasenaTests(TestCase):
@@ -54,32 +74,43 @@ class RecuperarContrasenaTests(TestCase):
         user = user or self.user
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        return reverse("password_reset_confirm", kwargs={"uidb64": uid, "token": token})
+        return reverse(
+            "password_reset_confirm", kwargs={"uidb64": uid, "token": token}
+        )
 
     def restablecer(self, password):
         # Django guarda el token en la sesión y redirige a una URL "set-password".
         respuesta = self.client.get(self.url_de_cambio())
         return self.client.post(
-            respuesta.url, {"new_password1": password, "new_password2": password}
+            respuesta.url,
+            {"new_password1": password, "new_password2": password},
         )
 
     def test_solicitud_envia_correo_con_enlace_al_correo_registrado(self):
-        respuesta = self.client.post(reverse("password_reset"), {"email": "ana@correo.com"})
+        respuesta = self.client.post(
+            reverse("password_reset"), {"email": "ana@correo.com"}
+        )
         self.assertRedirects(respuesta, reverse("password_reset_done"))
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["ana@correo.com"])
         self.assertIn("/accounts/reset/", mail.outbox[0].body)
         self.assertIn("24 horas", mail.outbox[0].body)
 
-    def test_correo_no_registrado_no_envia_correo_ni_revela_que_no_existe(self):
-        respuesta = self.client.post(reverse("password_reset"), {"email": "nadie@correo.com"})
+    def test_correo_no_registrado_no_envia_correo_ni_revela_que_no_existe(
+        self,
+    ):
+        respuesta = self.client.post(
+            reverse("password_reset"), {"email": "nadie@correo.com"}
+        )
         self.assertRedirects(respuesta, reverse("password_reset_done"))
         self.assertEqual(len(mail.outbox), 0)
 
     def test_enlace_valido_permite_cambiar_la_contrasena(self):
         respuesta = self.restablecer("Nueva2026clave")
         self.assertRedirects(
-            respuesta, reverse("password_reset_complete"), fetch_redirect_response=False
+            respuesta,
+            reverse("password_reset_complete"),
+            fetch_redirect_response=False,
         )
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("Nueva2026clave"))
@@ -115,10 +146,22 @@ class RecuperarContrasenaTests(TestCase):
     def test_el_enlace_vence_a_las_24_horas(self):
         token = default_token_generator.make_token(self.user)
         ahora = datetime.now()
-        with patch.object(PasswordResetTokenGenerator, "_now", return_value=ahora + timedelta(hours=23)):
-            self.assertTrue(default_token_generator.check_token(self.user, token))
-        with patch.object(PasswordResetTokenGenerator, "_now", return_value=ahora + timedelta(hours=24, minutes=1)):
-            self.assertFalse(default_token_generator.check_token(self.user, token))
+        with patch.object(
+            PasswordResetTokenGenerator,
+            "_now",
+            return_value=ahora + timedelta(hours=23),
+        ):
+            self.assertTrue(
+                default_token_generator.check_token(self.user, token)
+            )
+        with patch.object(
+            PasswordResetTokenGenerator,
+            "_now",
+            return_value=ahora + timedelta(hours=24, minutes=1),
+        ):
+            self.assertFalse(
+                default_token_generator.check_token(self.user, token)
+            )
 
     def test_enlace_no_se_puede_reutilizar(self):
         url = self.url_de_cambio()
@@ -128,13 +171,22 @@ class RecuperarContrasenaTests(TestCase):
 
     def test_cuenta_suspendida_no_recibe_enlace(self):
         User.objects.filter(pk=self.user.pk).update(is_active=False)
-        self.client.post(reverse("password_reset"), {"email": "ana@correo.com"})
+        self.client.post(
+            reverse("password_reset"), {"email": "ana@correo.com"}
+        )
         self.assertEqual(len(mail.outbox), 0)
 
 
 class EliminarCuentaTests(TestCase):
     # Al borrar un usuario también se borra su lista de deseos, que apunta a tablas de Supabase.
-    modelos_sin_migracion = [Brands, Categories, Currencies, Stores, Products, ProductVariants]
+    modelos_sin_migracion = [
+        Brands,
+        Categories,
+        Currencies,
+        Stores,
+        Products,
+        ProductVariants,
+    ]
 
     @classmethod
     def setUpClass(cls):
@@ -151,14 +203,20 @@ class EliminarCuentaTests(TestCase):
                 editor.delete_model(modelo)
 
     def setUp(self):
-        self.cliente = User.objects.create_user(email="ana@correo.com", password="Clave2026segura")
-        self.otro = User.objects.create_user(email="luis@correo.com", password="Otra2026clave")
+        self.cliente = User.objects.create_user(
+            email="ana@correo.com", password="Clave2026segura"
+        )
+        self.otro = User.objects.create_user(
+            email="luis@correo.com", password="Otra2026clave"
+        )
         self.url = reverse("eliminar_cuenta")
 
     def test_cliente_elimina_su_cuenta_con_la_contrasena_correcta(self):
         self.client.force_login(self.cliente)
         respuesta = self.client.post(self.url, {"password": "Clave2026segura"})
-        self.assertRedirects(respuesta, reverse("login"), fetch_redirect_response=False)
+        self.assertRedirects(
+            respuesta, reverse("login"), fetch_redirect_response=False
+        )
         self.assertFalse(User.objects.filter(email="ana@correo.com").exists())
         self.assertNotIn("_auth_user_id", self.client.session)
 
@@ -195,10 +253,14 @@ class EliminarCuentaTests(TestCase):
         for rol in (User.Role.ENTERPRISE, User.Role.ADMIN):
             with self.subTest(rol=rol):
                 usuario = User.objects.create_user(
-                    email=f"{rol}@correo.com", password="Clave2026segura", role=rol
+                    email=f"{rol}@correo.com",
+                    password="Clave2026segura",
+                    role=rol,
                 )
                 self.client.force_login(usuario)
-                respuesta = self.client.post(self.url, {"password": "Clave2026segura"})
+                respuesta = self.client.post(
+                    self.url, {"password": "Clave2026segura"}
+                )
                 self.assertEqual(respuesta.status_code, 403)
                 self.assertTrue(User.objects.filter(pk=usuario.pk).exists())
 
@@ -215,7 +277,11 @@ class CambioContrasenaTests(TestCase):
     def solicitar(self, actual="Vieja2026clave", nueva="Nueva2026clave"):
         return self.client.post(
             self.url,
-            {"old_password": actual, "new_password1": nueva, "new_password2": nueva},
+            {
+                "old_password": actual,
+                "new_password1": nueva,
+                "new_password2": nueva,
+            },
         )
 
     def codigo_enviado(self):
@@ -225,9 +291,14 @@ class CambioContrasenaTests(TestCase):
         return self.client.post(self.url_confirmar, {"codigo": codigo})
 
     def test_reemplaza_la_vista_de_django_que_no_pide_codigo(self):
-        self.assertEqual(resolve("/accounts/password_change/").func, views.cambiar_contrasena)
+        self.assertEqual(
+            resolve("/accounts/password_change/").func,
+            views.cambiar_contrasena,
+        )
 
-    def test_solicitud_envia_codigo_al_correo_sin_cambiar_aun_la_contrasena(self):
+    def test_solicitud_envia_codigo_al_correo_sin_cambiar_aun_la_contrasena(
+        self,
+    ):
         respuesta = self.solicitar()
         self.assertRedirects(respuesta, self.url_confirmar)
         self.assertEqual(len(mail.outbox), 1)
@@ -241,12 +312,16 @@ class CambioContrasenaTests(TestCase):
         User.objects.filter(pk=self.user.pk).update(last_password_change=antes)
         self.solicitar()
         respuesta = self.confirmar(self.codigo_enviado())
-        self.assertRedirects(respuesta, reverse("panel"), fetch_redirect_response=False)
+        self.assertRedirects(
+            respuesta, reverse("panel"), fetch_redirect_response=False
+        )
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("Nueva2026clave"))
         self.assertFalse(self.user.check_password("Vieja2026clave"))
         self.assertGreater(self.user.last_password_change, antes)
-        self.assertEqual(self.client.session["_auth_user_id"], str(self.user.pk))
+        self.assertEqual(
+            self.client.session["_auth_user_id"], str(self.user.pk)
+        )
         self.assertNotIn(views.CAMBIO_PENDIENTE, self.client.session)
 
     def test_contrasena_actual_incorrecta_no_envia_codigo(self):
@@ -297,7 +372,10 @@ class CambioContrasenaTests(TestCase):
     def test_codigo_vencido_no_cambia_la_contrasena(self):
         self.solicitar()
         codigo = self.codigo_enviado()
-        with patch("accounts.views.timezone.now", return_value=timezone.now() + timedelta(minutes=11)):
+        with patch(
+            "accounts.views.timezone.now",
+            return_value=timezone.now() + timedelta(minutes=11),
+        ):
             respuesta = self.confirmar(codigo)
         self.assertRedirects(respuesta, self.url)
         self.user.refresh_from_db()
@@ -330,7 +408,9 @@ class CambioContrasenaTests(TestCase):
         for rol in (User.Role.ENTERPRISE, User.Role.ADMIN):
             with self.subTest(rol=rol):
                 usuario = User.objects.create_user(
-                    email=f"{rol}@correo.com", password="Vieja2026clave", role=rol
+                    email=f"{rol}@correo.com",
+                    password="Vieja2026clave",
+                    role=rol,
                 )
                 self.client.force_login(usuario)
                 self.solicitar()
@@ -342,21 +422,30 @@ class CambioContrasenaTests(TestCase):
 class EditarPerfilTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="ana@correo.com", password="Clave2026segura", first_name="Ana"
+            email="ana@correo.com",
+            password="Clave2026segura",
+            first_name="Ana",
         )
-        User.objects.create_user(email="luis@correo.com", password="Otra2026clave")
+        User.objects.create_user(
+            email="luis@correo.com", password="Otra2026clave"
+        )
         self.client.force_login(self.user)
         self.url = reverse("editar_perfil")
 
     def cambiar_nombre(self, nombre):
-        return self.client.post(self.url, {"accion": "nombre", "nombre-first_name": nombre})
+        return self.client.post(
+            self.url, {"accion": "nombre", "nombre-first_name": nombre}
+        )
 
     def verificar_correo(self, email):
-        return self.client.post(reverse("verificar_correo"), {"correo-email": email})
+        return self.client.post(
+            reverse("verificar_correo"), {"correo-email": email}
+        )
 
     def confirmar_correo(self, password="Clave2026segura"):
         return self.client.post(
-            self.url, {"accion": "confirmar_correo", "confirmar-password": password}
+            self.url,
+            {"accion": "confirmar_correo", "confirmar-password": password},
         )
 
     def cambiar_correo(self, email, password="Clave2026segura"):
@@ -371,14 +460,18 @@ class EditarPerfilTests(TestCase):
         self.assertContains(respuesta, 'value="Ana"')
         self.assertContains(respuesta, "ana@correo.com")
 
-    def test_la_pagina_no_muestra_campo_de_contrasena_hasta_verificar_el_correo(self):
+    def test_la_pagina_no_muestra_campo_de_contrasena_hasta_verificar_el_correo(
+        self,
+    ):
         respuesta = self.client.get(self.url)
         self.assertNotContains(respuesta, 'type="password"')
         self.assertContains(respuesta, reverse("password_change"))
 
     def test_correo_libre_pasa_a_pedir_la_contrasena_sin_cambiar_aun(self):
         respuesta = self.verificar_correo("nueva@correo.com")
-        self.assertRedirects(respuesta, self.url, fetch_redirect_response=False)
+        self.assertRedirects(
+            respuesta, self.url, fetch_redirect_response=False
+        )
         pagina = self.client.get(self.url)
         self.assertContains(pagina, "nueva@correo.com")
         self.assertContains(pagina, 'type="password"')
@@ -386,13 +479,21 @@ class EditarPerfilTests(TestCase):
         self.assertEqual(self.user.email, "ana@correo.com")
 
     def test_verificar_correo_solo_acepta_post(self):
-        self.assertEqual(self.client.get(reverse("verificar_correo")).status_code, 405)
+        self.assertEqual(
+            self.client.get(reverse("verificar_correo")).status_code, 405
+        )
 
-    def test_si_otra_cuenta_toma_el_correo_antes_de_confirmar_no_se_cambia(self):
+    def test_si_otra_cuenta_toma_el_correo_antes_de_confirmar_no_se_cambia(
+        self,
+    ):
         self.verificar_correo("nueva@correo.com")
-        User.objects.create_user(email="nueva@correo.com", password="Otra2026clave")
+        User.objects.create_user(
+            email="nueva@correo.com", password="Otra2026clave"
+        )
         respuesta = self.confirmar_correo()
-        self.assertRedirects(respuesta, self.url, fetch_redirect_response=False)
+        self.assertRedirects(
+            respuesta, self.url, fetch_redirect_response=False
+        )
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "ana@correo.com")
 
@@ -426,16 +527,28 @@ class EditarPerfilTests(TestCase):
         self.assertRedirects(respuesta, self.url)
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "ana.nueva@correo.com")
-        self.assertEqual(self.client.session["_auth_user_id"], str(self.user.pk))
+        self.assertEqual(
+            self.client.session["_auth_user_id"], str(self.user.pk)
+        )
 
     def test_puede_iniciar_sesion_con_el_correo_nuevo(self):
         self.cambiar_correo("nueva@correo.com")
         self.client.logout()
-        self.assertTrue(self.client.login(email="nueva@correo.com", password="Clave2026segura"))
-        self.assertFalse(self.client.login(email="ana@correo.com", password="Clave2026segura"))
+        self.assertTrue(
+            self.client.login(
+                email="nueva@correo.com", password="Clave2026segura"
+            )
+        )
+        self.assertFalse(
+            self.client.login(
+                email="ana@correo.com", password="Clave2026segura"
+            )
+        )
 
     def test_contrasena_incorrecta_no_cambia_el_correo(self):
-        respuesta = self.cambiar_correo("nueva@correo.com", password="Incorrecta2026")
+        respuesta = self.cambiar_correo(
+            "nueva@correo.com", password="Incorrecta2026"
+        )
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "no es correcta")
         self.user.refresh_from_db()
@@ -475,7 +588,9 @@ class EditarPerfilTests(TestCase):
         for rol in (User.Role.ENTERPRISE, User.Role.ADMIN):
             with self.subTest(rol=rol):
                 usuario = User.objects.create_user(
-                    email=f"{rol}@correo.com", password="Clave2026segura", role=rol
+                    email=f"{rol}@correo.com",
+                    password="Clave2026segura",
+                    role=rol,
                 )
                 self.client.force_login(usuario)
                 self.cambiar_nombre("Nuevo")

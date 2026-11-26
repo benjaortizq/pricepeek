@@ -1,3 +1,5 @@
+"""Validadores de datos de la aplicación accounts."""
+
 from django.core.exceptions import ValidationError
 
 from core.translations import translate_text_lazy

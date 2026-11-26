@@ -36,13 +36,22 @@ def ruta_de_categorias(producto):
     if not rutas:
         return ""
     mas_larga = max(rutas, key=lambda r: r.count("/"))
-    return " > ".join(parte.strip() for parte in mas_larga.split("/") if parte.strip())
+    return " > ".join(
+        parte.strip() for parte in mas_larga.split("/") if parte.strip()
+    )
 
 
 def _item_principal(items):
     """La primera presentación disponible (o la primera, si ninguna lo está) y su oferta."""
-    con_oferta = [(item, oferta) for item in items if (oferta := api.oferta_del_item(item)) is not None]
-    return next(((i, o) for i, o in con_oferta if o.disponible), con_oferta[0] if con_oferta else (None, None))
+    con_oferta = [
+        (item, oferta)
+        for item in items
+        if (oferta := api.oferta_del_item(item)) is not None
+    ]
+    return next(
+        ((i, o) for i, o in con_oferta if o.disponible),
+        con_oferta[0] if con_oferta else (None, None),
+    )
 
 
 def ficha_del_producto(url, producto):
@@ -51,18 +60,25 @@ def ficha_del_producto(url, producto):
     if item is None:
         return None
     codigos_invalidos = ()
-    validacion = validar_codigo_barras(oferta.gtins[0]) if oferta.gtins else None
+    validacion = (
+        validar_codigo_barras(oferta.gtins[0]) if oferta.gtins else None
+    )
     if validacion is not None and not validacion:
         codigos_invalidos = ((oferta.gtins[0], validacion.motivo),)
-        oferta = replace(oferta, gtins=())  # un código inválido no sirve para comparar (RF-38)
+        oferta = replace(
+            oferta, gtins=()
+        )  # un código inválido no sirve para comparar (RF-38)
     imagenes = item.get("images") or []
     return Ficha(
         url=url,
-        nombre=str(producto.get("productName") or item.get("name") or "").strip(),
+        nombre=str(
+            producto.get("productName") or item.get("name") or ""
+        ).strip(),
         oferta=oferta,
         sku=str(item.get("itemId") or ""),
         # "Marca" viene escrita como se debe ("Dos Pinos"); "brand", en mayúsculas ("DOS PINOS").
-        marca=_primero(producto.get("Marca")) or str(producto.get("brand") or "").strip(),
+        marca=_primero(producto.get("Marca"))
+        or str(producto.get("brand") or "").strip(),
         modelo=_primero(producto.get("Modelo o serie del producto")),
         color=_primero(producto.get("Color")),
         categoria=ruta_de_categorias(producto),
@@ -75,7 +91,10 @@ def subcategorias(arbol, ruta):
     """Las rutas de las subcategorías de esa ruta en el árbol de categorías de VTEX ([] si no tiene)."""
     for nodo in arbol:
         if ruta_de_busqueda(urlsplit(nodo.get("url") or "").path) == ruta:
-            return [ruta_de_busqueda(urlsplit(hija.get("url") or "").path) for hija in nodo.get("children") or []]
+            return [
+                ruta_de_busqueda(urlsplit(hija.get("url") or "").path)
+                for hija in nodo.get("children") or []
+            ]
         if hijas := subcategorias(nodo.get("children") or [], ruta):
             return hijas
     return []
@@ -99,7 +118,12 @@ class TiendaVtex:
 
     def es_url_de_producto(self, url):
         partes = urlsplit(url)
-        return partes.netloc == self.DOMINIO and not partes.query and partes.path.endswith("/p") and partes.path != "/p"
+        return (
+            partes.netloc == self.DOMINIO
+            and not partes.query
+            and partes.path.endswith("/p")
+            and partes.path != "/p"
+        )
 
     def listar_urls(self, http, avisar=None):
         """Las URLs de los sitemaps de productos, en su orden y sin repetir.
@@ -107,13 +131,21 @@ class TiendaVtex:
         Walmart tiene unos 39 sitemaps de productos (~1 minuto): cada 5 se llama a avisar(texto).
         """
         # los otros sitemaps son de marcas, categorías y páginas
-        submapas = [s for s in urls_del_sitemap(http.texto(self.SITEMAP)) if "/sitemap/product-" in s]
+        submapas = [
+            s
+            for s in urls_del_sitemap(http.texto(self.SITEMAP))
+            if "/sitemap/product-" in s
+        ]
         urls = []
         for numero, submapa in enumerate(submapas, 1):
             urls += urls_del_sitemap(http.texto(submapa))
             if avisar and (numero % 5 == 0 or numero == len(submapas)):
-                avisar(f"sitemap {numero}/{len(submapas)} · {len(urls)} páginas hasta ahora")
-        return list(dict.fromkeys(u for u in urls if self.es_url_de_producto(u)))
+                avisar(
+                    f"sitemap {numero}/{len(submapas)} · {len(urls)} páginas hasta ahora"
+                )
+        return list(
+            dict.fromkeys(u for u in urls if self.es_url_de_producto(u))
+        )
 
     def productos_de_categorias(self, http, categorias, avisar=None):
         """{URL de la página: producto de la API} de los productos de esas categorías.
@@ -123,21 +155,32 @@ class TiendaVtex:
         cada una de sus subcategorías.
         """
         productos = {}
-        pendientes = [ruta for ruta in map(ruta_de_busqueda, categorias) if ruta]
+        pendientes = [
+            ruta for ruta in map(ruta_de_busqueda, categorias) if ruta
+        ]
         arbol = None
         while pendientes:
             ruta = pendientes.pop(0)
             # Si la última página que deja ver la búsqueda viene llena, puede que haya más.
-            if len(self._pagina(http, ruta, self.ULTIMO_DESDE)) == self.POR_PAGINA:
+            if (
+                len(self._pagina(http, ruta, self.ULTIMO_DESDE))
+                == self.POR_PAGINA
+            ):
                 if arbol is None:
-                    arbol = http.json(f"https://{self.DOMINIO}/api/catalog_system/pub/category/tree/{self.NIVELES_DEL_ARBOL}")
+                    arbol = http.json(
+                        f"https://{self.DOMINIO}/api/catalog_system/pub/category/tree/{self.NIVELES_DEL_ARBOL}"
+                    )
                 if hijas := subcategorias(arbol, ruta):
                     if avisar:
-                        avisar(f"{ruta}: tiene demasiados productos para una sola búsqueda; se busca en sus {len(hijas)} subcategorías")
+                        avisar(
+                            f"{ruta}: tiene demasiados productos para una sola búsqueda; se busca en sus {len(hijas)} subcategorías"
+                        )
                     pendientes[:0] = hijas
                     continue
                 if avisar:
-                    avisar(f"{ruta}: tiene demasiados productos y no tiene subcategorías: solo se leen los primeros")
+                    avisar(
+                        f"{ruta}: tiene demasiados productos y no tiene subcategorías: solo se leen los primeros"
+                    )
             self._buscar(http, ruta, productos, avisar)
         return productos
 
@@ -147,7 +190,9 @@ class TiendaVtex:
             f"?_from={desde}&_to={desde + self.POR_PAGINA - 1}&O=OrderByNameASC"  # en orden, para no saltarse ninguno
         )
         if not isinstance(pagina, list):
-            raise PrecioNoEncontrado("La búsqueda de VTEX devolvió algo que no es una lista de productos.")
+            raise PrecioNoEncontrado(
+                "La búsqueda de VTEX devolvió algo que no es una lista de productos."
+            )
         return pagina
 
     def _buscar(self, http, ruta, productos, avisar):
@@ -157,7 +202,10 @@ class TiendaVtex:
             pagina = self._pagina(http, ruta, desde)
             for producto in pagina:
                 if producto.get("linkText"):
-                    productos.setdefault(f"https://{self.DOMINIO}/{producto['linkText']}/p", producto)
+                    productos.setdefault(
+                        f"https://{self.DOMINIO}/{producto['linkText']}/p",
+                        producto,
+                    )
             if len(pagina) < self.POR_PAGINA:
                 break
         if avisar:

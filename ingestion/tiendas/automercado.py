@@ -30,8 +30,14 @@ INDICE = "Product_CatalogueV2"
 FACETA = "categoryPageId"
 POR_CONSULTA = 1000  # lo más que devuelve Algolia para una consulta
 CAMPOS = [
-    "productID", "ecomDescription", "productPresentation", "marca", "productNumber", "imageUrl",
-    "hierarchicalCategories", "productAvailable",
+    "productID",
+    "ecomDescription",
+    "productPresentation",
+    "marca",
+    "productNumber",
+    "imageUrl",
+    "hierarchicalCategories",
+    "productAvailable",
 ]
 DE_CADA_SUCURSAL = ["amount", "basePrice", "productAvailable"]
 
@@ -45,7 +51,7 @@ def url_del_producto(producto):
 
 
 def ruta_de_la_categoria(nombre):
-    """"SNACK Y GOLOSINA > CONFITURAS Y CHOCOLATES" -> "snack-y-golosina/confituras-y-chocolates" (como en su URL)."""
+    """ "SNACK Y GOLOSINA > CONFITURAS Y CHOCOLATES" -> "snack-y-golosina/confituras-y-chocolates" (como en su URL)."""
     return ruta_de_busqueda(nombre.replace(">", "/"))
 
 
@@ -53,7 +59,9 @@ def nombre_con_presentacion(producto):
     """El nombre con la presentación ("frasco 200 g") si no dice el tamaño: casi la mitad no lo dice
     ("CAFE INSTANTANEO CLASICO NESCAFE"), y sin tamaño se confunde con el de otro tamaño."""
     nombre = " ".join(str(producto.get("ecomDescription") or "").split())
-    presentacion = " ".join(str(producto.get("productPresentation") or "").split())
+    presentacion = " ".join(
+        str(producto.get("productPresentation") or "").split()
+    )
     if presentacion and not rasgos(nombre).capacidades:
         return f"{nombre} {presentacion}"
     return nombre
@@ -67,7 +75,9 @@ def ficha_del_producto(url, producto):
         oferta=oferta_del_producto(producto),  # sin código de barras
         sku=str(producto.get("productNumber") or ""),
         marca=str(producto.get("marca") or "").strip(),
-        categoria=str(categorias[max(categorias)]) if categorias else "",  # la más específica: lvl2 > lvl1 > lvl0
+        categoria=str(categorias[max(categorias)])
+        if categorias
+        else "",  # la más específica: lvl2 > lvl1 > lvl0
         imagen_url=str(producto.get("imageUrl") or ""),
     )
 
@@ -87,36 +97,75 @@ class TiendaAutomercado:
         try:
             return estado["client_keys"]["algoliaApiKey"]
         except (KeyError, TypeError):
-            raise PrecioNoEncontrado("La página de inicio no trae la llave de búsqueda (client_keys.algoliaApiKey).") from None
+            raise PrecioNoEncontrado(
+                "La página de inicio no trae la llave de búsqueda (client_keys.algoliaApiKey)."
+            ) from None
 
     @staticmethod
     def url_de_consulta(llave, **parametros):
-        parametros = {k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v for k, v in parametros.items()}
-        credenciales = {"x-algolia-application-id": APLICACION, "x-algolia-api-key": llave}
-        return f"https://{APLICACION}-dsn.algolia.net/1/indexes/{INDICE}?" + urlencode({**parametros, **credenciales})
+        parametros = {
+            k: json.dumps(v, ensure_ascii=False)
+            if isinstance(v, (list, dict))
+            else v
+            for k, v in parametros.items()
+        }
+        credenciales = {
+            "x-algolia-application-id": APLICACION,
+            "x-algolia-api-key": llave,
+        }
+        return (
+            f"https://{APLICACION}-dsn.algolia.net/1/indexes/{INDICE}?"
+            + urlencode({**parametros, **credenciales})
+        )
 
     def _consultar(self, http, llave, **parametros):
         respuesta = http.json(self.url_de_consulta(llave, **parametros))
         if not isinstance(respuesta, dict) or "hits" not in respuesta:
-            raise PrecioNoEncontrado("Algolia devolvió algo que no es una búsqueda.")
+            raise PrecioNoEncontrado(
+                "Algolia devolvió algo que no es una búsqueda."
+            )
         return respuesta
 
     def categorias(self, http, llave):
         """{"ABARROTES > CEREALES": cuántos productos tiene} de todas las categorías."""
-        respuesta = self._consultar(http, llave, query="", hitsPerPage=0, facets=[FACETA], maxValuesPerFacet=POR_CONSULTA)
+        respuesta = self._consultar(
+            http,
+            llave,
+            query="",
+            hitsPerPage=0,
+            facets=[FACETA],
+            maxValuesPerFacet=POR_CONSULTA,
+        )
         return (respuesta.get("facets") or {}).get(FACETA) or {}
 
     def sucursales(self, http, llave):
         """Los números de las sucursales ("01", "02"...), según los campos storeDetail.NN.* del índice."""
-        respuesta = self._consultar(http, llave, query="", hitsPerPage=0, facets=["*"], maxValuesPerFacet=1)
-        return sorted({faceta.split(".")[1] for faceta in respuesta.get("facets") or {} if faceta.startswith("storeDetail.")})
+        respuesta = self._consultar(
+            http,
+            llave,
+            query="",
+            hitsPerPage=0,
+            facets=["*"],
+            maxValuesPerFacet=1,
+        )
+        return sorted(
+            {
+                faceta.split(".")[1]
+                for faceta in respuesta.get("facets") or {}
+                if faceta.startswith("storeDetail.")
+            }
+        )
 
     def productos_de_categorias(self, http, categorias, avisar=None):
         """{URL de la página: producto de Algolia} de esas categorías ("abarrotes", "abarrotes/cereales"), o de todas."""
         avisar = avisar or (lambda texto: None)
         llave = self.llave(http)
         conteos = self.categorias(http, llave)
-        campos = CAMPOS + [f"storeDetail.{s}.{c}" for s in self.sucursales(http, llave) for c in DE_CADA_SUCURSAL]
+        campos = CAMPOS + [
+            f"storeDetail.{s}.{c}"
+            for s in self.sucursales(http, llave)
+            for c in DE_CADA_SUCURSAL
+        ]
         por_ruta = {ruta_de_la_categoria(nombre): nombre for nombre in conteos}
         if categorias:
             pendientes = []
@@ -124,7 +173,9 @@ class TiendaAutomercado:
                 if ruta in por_ruta:
                     pendientes.append(por_ruta[ruta])
                 else:
-                    avisar(f"{ruta}: no existe en Automercado. Es la ruta de su URL, por ejemplo abarrotes/cereales")
+                    avisar(
+                        f"{ruta}: no existe en Automercado. Es la ruta de su URL, por ejemplo abarrotes/cereales"
+                    )
         else:
             pendientes = [nombre for nombre in conteos if ">" not in nombre]
 
@@ -134,15 +185,30 @@ class TiendaAutomercado:
             ruta = ruta_de_la_categoria(nombre)
             if conteos[nombre] > POR_CONSULTA:
                 nivel = nombre.count(">") + 1
-                hijas = [n for n in conteos if n.startswith(f"{nombre} >") and n.count(">") == nivel]
+                hijas = [
+                    n
+                    for n in conteos
+                    if n.startswith(f"{nombre} >") and n.count(">") == nivel
+                ]
                 if hijas:
-                    avisar(f"{ruta}: {conteos[nombre]} productos, más de los {POR_CONSULTA} por consulta; se piden sus {len(hijas)} subcategorías")
+                    avisar(
+                        f"{ruta}: {conteos[nombre]} productos, más de los {POR_CONSULTA} por consulta; se piden sus {len(hijas)} subcategorías"
+                    )
                     pendientes[:0] = hijas
                     continue
-                avisar(f"{ruta}: tiene más de {POR_CONSULTA} productos y no tiene subcategorías: solo se leen {POR_CONSULTA}")
+                avisar(
+                    f"{ruta}: tiene más de {POR_CONSULTA} productos y no tiene subcategorías: solo se leen {POR_CONSULTA}"
+                )
             respuesta = self._consultar(
-                http, llave, query="", hitsPerPage=POR_CONSULTA, page=0, facetFilters=[f"{FACETA}:{nombre}"],
-                attributesToRetrieve=campos, attributesToHighlight=[], attributesToSnippet=[],
+                http,
+                llave,
+                query="",
+                hitsPerPage=POR_CONSULTA,
+                page=0,
+                facetFilters=[f"{FACETA}:{nombre}"],
+                attributesToRetrieve=campos,
+                attributesToHighlight=[],
+                attributesToSnippet=[],
             )
             antes = len(productos)
             for producto in respuesta["hits"]:

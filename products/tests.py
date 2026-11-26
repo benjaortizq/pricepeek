@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -383,6 +384,309 @@ class HistorialPreciosPublicoTests(CatalogoTestCase):
         self.assertContains(respuesta, "Price change history")
         self.assertContains(respuesta, "No changes have been recorded")
         self.assertContains(respuesta, "Previous price")
+
+
+class GraficaHistorialPreciosTests(CatalogoTestCase):
+    def url(self):
+        return reverse("detalle_producto", kwargs={"pk": self.leche.pk})
+
+    def crear_oferta(
+        self,
+        nombre="Tienda Gráfica",
+        *,
+        precio=1000,
+        descuento="0",
+        disponible=True,
+        creada=None,
+    ):
+        tienda = Stores.objects.create(name=nombre, **fechas())
+        oferta = self.precio(
+            self.variante_leche,
+            tienda,
+            precio,
+            descuento,
+            disponible=disponible,
+        )
+        if creada is None:
+            creada = timezone.now() - timedelta(days=30)
+        Prices.objects.filter(pk=oferta.pk).update(created_at=creada)
+        return tienda, oferta
+
+    def crear_auditoria(
+        self,
+        tienda,
+        *,
+        old_price=1000,
+        new_price=900,
+        old_discount="0",
+        new_discount="0",
+        is_active=True,
+        creada=None,
+        autor=None,
+    ):
+        return AuditPriceChanges.objects.create(
+            old_price=old_price,
+            new_price=new_price,
+            old_discount=Decimal(old_discount),
+            new_discount=Decimal(new_discount),
+            id_requested_by=autor.pk if autor is not None else None,
+            created_at=creada or timezone.now(),
+            is_active=is_active,
+            gtin_id=self.variante_leche.gtin,
+            id_store_id=tienda.pk,
+        )
+
+    def obtener_grafica(self, respuesta):
+        graficas = respuesta.context["grafica_precios"]["graficas"]
+        self.assertEqual(len(graficas), 1)
+        return graficas[0]
+
+    def test_muestra_lineas_por_tienda_y_marcadores_para_varias_tiendas(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda_a, _ = self.crear_oferta("Tienda A")
+        tienda_b, _ = self.crear_oferta("Tienda B", precio=1200)
+        self.crear_auditoria(
+            tienda_a,
+            new_price=950,
+            creada=ahora - timedelta(days=2),
+        )
+        self.crear_auditoria(
+            tienda_b,
+            old_price=1200,
+            new_price=1100,
+            creada=ahora - timedelta(days=1),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        grafica = self.obtener_grafica(respuesta)
+        self.assertEqual(
+            {serie["tienda"] for serie in grafica["series"]},
+            {"Tienda A", "Tienda B"},
+        )
+        self.assertEqual(
+            [len(serie["cambios"]) for serie in grafica["series"]],
+            [1, 1],
+        )
+        self.assertContains(respuesta, "Historial de precios por tienda")
+        self.assertContains(respuesta, "data-chart-marker")
+        self.assertContains(respuesta, "data-chart-legend-toggle")
+        self.assertContains(respuesta, "Resumen accesible de los cambios")
+
+    def test_la_grafica_aparece_al_final_del_detalle_publico(self):
+        self.crear_oferta()
+
+        html = self.client.get(self.url()).content.decode()
+
+        self.assertLess(html.index("resenas-heading"), html.index("price-chart-heading"))
+
+    def test_cada_marcador_es_interactivo_y_describe_el_cambio(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta()
+        self.crear_auditoria(
+            tienda,
+            new_price=950,
+            creada=ahora - timedelta(days=1),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        cambio = self.obtener_grafica(respuesta)["series"][0]["cambios"][0]
+        self.assertIn("Tienda Gráfica", cambio["aria_label"])
+        self.assertIn("₡1.000", cambio["aria_label"])
+        self.assertIn("₡950", cambio["aria_label"])
+        self.assertIn("Disponible", cambio["aria_label"])
+        self.assertContains(respuesta, 'role="button"')
+        self.assertContains(respuesta, 'tabindex="0"')
+        self.assertContains(respuesta, "aria-controls=\"price-chart-detail-grafica-1\"")
+
+    def test_la_serie_de_un_producto_menor_de_seis_meses_comienza_en_su_creacion(self):
+        ahora = timezone.localtime(timezone.now())
+        creacion = ahora - timedelta(days=20)
+        self.crear_oferta(creada=creacion)
+
+        respuesta = self.client.get(self.url())
+
+        grafica = self.obtener_grafica(respuesta)
+        serie = grafica["series"][0]
+        self.assertEqual(serie["introduccion"], creacion.isoformat())
+        self.assertEqual(serie["inicio_visible"], creacion.isoformat())
+        self.assertEqual(serie["tramos"][0]["desde_texto"], creacion.isoformat())
+        self.assertEqual(
+            respuesta.context["grafica_precios"]["ventana"]["meses"],
+            6,
+        )
+
+    def test_una_tienda_sin_cambios_produce_una_linea_horizontal(self):
+        self.crear_oferta()
+
+        respuesta = self.client.get(self.url())
+
+        serie = self.obtener_grafica(respuesta)["series"][0]
+        self.assertEqual(serie["cambios"], [])
+        self.assertEqual(len(serie["tramos"]), 1)
+        tramo = serie["tramos"][0]
+        self.assertLess(tramo["x1"], tramo["x2"])
+        self.assertTrue(tramo["disponible"])
+
+    def test_desactivacion_y_reactivacion_interrumpen_la_serie(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta()
+        desactivacion = ahora - timedelta(days=3)
+        reactivacion = ahora - timedelta(days=1)
+        self.crear_auditoria(
+            tienda,
+            old_price=1000,
+            new_price=1000,
+            is_active=False,
+            creada=desactivacion,
+        )
+        self.crear_auditoria(
+            tienda,
+            old_price=1000,
+            new_price=1000,
+            is_active=True,
+            creada=reactivacion,
+        )
+
+        respuesta = self.client.get(self.url())
+
+        serie = self.obtener_grafica(respuesta)["series"][0]
+        self.assertEqual(
+            [cambio["tipo"] for cambio in serie["cambios"]],
+            ["desactivacion", "reactivacion"],
+        )
+        self.assertEqual(
+            [tramo["disponible"] for tramo in serie["tramos"]],
+            [True, False, True],
+        )
+
+    def test_una_desactivacion_sin_reactivacion_no_reanuda_la_linea(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta()
+        self.crear_auditoria(
+            tienda,
+            old_price=1000,
+            new_price=1000,
+            is_active=False,
+            creada=ahora - timedelta(days=1),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        serie = self.obtener_grafica(respuesta)["series"][0]
+        self.assertEqual([cambio["tipo"] for cambio in serie["cambios"]], ["desactivacion"])
+        self.assertEqual(
+            [tramo["disponible"] for tramo in serie["tramos"]],
+            [True, False],
+        )
+
+    def test_conserva_dos_cambios_registrados_el_mismo_dia(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta()
+        dia_anterior = ahora - timedelta(days=1)
+        self.crear_auditoria(
+            tienda,
+            new_price=950,
+            creada=dia_anterior.replace(hour=9, minute=0, second=0, microsecond=0),
+        )
+        self.crear_auditoria(
+            tienda,
+            old_price=950,
+            new_price=900,
+            creada=dia_anterior.replace(hour=15, minute=0, second=0, microsecond=0),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        serie = self.obtener_grafica(respuesta)["series"][0]
+        self.assertEqual(len(serie["cambios"]), 2)
+        self.assertNotEqual(serie["cambios"][0]["x"], serie["cambios"][1]["x"])
+        self.assertEqual(
+            [cambio["precio_nuevo"] for cambio in serie["cambios"]],
+            [950, 900],
+        )
+
+    def test_una_sola_tienda_produce_una_sola_serie(self):
+        self.crear_oferta()
+
+        respuesta = self.client.get(self.url())
+
+        grafica = self.obtener_grafica(respuesta)
+        self.assertEqual(len(grafica["series"]), 1)
+        self.assertEqual(grafica["series"][0]["tienda"], "Tienda Gráfica")
+
+    def test_el_html_y_el_json_de_la_grafica_no_exponen_actores_ni_ids_internos(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta()
+        autor = User.objects.create_user(
+            email="actor-grafica@example.com",
+            password="ClaveSegura123",
+            role=User.Role.CLIENT,
+        )
+        self.crear_auditoria(
+            tienda,
+            new_price=950,
+            creada=ahora - timedelta(days=1),
+            autor=autor,
+        )
+
+        respuesta = self.client.get(self.url())
+
+        datos = respuesta.context["grafica_precios"]
+        self.assertNotContains(respuesta, autor.email)
+        self.assertNotContains(respuesta, "id_requested_by")
+        self.assertNotIn("id_requested_by", str(datos))
+        self.assertNotIn("id_store", str(datos))
+        self.assertNotIn("gtin", str(datos))
+        self.assertNotIn("id_user", str(datos))
+
+    def test_b3_y_la_grafica_comparten_una_sola_consulta_de_auditoria(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta()
+        self.crear_auditoria(
+            tienda,
+            new_price=950,
+            creada=ahora - timedelta(days=1),
+        )
+
+        with CaptureQueriesContext(connection) as consultas:
+            self.client.get(self.url())
+
+        consultas_auditoria = [
+            consulta
+            for consulta in consultas.captured_queries
+            if "audit_price_changes" in consulta["sql"].lower()
+        ]
+        self.assertEqual(len(consultas_auditoria), 1)
+
+    def test_el_precio_final_de_la_grafica_usa_el_redondeo_del_detalle(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta(precio=1001, descuento="0.34")
+        self.crear_auditoria(
+            tienda,
+            old_price=1001,
+            new_price=1002,
+            old_discount="0.34",
+            new_discount="0.33",
+            creada=ahora - timedelta(days=1),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        cambio = self.obtener_grafica(respuesta)["series"][0]["cambios"][0]
+        self.assertEqual(cambio["precio_anterior"], 661)
+        self.assertEqual(cambio["precio_nuevo"], 671)
+
+    def test_la_grafica_se_traduce_al_ingles(self):
+        self.crear_oferta()
+        self.client.cookies["django_language"] = "en"
+
+        respuesta = self.client.get(self.url())
+
+        self.assertContains(respuesta, "Price history by store")
+        self.assertContains(respuesta, "Accessible summary of changes")
+        self.assertContains(respuesta, "Previous final price")
 
 
 class DetalleMarcaTests(CatalogoTestCase):

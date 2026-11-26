@@ -1,6 +1,5 @@
 from datetime import timedelta
 from decimal import Decimal
-from datetime import timedelta
 
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
@@ -39,7 +38,7 @@ from core.translations import translate_text
 from reviews.forms import ReviewForm
 from reviews.models import ReviewPhoto, ReviewReport, Reviews
 
-from .auditoria import historiales_publicos
+from .auditoria import datos_historicos_publicos
 from .barcodes import validar_codigo_barras
 from .busqueda import (
     buscar_productos,
@@ -178,7 +177,9 @@ def detalle_producto(request, pk):
     for precio in precios:
         precio.desactualizado = precio.updated_at < limite_precio_antiguo
     grupos_precios = agrupar_precios_por_gtin(variantes, precios)
-    historiales_precio = historiales_publicos(precios)
+    datos_historicos = datos_historicos_publicos(precios)
+    historiales_precio = datos_historicos["historiales"]
+    grafica_precios = datos_historicos["grafica"]
 
     resenas = (
         Reviews.objects.select_related("variant", "user")
@@ -267,6 +268,7 @@ def detalle_producto(request, pk):
             "grupos_precios": grupos_precios,
             "precios": precios,
             "historiales_precio": historiales_precio,
+            "grafica_precios": grafica_precios,
             "resenas": resenas,
             "calificacion_promedio": calificacion_promedio,
             "estrellas_promedio": estrellas_promedio,

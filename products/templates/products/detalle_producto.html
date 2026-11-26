@@ -604,5 +604,334 @@
       {% endfor %}
     </div>
   </section>
+
+  {% if grafica_precios.graficas %}
+    {{ grafica_precios|json_script:"datos-grafica-precios" }}
+
+    <section aria-labelledby="price-chart-heading" class="mb-14">
+      <div class="mb-6 border-b border-outline-variant/60">
+        <h2 class="px-1 py-3 font-body-md text-body-md font-bold text-on-surface" id="price-chart-heading">
+          {% t 'Historial de precios por tienda' %}
+        </h2>
+        <p class="mt-1 text-body-sm text-secondary">
+          {% t 'Consulta la evolución del precio final de cada tienda durante los últimos seis meses.' %}
+        </p>
+      </div>
+
+      <style>
+        .price-chart-grid {
+          stroke: rgb(var(--color-outline-variant) / 0.7);
+          stroke-width: 1;
+        }
+        .price-chart-axis-label {
+          fill: rgb(var(--color-secondary));
+          font-family: "Plus Jakarta Sans", sans-serif;
+          font-size: 12px;
+        }
+        .price-chart-line,
+        .price-chart-connector {
+          stroke: var(--chart-color);
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        .price-chart-line {
+          stroke-width: 3;
+        }
+        .price-chart-connector {
+          stroke-width: 2;
+        }
+        .price-chart-marker {
+          cursor: pointer;
+          outline: none;
+        }
+        .price-chart-marker-shape {
+          fill: var(--chart-color);
+          stroke: rgb(var(--color-surface-container-lowest));
+          stroke-width: 2;
+          transition: stroke-width 120ms ease;
+        }
+        .price-chart-marker:focus-visible .price-chart-marker-shape,
+        .price-chart-marker[aria-expanded="true"] .price-chart-marker-shape {
+          stroke: rgb(var(--color-on-surface));
+          stroke-width: 4;
+        }
+        .price-chart-marker[data-tipo-codigo="desactivacion"] .price-chart-marker-shape {
+          fill: rgb(var(--color-error));
+        }
+        .price-chart-marker[data-tipo-codigo="reactivacion"] .price-chart-marker-shape {
+          fill: rgb(var(--color-tertiary));
+        }
+        .price-chart-series[data-color="0"], .price-chart-legend [data-color="0"] { --chart-color: #0057b8; }
+        .price-chart-series[data-color="1"], .price-chart-legend [data-color="1"] { --chart-color: #b3261e; }
+        .price-chart-series[data-color="2"], .price-chart-legend [data-color="2"] { --chart-color: #7b4f00; }
+        .price-chart-series[data-color="3"], .price-chart-legend [data-color="3"] { --chart-color: #6b4fa1; }
+        .price-chart-series[data-color="4"], .price-chart-legend [data-color="4"] { --chart-color: #00796b; }
+        .price-chart-series[data-color="5"], .price-chart-legend [data-color="5"] { --chart-color: #a63d00; }
+        .price-chart-series[data-color="6"], .price-chart-legend [data-color="6"] { --chart-color: #455a64; }
+        .price-chart-series[data-color="7"], .price-chart-legend [data-color="7"] { --chart-color: #8b006e; }
+        .price-chart-series[data-color="8"], .price-chart-legend [data-color="8"] { --chart-color: #536b00; }
+        .price-chart-series[data-color="9"], .price-chart-legend [data-color="9"] { --chart-color: #4557c4; }
+        .dark .price-chart-series[data-color="0"], .dark .price-chart-legend [data-color="0"] { --chart-color: #7db7ff; }
+        .dark .price-chart-series[data-color="1"], .dark .price-chart-legend [data-color="1"] { --chart-color: #ffb4ab; }
+        .dark .price-chart-series[data-color="2"], .dark .price-chart-legend [data-color="2"] { --chart-color: #e9bd6f; }
+        .dark .price-chart-series[data-color="3"], .dark .price-chart-legend [data-color="3"] { --chart-color: #d8b9ff; }
+        .dark .price-chart-series[data-color="4"], .dark .price-chart-legend [data-color="4"] { --chart-color: #62d5c7; }
+        .dark .price-chart-series[data-color="5"], .dark .price-chart-legend [data-color="5"] { --chart-color: #ffb68c; }
+        .dark .price-chart-series[data-color="6"], .dark .price-chart-legend [data-color="6"] { --chart-color: #b0c4cc; }
+        .dark .price-chart-series[data-color="7"], .dark .price-chart-legend [data-color="7"] { --chart-color: #f3a4dc; }
+        .dark .price-chart-series[data-color="8"], .dark .price-chart-legend [data-color="8"] { --chart-color: #c4d77a; }
+        .dark .price-chart-series[data-color="9"], .dark .price-chart-legend [data-color="9"] { --chart-color: #aeb8ff; }
+        .price-chart-swatch {
+          background: var(--chart-color);
+        }
+        .price-chart-legend [aria-pressed="false"] .price-chart-swatch {
+          opacity: 0.25;
+        }
+        .price-chart-legend [aria-pressed="false"] .price-chart-legend-name {
+          text-decoration: line-through;
+        }
+      </style>
+
+      <div class="space-y-8">
+        {% for grafica in grafica_precios.graficas %}
+          <article
+            class="rounded-2xl border border-outline-variant/60 bg-surface-container-lowest p-4 sm:p-6"
+            id="price-chart-{{ grafica.clave }}"
+            data-price-chart="{{ grafica.clave }}"
+          >
+            <h3 class="font-headline-md text-headline-md font-bold text-on-surface">
+              {{ grafica.variante }}
+            </h3>
+            <p class="mt-1 text-body-sm text-secondary">
+              {% t 'La serie de cada tienda comienza cuando se registró su precio.' %}
+            </p>
+
+            <div
+              class="price-chart-legend mt-5 flex flex-wrap gap-2"
+              role="group"
+              aria-label="{% t 'Tiendas' %}"
+            >
+              {% for serie in grafica.series %}
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-full border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-body-sm font-semibold text-on-surface transition-opacity hover:border-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  data-chart-legend-toggle
+                  data-chart-series-key="{{ serie.clave }}"
+                  data-color="{{ serie.color }}"
+                  data-label-show="{% t 'Mostrar la serie de {tienda}' tienda=serie.tienda %}"
+                  data-label-hide="{% t 'Ocultar la serie de {tienda}' tienda=serie.tienda %}"
+                  aria-pressed="true"
+                  aria-label="{% t 'Ocultar la serie de {tienda}' tienda=serie.tienda %}"
+                >
+                  <span class="price-chart-swatch h-3 w-3 shrink-0 rounded-full" aria-hidden="true"></span>
+                  <span class="price-chart-legend-name">{{ serie.tienda }}</span>
+                </button>
+              {% endfor %}
+            </div>
+
+            <div class="mt-5 overflow-x-auto rounded-xl border border-outline-variant/50 bg-surface-container-lowest">
+              <svg
+                class="block h-auto min-w-[44rem] w-full"
+                viewBox="0 0 {{ grafica.ancho }} {{ grafica.alto }}"
+                aria-labelledby="price-chart-title-{{ grafica.clave }} price-chart-description-{{ grafica.clave }}"
+              >
+                <title id="price-chart-title-{{ grafica.clave }}">{% t 'Historial de precios por tienda' %}: {{ grafica.variante }}</title>
+                <desc id="price-chart-description-{{ grafica.clave }}">{% t 'Los tramos en que una tienda no estuvo disponible se muestran como interrupciones.' %}</desc>
+
+                <text class="price-chart-axis-label" x="{{ grafica.x_inicio }}" y="14">{% t 'Precio final' %}</text>
+                {% for marca in grafica.eje_y %}
+                  <line class="price-chart-grid" x1="{{ grafica.x_inicio }}" y1="{{ marca.y }}" x2="{{ grafica.x_fin }}" y2="{{ marca.y }}"></line>
+                  <text class="price-chart-axis-label" x="{{ grafica.x_inicio }}" y="{{ marca.y }}" dy="-0.35em" text-anchor="end">{{ marca.etiqueta }}</text>
+                {% endfor %}
+                <line class="price-chart-grid" x1="{{ grafica.x_inicio }}" y1="{{ grafica.y_inicio }}" x2="{{ grafica.x_inicio }}" y2="{{ grafica.y_fin }}"></line>
+                <line class="price-chart-grid" x1="{{ grafica.x_inicio }}" y1="{{ grafica.y_fin }}" x2="{{ grafica.x_fin }}" y2="{{ grafica.y_fin }}"></line>
+
+                {% for marca in grafica.eje_x %}
+                  <text class="price-chart-axis-label" x="{{ marca.x }}" y="{{ grafica.y_fin }}" dy="1.6em" text-anchor="{{ marca.anclaje }}">{{ marca.etiqueta }}</text>
+                {% endfor %}
+
+                {% for serie in grafica.series %}
+                  <g
+                    class="price-chart-series"
+                    data-chart-series="{{ serie.clave }}"
+                    data-color="{{ serie.color }}"
+                  >
+                    <title>{{ serie.tienda }}</title>
+                    {% for tramo in serie.tramos %}
+                      {% if tramo.disponible %}
+                        <line class="price-chart-line" x1="{{ tramo.x1 }}" y1="{{ tramo.y }}" x2="{{ tramo.x2 }}" y2="{{ tramo.y }}"></line>
+                      {% endif %}
+                    {% endfor %}
+                    {% for conector in serie.conectores %}
+                      <line class="price-chart-connector" x1="{{ conector.x }}" y1="{{ conector.y_anterior }}" x2="{{ conector.x }}" y2="{{ conector.y_nuevo }}"></line>
+                    {% endfor %}
+                    {% for cambio in serie.cambios %}
+                      <g
+                        class="price-chart-marker"
+                        role="button"
+                        tabindex="0"
+                        data-chart-marker
+                        data-tipo-codigo="{{ cambio.tipo }}"
+                        data-tipo="{{ cambio.tipo_texto }}"
+                        data-tienda="{{ serie.tienda }}"
+                        data-fecha="{{ cambio.fecha_texto }}"
+                        data-precio-anterior="{{ cambio.precio_anterior_texto }}"
+                        data-precio-nuevo="{{ cambio.precio_nuevo_texto }}"
+                        data-estado="{{ cambio.estado }}"
+                        aria-label="{{ cambio.aria_label }}"
+                        aria-controls="price-chart-detail-{{ grafica.clave }}"
+                        aria-expanded="false"
+                      >
+                        <title>{{ cambio.aria_label }}</title>
+                        {% if cambio.figura == "cuadrado" %}
+                          <rect class="price-chart-marker-shape" x="{{ cambio.rectangulo.x }}" y="{{ cambio.rectangulo.y }}" width="{{ cambio.rectangulo.ancho }}" height="{{ cambio.rectangulo.alto }}"></rect>
+                        {% elif cambio.figura == "triangulo" %}
+                          <polygon class="price-chart-marker-shape" points="{{ cambio.puntos }}"></polygon>
+                        {% else %}
+                          <circle class="price-chart-marker-shape" cx="{{ cambio.x }}" cy="{{ cambio.y }}" r="6"></circle>
+                        {% endif %}
+                      </g>
+                    {% endfor %}
+                  </g>
+                {% endfor %}
+              </svg>
+            </div>
+
+            <div
+              class="mt-4 min-h-28 rounded-xl border border-outline-variant/50 bg-surface-container-low p-4"
+              id="price-chart-detail-{{ grafica.clave }}"
+              data-chart-detail-panel
+              aria-live="polite"
+            >
+              <p class="text-body-sm text-secondary" data-chart-detail-empty>
+                {% t 'Selecciona un punto del gráfico para ver sus detalles.' %}
+              </p>
+              <div data-chart-detail-content hidden>
+                <h4 class="font-body-md text-body-md font-bold text-on-surface">{% t 'Detalle del cambio' %}</h4>
+                <dl class="mt-3 grid grid-cols-1 gap-3 text-body-sm sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <dt class="font-semibold text-secondary">{% t 'Tienda' %}</dt>
+                    <dd class="mt-0.5 font-bold text-on-surface" data-detail-tienda></dd>
+                  </div>
+                  <div>
+                    <dt class="font-semibold text-secondary">{% t 'Fecha' %}</dt>
+                    <dd class="mt-0.5 font-bold text-on-surface" data-detail-fecha></dd>
+                  </div>
+                  <div>
+                    <dt class="font-semibold text-secondary">{% t 'Estado' %}</dt>
+                    <dd class="mt-0.5 font-bold text-on-surface" data-detail-estado></dd>
+                  </div>
+                  <div>
+                    <dt class="font-semibold text-secondary">{% t 'Precio final anterior' %}</dt>
+                    <dd class="mt-0.5 font-bold text-on-surface" data-detail-precio-anterior></dd>
+                  </div>
+                  <div>
+                    <dt class="font-semibold text-secondary">{% t 'Precio final nuevo' %}</dt>
+                    <dd class="mt-0.5 font-bold text-on-surface" data-detail-precio-nuevo></dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            <details class="mt-4 rounded-xl border border-outline-variant/50 bg-surface-container-low px-4 py-3">
+              <summary class="cursor-pointer font-body-sm font-semibold text-on-surface">
+                {% t 'Ver el resumen de los datos' %}
+              </summary>
+              <div class="mt-4 overflow-x-auto">
+                <table class="w-full min-w-[42rem] border-collapse text-left text-body-sm">
+                  <caption class="sr-only">{% t 'Resumen accesible de los cambios' %}</caption>
+                  <thead>
+                    <tr class="border-b border-outline-variant/60 text-secondary">
+                      <th class="px-3 py-2 font-bold" scope="col">{% t 'Tienda' %}</th>
+                      <th class="px-3 py-2 font-bold" scope="col">{% t 'Fecha' %}</th>
+                      <th class="px-3 py-2 font-bold" scope="col">{% t 'Precio final anterior' %}</th>
+                      <th class="px-3 py-2 font-bold" scope="col">{% t 'Precio final nuevo' %}</th>
+                      <th class="px-3 py-2 font-bold" scope="col">{% t 'Estado' %}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for serie in grafica.series %}
+                      {% for cambio in serie.cambios %}
+                        <tr class="border-b border-outline-variant/40 last:border-b-0">
+                          <th class="px-3 py-2 font-semibold text-on-surface" scope="row">{{ serie.tienda }}</th>
+                          <td class="px-3 py-2 text-secondary"><time datetime="{{ cambio.fecha_texto_iso }}">{{ cambio.fecha_texto }}</time></td>
+                          <td class="px-3 py-2 font-bold text-on-surface">{{ cambio.precio_anterior_texto }}</td>
+                          <td class="px-3 py-2 font-bold text-on-surface">{{ cambio.precio_nuevo_texto }}</td>
+                          <td class="px-3 py-2 text-secondary">{{ cambio.tipo_texto }} · {{ cambio.estado }}</td>
+                        </tr>
+                      {% empty %}
+                        <tr class="border-b border-outline-variant/40 last:border-b-0">
+                          <th class="px-3 py-2 font-semibold text-on-surface" scope="row">{{ serie.tienda }}</th>
+                          <td class="px-3 py-2 text-secondary" colspan="4">{% t 'Sin cambios registrados en este período.' %}</td>
+                        </tr>
+                      {% endfor %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </article>
+        {% endfor %}
+      </div>
+
+      <p class="mt-5 flex items-start gap-2 text-body-sm text-secondary">
+        <span class="material-symbols-outlined text-[18px]" aria-hidden="true">info</span>
+        {% t 'Los tramos en que una tienda no estuvo disponible se muestran como interrupciones.' %}
+      </p>
+    </section>
+
+    <script>
+      (() => {
+        document.querySelectorAll("[data-price-chart]").forEach((grafica) => {
+          const panel = grafica.querySelector("[data-chart-detail-panel]");
+          const emptyState = grafica.querySelector("[data-chart-detail-empty]");
+          const detail = grafica.querySelector("[data-chart-detail-content]");
+          const markers = Array.from(grafica.querySelectorAll("[data-chart-marker]"));
+          if (!panel || !emptyState || !detail) return;
+
+          const escribir = (selector, valor) => {
+            const elemento = panel.querySelector(selector);
+            if (elemento) elemento.textContent = valor || "";
+          };
+
+          const mostrarDetalle = (marker) => {
+            markers.forEach((otro) => otro.setAttribute("aria-expanded", "false"));
+            marker.setAttribute("aria-expanded", "true");
+            escribir("[data-detail-tienda]", marker.dataset.tienda);
+            escribir("[data-detail-fecha]", marker.dataset.fecha);
+            escribir("[data-detail-estado]", `${marker.dataset.tipo} · ${marker.dataset.estado}`);
+            escribir("[data-detail-precio-anterior]", marker.dataset.precioAnterior);
+            escribir("[data-detail-precio-nuevo]", marker.dataset.precioNuevo);
+            emptyState.hidden = true;
+            detail.hidden = false;
+          };
+
+          markers.forEach((marker) => {
+            marker.addEventListener("click", () => mostrarDetalle(marker));
+            marker.addEventListener("keydown", (evento) => {
+              if (evento.key !== "Enter" && evento.key !== " ") return;
+              evento.preventDefault();
+              mostrarDetalle(marker);
+            });
+          });
+
+          grafica.querySelectorAll("[data-chart-legend-toggle]").forEach((boton) => {
+            boton.addEventListener("click", () => {
+              const serie = Array.from(grafica.querySelectorAll("[data-chart-series]"))
+                .find((elemento) => elemento.dataset.chartSeries === boton.dataset.chartSeriesKey);
+              if (!serie) return;
+              const visible = boton.getAttribute("aria-pressed") === "true";
+              boton.setAttribute("aria-pressed", String(!visible));
+              boton.setAttribute(
+                "aria-label",
+                visible ? boton.dataset.labelShow : boton.dataset.labelHide,
+              );
+              serie.style.display = visible ? "none" : "";
+            });
+          });
+        });
+      })();
+    </script>
+  {% endif %}
 </div>
 {% endblock %}

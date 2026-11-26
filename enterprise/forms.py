@@ -451,7 +451,9 @@ class CargarCSVForm(forms.Form):
             )
         if not archivo.name.lower().endswith(".csv"):
             raise forms.ValidationError(
-                translate_text_lazy("El archivo de carga debe estar en formato CSV.")
+                translate_text_lazy(
+                    "El archivo de carga debe estar en formato CSV."
+                )
             )
         return archivo
 

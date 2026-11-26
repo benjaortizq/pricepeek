@@ -122,9 +122,7 @@ class EditarProductoForm(forms.Form):
             )
         if imagen.image.format not in EXTENSION_POR_FORMATO:
             raise forms.ValidationError(
-                translate_text_lazy(
-                    "La imagen tiene que ser JPG o PNG."
-                )
+                translate_text_lazy("La imagen tiene que ser JPG o PNG.")
             )
         return imagen
 

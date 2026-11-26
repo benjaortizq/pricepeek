@@ -5,14 +5,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
-from products.historial import registrar
-from products.models import (
-    Currencies,
-    Prices,
-    PriceHistory,
-    ProductVariants,
-    Stores,
-)
+from products.models import Currencies, Prices, ProductVariants, Stores
 
 from .actualizacion import formas_del_codigo
 from .emparejamiento import (
@@ -189,7 +182,6 @@ def confirmar(producto):
     precio.product_web_url = producto.url
     precio.updated_at = ahora
     precio.save()
-    registrar([precio], PriceHistory.Source.VINCULACION)
 
     producto.status = Status.CONFIRMED
     producto.save(update_fields=["status", "updated_at"])

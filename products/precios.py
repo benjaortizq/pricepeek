@@ -41,7 +41,7 @@ def precio_minimo_por_gtin(
     if not gtin:
         return Prices.objects.none()
 
-    precios = Prices.objects.select_related("id_store", "currency").filter(
+    precios = Prices.visibles.select_related("id_store", "currency").filter(
         gtin_id=gtin,
         price__isnull=False,
     )
@@ -64,7 +64,7 @@ def precios_por_gtin(gtin: str, solo_disponibles: bool = True) -> QuerySet:
     if not gtin:
         return Prices.objects.none()
 
-    precios = Prices.objects.select_related("id_store", "currency").filter(
+    precios = Prices.visibles.select_related("id_store", "currency").filter(
         gtin_id=gtin,
         price__isnull=False,
     )
@@ -90,7 +90,7 @@ def con_precio_minimo(variantes):
         return variantes
 
     gtins = [variante.gtin for variante in variantes]
-    precios = Prices.objects.filter(
+    precios = Prices.visibles.filter(
         gtin_id__in=gtins,
         is_available=True,
         price__isnull=False,

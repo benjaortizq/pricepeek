@@ -22,7 +22,8 @@ from ingestion.actualizacion import (
     revisar,
 )
 from ingestion.scrapers import ClienteHttp
-from products.models import Prices
+from products.comercios import nombre_del_comercio, sin_obtencion_automatica
+from products.models import PartnerStore, Prices
 from products.popularidad import DIAS_DE_POPULARIDAD, popularidad_reciente
 from products.templatetags.precios import miles
 
@@ -100,8 +101,22 @@ class Command(BaseCommand):
         if minutos is not None and minutos <= 0:
             raise CommandError("--minutos tiene que ser mayor que 0.")
         guardar = not opciones["dry_run"]
+        omitidos = sorted(
+            nombre_del_comercio(perfil.store)
+            for perfil in PartnerStore.objects.filter(
+                store_id__in=sin_obtencion_automatica()
+            ).select_related("store")
+        )
+        if omitidos:
+            self.stdout.write(
+                "Se omiten (desactivados o con datos provistos por el comercio): "
+                + ", ".join(omitidos)
+                + "."
+            )
         precios = (
-            Prices.objects.select_related("id_store", "gtin")
+            # Los comercios desactivados o que proveen sus datos no se revisan (products/comercios.py).
+            Prices.objects.exclude(id_store_id__in=sin_obtencion_automatica())
+            .select_related("id_store", "gtin")
             .annotate(popularidad=popularidad_reciente("gtin__product_id"))
             # Primero lo que la gente está viendo; después, lo que lleva más tiempo sin revisarse.
             .order_by("-popularidad", "updated_at", "id")

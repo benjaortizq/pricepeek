@@ -108,7 +108,7 @@
             <tbody class="divide-y divide-outline-variant/50 text-body-sm text-on-surface">
               {% for precio in precios %}
                 <tr>
-                  <td class="py-3 px-6 font-semibold">{{ precio.id_store.name }}</td>
+                  <td class="py-3 px-6 font-semibold">{{ precio.id_store.name }}{% if precio.id_store_id in desactivados %} <span class="ml-1 font-label-badge text-label-badge px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-bold whitespace-nowrap">{% t 'Comercio desactivado: no se muestra' %}</span>{% endif %}</td>
                   <td class="py-3 px-4 font-mono text-secondary">{{ precio.gtin.gtin }}</td>
                   <td class="py-3 px-4 whitespace-nowrap">{% if precio.price is not None %}₡{{ precio.price|miles }}{% else %}—{% endif %}</td>
                   <td class="py-3 px-6 whitespace-nowrap">

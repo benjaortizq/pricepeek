@@ -3,7 +3,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path, reverse_lazy
 
-from . import views
+from . import views, vistas_comercios
 from .forms import IniciarSesionForm, RestablecerContrasenaForm
 
 urlpatterns = [
@@ -69,5 +69,36 @@ urlpatterns = [
         "administrador/clientes/<int:pk>/reactivar/",
         views.reactivar_cliente,
         name="reactivar_cliente",
+    ),
+    # Comercios asociados: su cuenta de empresa, cómo se obtienen sus datos y si están activos.
+    path(
+        "administrador/comercios/",
+        vistas_comercios.comercios,
+        name="comercios",
+    ),
+    path(
+        "administrador/comercios/registrar/",
+        vistas_comercios.registrar_comercio,
+        name="registrar_comercio",
+    ),
+    path(
+        "administrador/comercios/<int:pk>/",
+        vistas_comercios.detalle_comercio,
+        name="detalle_comercio",
+    ),
+    path(
+        "administrador/comercios/<int:pk>/estado/",
+        vistas_comercios.estado_comercio,
+        name="estado_comercio",
+    ),
+    path(
+        "administrador/comercios/<int:pk>/cuentas/",
+        vistas_comercios.crear_cuenta_comercio,
+        name="crear_cuenta_comercio",
+    ),
+    path(
+        "administrador/comercios/<int:pk>/cuentas/<int:cuenta_pk>/acceso/",
+        vistas_comercios.reenviar_acceso,
+        name="reenviar_acceso_comercio",
     ),
 ]

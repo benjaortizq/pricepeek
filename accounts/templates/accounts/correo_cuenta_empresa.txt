@@ -1,0 +1,14 @@
+{% load site_i18n %}{% autoescape off %}{% t 'Hola' %}{% if cuenta.first_name %} {{ cuenta.first_name }}{% endif %},
+
+{% t 'El equipo de PricePeek creó una cuenta de empresa para {comercio}. Con ella puede ver y actualizar los precios del comercio desde el portal de empresas.' comercio=comercio %}
+
+{% t 'Para elegir su contraseña, abra este enlace:' %}
+
+{{ enlace }}
+
+{% t 'Su usuario es este correo: {correo}' correo=cuenta.email %}
+
+{% t 'Si el enlace venció, puede pedir otro en «¿Olvidaste tu contraseña?», en la página de inicio de sesión.' %}
+
+{% t 'El equipo de PricePeek' %}
+{% endautoescape %}

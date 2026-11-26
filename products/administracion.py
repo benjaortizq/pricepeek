@@ -33,6 +33,7 @@ from .forms import EditarProductoForm
 from .models import (
     Brands,
     Categories,
+    PartnerStore,
     Prices,
     ProductImages,
     Products,
@@ -265,6 +266,12 @@ def editar_producto(request, pk):
             "presentaciones": presentaciones,
             "precios": precios,
             "cantidad_tiendas": len(tiendas),
+            # Los comercios desactivados tienen precio, pero no se muestra (products/comercios.py).
+            "desactivados": set(
+                PartnerStore.objects.filter(is_active=False).values_list(
+                    "store_id", flat=True
+                )
+            ),
             "imagen": imagen_actual(producto),
             "marcas": Brands.objects.order_by("name").values_list(
                 "name", flat=True

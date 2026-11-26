@@ -31,7 +31,7 @@ def precio_final(precio):
 def mejores_precios(items):
     """{(gtin, id de la moneda): (precio final, tienda)} con el precio disponible más bajo."""
     precios = (
-        Prices.objects.filter(
+        Prices.visibles.filter(
             gtin__in={item.variant.gtin for item in items},
             currency_id__in={item.currency_id for item in items},
             is_available=True,

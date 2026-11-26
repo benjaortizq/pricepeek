@@ -24,6 +24,7 @@ from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
+from products.comercios import sin_obtencion_automatica
 from products.models import Prices, Stores
 
 from .models import Incident, ManualRun
@@ -89,7 +90,10 @@ def comercios_con_scraping():
         .annotate(total=Count("pk"))
     )
     comercios = []
-    for tienda in Stores.objects.filter(pk__in=list(filas)):
+    # Los desactivados y los que proveen sus propios datos no se obtienen por web scraping (products/comercios.py).
+    for tienda in Stores.objects.filter(pk__in=list(filas)).exclude(
+        pk__in=sin_obtencion_automatica()
+    ):
         nombre = tienda.name.strip()
         comercios.append(
             {

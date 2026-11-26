@@ -51,6 +51,13 @@
     </aside>
 
     <section class="min-w-0">
+      {% if store.asociado and not store.asociado.is_active %}
+        {# El administrador desactivó el comercio (accounts/vistas_comercios.py): sus precios no se muestran. #}
+        <div role="status" class="mb-space-md flex items-start gap-3 rounded-xl border border-error/30 bg-error-container/40 p-3.5 text-body-md text-on-error-container">
+          <span class="material-symbols-outlined text-[20px] text-error" aria-hidden="true">visibility_off</span>
+          <p>{% t 'Su comercio está desactivado en PricePeek: sus precios no se muestran a los usuarios. Para reactivarlo, comuníquese con el equipo de PricePeek.' %}</p>
+        </div>
+      {% endif %}
       {% block empresa_content %}{% endblock %}
     </section>
   </div>

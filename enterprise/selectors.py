@@ -201,9 +201,15 @@ def historial_precios_de_tienda(store, precio):
             cambio.autor = translate_text("Usuario no disponible")
             continue
         nombre = " ".join(
-            parte for parte in (usuario["first_name"], usuario["last_name"]) if parte
+            parte
+            for parte in (usuario["first_name"], usuario["last_name"])
+            if parte
         ).strip()
-        cambio.autor = nombre or usuario["email"] or translate_text("Usuario no disponible")
+        cambio.autor = (
+            nombre
+            or usuario["email"]
+            or translate_text("Usuario no disponible")
+        )
 
     return cambios
 

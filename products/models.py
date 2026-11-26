@@ -4,6 +4,7 @@
 from django.conf import settings
 from django.db import models
 
+
 class Brands(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField()
@@ -36,6 +37,7 @@ class Categories(models.Model):
         managed = False
         db_table = "categories"
 
+
 class AuditPriceChanges(models.Model):
     id = models.BigAutoField(primary_key=True)
     old_price = models.IntegerField()
@@ -45,12 +47,17 @@ class AuditPriceChanges(models.Model):
     id_requested_by = models.BigIntegerField(blank=True, null=True)
     created_at = models.DateTimeField()
     is_active = models.BooleanField()
-    gtin = models.ForeignKey('ProductVariants', models.DO_NOTHING, db_column='gtin', to_field='gtin')
-    id_store = models.ForeignKey('Stores', models.DO_NOTHING, db_column='id_store')
+    gtin = models.ForeignKey(
+        "ProductVariants", models.DO_NOTHING, db_column="gtin", to_field="gtin"
+    )
+    id_store = models.ForeignKey(
+        "Stores", models.DO_NOTHING, db_column="id_store"
+    )
 
     class Meta:
         managed = False
-        db_table = 'audit_price_changes'
+        db_table = "audit_price_changes"
+
 
 class Currencies(models.Model):
     id = models.BigAutoField(primary_key=True)

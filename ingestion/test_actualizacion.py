@@ -150,7 +150,9 @@ class RevisarTests(PrecioGuardadoTestCase):
         self.assertEqual(Incident.objects.count(), 0)
 
         auditoria = AuditPriceChanges.objects.get()
-        self.assertEqual((auditoria.old_price, auditoria.new_price), (1760, 2000))
+        self.assertEqual(
+            (auditoria.old_price, auditoria.new_price), (1760, 2000)
+        )
         self.assertEqual(auditoria.old_discount, Decimal("0.00"))
         self.assertEqual(auditoria.new_discount, Decimal("0.25"))
         self.assertTrue(auditoria.is_active)
@@ -199,13 +201,17 @@ class RevisarTests(PrecioGuardadoTestCase):
         self.assertEqual((fila.price, fila.is_available), (1800, True))
         self.assertFalse(AuditPriceChanges.objects.exists())
 
-    def test_producto_que_ya_no_existe_queda_no_disponible_con_incidencia(self):
+    def test_producto_que_ya_no_existe_queda_no_disponible_con_incidencia(
+        self,
+    ):
         fila = self.guardado(precio=1760)
         revision = self.revisar(fila, ProductoNoEncontrado("404"))
         self.assertEqual(revision.cambios, {"is_available": (True, False)})
         self.assertFalse(self.recargar(fila).is_available)
         auditoria = AuditPriceChanges.objects.get()
-        self.assertEqual((auditoria.old_price, auditoria.new_price), (1760, 1760))
+        self.assertEqual(
+            (auditoria.old_price, auditoria.new_price), (1760, 1760)
+        )
         self.assertFalse(auditoria.is_active)
         self.assertIsNone(auditoria.id_requested_by)
         incidencia = Incident.objects.get()

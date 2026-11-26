@@ -80,17 +80,19 @@ def _valor_cambio(cambio, campo):
 
 def es_cambio_solo_disponibilidad(cambio):
     """Indica si el registro no cambió el precio base ni el descuento."""
-    return (
-        _valor_cambio(cambio, "old_price") == _valor_cambio(cambio, "new_price")
-        and _descuento(_valor_cambio(cambio, "old_discount"))
-        == _descuento(_valor_cambio(cambio, "new_discount"))
+    return _valor_cambio(cambio, "old_price") == _valor_cambio(
+        cambio, "new_price"
+    ) and _descuento(_valor_cambio(cambio, "old_discount")) == _descuento(
+        _valor_cambio(cambio, "new_discount")
     )
 
 
 def etiqueta_cambio_disponibilidad(cambio):
     """Devuelve la etiqueta pública de una reactivación o desactivación."""
     return translate_text(
-        "Reactivación" if _valor_cambio(cambio, "is_active") else "Desactivación"
+        "Reactivación"
+        if _valor_cambio(cambio, "is_active")
+        else "Desactivación"
     )
 
 
@@ -160,8 +162,7 @@ def _consultar_auditorias_publicas(precios, inicio, fin):
         return []
 
     combinaciones = {
-        (precio.id_store_id, precio.gtin_id)
-        for precio in precios
+        (precio.id_store_id, precio.gtin_id) for precio in precios
     }
     filtro_exacto = Q()
     for id_store_id, gtin_id in combinaciones:
@@ -199,19 +200,23 @@ def _preparar_historiales(precios, registros):
         clave = f"precio-{indice}"
         precio.historial_clave = clave
         elementos = []
-        registros_precio = por_precio.get((precio.id_store_id, precio.gtin_id), [])
+        registros_precio = por_precio.get(
+            (precio.id_store_id, precio.gtin_id), []
+        )
         for registro in reversed(registros_precio):
             fecha = _fecha_local(registro["created_at"])
             elemento = {
                 "fecha": fecha.isoformat(),
                 "precio_anterior": registro["old_price"],
                 "precio_nuevo": registro["new_price"],
-                "descuento_anterior": str(_descuento(registro["old_discount"])),
+                "descuento_anterior": str(
+                    _descuento(registro["old_discount"])
+                ),
                 "descuento_nuevo": str(_descuento(registro["new_discount"])),
             }
             if es_cambio_solo_disponibilidad(registro):
-                elemento["cambio_disponibilidad"] = etiqueta_cambio_disponibilidad(
-                    registro
+                elemento["cambio_disponibilidad"] = (
+                    etiqueta_cambio_disponibilidad(registro)
                 )
             elementos.append(elemento)
         historiales[clave] = elementos
@@ -274,9 +279,7 @@ def _preparar_serie(precio, registros, inicio_ventana, fin_ventana):
             max(introduccion, actualizacion),
         )
         eventos = [
-            evento
-            for evento in eventos
-            if evento["fecha"] <= fin_conocido
+            evento for evento in eventos if evento["fecha"] <= fin_conocido
         ]
 
     inicio_visible = max(introduccion, inicio_ventana)
@@ -395,7 +398,9 @@ def _etiqueta_accesible_cambio(serie, evento):
             "reactivacion": "Reactivación",
         }[evento["tipo"]]
     )
-    estado = translate_text("Disponible" if evento["disponible"] else "No disponible")
+    estado = translate_text(
+        "Disponible" if evento["disponible"] else "No disponible"
+    )
     anterior = _formatear_monto(evento["precio_anterior"], serie["moneda"])
     nuevo = _formatear_monto(evento["precio_nuevo"], serie["moneda"])
     return translate_text(
@@ -477,7 +482,9 @@ def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
     def y_precio(precio):
         if maximo == minimo:
             return (y_inicio + y_fin) / 2
-        return y_fin - ((precio - minimo) / (maximo - minimo)) * (y_fin - y_inicio)
+        return y_fin - ((precio - minimo) / (maximo - minimo)) * (
+            y_fin - y_inicio
+        )
 
     moneda = grafica["series"][0]["moneda"]
     grafica.update(
@@ -497,7 +504,9 @@ def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
                 },
                 {
                     "y": (y_inicio + y_fin) / 2,
-                    "etiqueta": _formatear_monto(round((minimo + maximo) / 2), moneda),
+                    "etiqueta": _formatear_monto(
+                        round((minimo + maximo) / 2), moneda
+                    ),
                 },
                 {
                     "y": y_fin,
@@ -619,7 +628,9 @@ def _preparar_graficas(precios, registros, inicio_ventana, fin_ventana):
     for precio in precios:
         moneda_id = getattr(precio, "currency_id", None)
         if moneda_id is None:
-            moneda_id = getattr(getattr(precio, "currency", None), "symbol", "")
+            moneda_id = getattr(
+                getattr(precio, "currency", None), "symbol", ""
+            )
         grupos[(precio.gtin_id, moneda_id)].append(precio)
 
     graficas = []

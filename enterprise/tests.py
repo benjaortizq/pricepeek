@@ -534,7 +534,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_editar_sin_variaciones_no_registra_auditoria(self):
         self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {
                 "price": "1000",
                 "discount": "0.20",
@@ -547,7 +550,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_un_cambio_solo_de_descuento_tambien_se_audita(self):
         self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {
                 "price": "1000",
                 "discount": "0.25",
@@ -557,7 +563,9 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         )
 
         auditoria = AuditPriceChanges.objects.get()
-        self.assertEqual((auditoria.old_price, auditoria.new_price), (1000, 1000))
+        self.assertEqual(
+            (auditoria.old_price, auditoria.new_price), (1000, 1000)
+        )
         self.assertEqual(auditoria.old_discount, Decimal("0.20"))
         self.assertEqual(auditoria.new_discount, Decimal("0.25"))
 
@@ -617,7 +625,9 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         self.precio.refresh_from_db()
         self.assertIsNone(self.precio.price)
         self.assertFalse(self.precio.is_available)
-        self.assertTrue(ProductVariants.objects.filter(pk=self.variante.pk).exists())
+        self.assertTrue(
+            ProductVariants.objects.filter(pk=self.variante.pk).exists()
+        )
         self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_desactivar_conserva_el_precio_de_la_tienda(self):
@@ -697,7 +707,10 @@ class HistorialPreciosEmpresaTests(EmpresaTestCase):
         self.crear_auditoria(self.otra_store, autor=self.usuario_sin_tienda)
 
         respuesta = self.client.get(
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertEqual(respuesta.status_code, 200)
@@ -719,7 +732,10 @@ class HistorialPreciosEmpresaTests(EmpresaTestCase):
         )
 
         respuesta = self.client.get(
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertContains(respuesta, "Desactivación")
@@ -736,7 +752,10 @@ class HistorialPreciosEmpresaTests(EmpresaTestCase):
         )
 
         respuesta = self.client.get(
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertContains(respuesta, "Reactivación")
@@ -753,7 +772,10 @@ class HistorialPreciosEmpresaTests(EmpresaTestCase):
         self.client.cookies["django_language"] = "en"
 
         respuesta = self.client.get(
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertContains(respuesta, "Price change history")
@@ -1107,7 +1129,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertEqual(self.precio.price, 1250)
         self.assertEqual(self.precio.discount, Decimal("0.10"))
         auditoria = AuditPriceChanges.objects.get()
-        self.assertEqual((auditoria.old_price, auditoria.new_price), (1000, 1250))
+        self.assertEqual(
+            (auditoria.old_price, auditoria.new_price), (1000, 1250)
+        )
         self.assertEqual(auditoria.id_requested_by, self.usuario.pk)
         self.assertEqual(auditoria.id_store_id, self.store.pk)
 

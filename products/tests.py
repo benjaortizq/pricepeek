@@ -1,4 +1,5 @@
 """Pruebas unitarias y de integración para el módulo de productos."""
+
 from django.test import TestCase
 
 import re
@@ -18,7 +19,17 @@ from reviews.models import Reviews
 
 from .auditoria import limite_historial_publico
 from .correccion import olvidar_vocabulario
-from .models import AuditPriceChanges, Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
+from .models import (
+    AuditPriceChanges,
+    Brands,
+    Categories,
+    Currencies,
+    Prices,
+    ProductImages,
+    Products,
+    ProductVariants,
+    Stores,
+)
 
 from .busqueda import buscar_productos, con_imagen, con_imagen_variante
 from .views import (
@@ -30,7 +41,18 @@ from .views import (
 # Los modelos son managed = False (las tablas viven en Supabase),
 # así que en la base de pruebas hay que crear las tablas a mano.
 # accounts_user ya existe porque User sí es managed.
-MODELOS = [Brands, Categories, Currencies, Stores, Products, ProductVariants, ProductImages, Prices, AuditPriceChanges, Reviews]
+MODELOS = [
+    Brands,
+    Categories,
+    Currencies,
+    Stores,
+    Products,
+    ProductVariants,
+    ProductImages,
+    Prices,
+    AuditPriceChanges,
+    Reviews,
+]
 
 
 def fechas():
@@ -335,7 +357,9 @@ class HistorialPreciosPublicoTests(CatalogoTestCase):
             id_store_id=tienda.pk,
         )
 
-    def test_el_historial_publico_no_expone_actor_ni_identificadores_internos(self):
+    def test_el_historial_publico_no_expone_actor_ni_identificadores_internos(
+        self,
+    ):
         tienda, oferta = self.crear_oferta()
         autor = User.objects.create_user(
             email="actor-privado@example.com",
@@ -348,9 +372,13 @@ class HistorialPreciosPublicoTests(CatalogoTestCase):
 
         self.assertEqual(respuesta.status_code, 200)
         precio_publicado = next(
-            precio for precio in respuesta.context["precios"] if precio.pk == oferta.pk
+            precio
+            for precio in respuesta.context["precios"]
+            if precio.pk == oferta.pk
         )
-        historial = respuesta.context["historiales_precio"][precio_publicado.historial_clave]
+        historial = respuesta.context["historiales_precio"][
+            precio_publicado.historial_clave
+        ]
         self.assertEqual(len(historial), 1)
         self.assertEqual(
             set(historial[0]),
@@ -387,15 +415,21 @@ class HistorialPreciosPublicoTests(CatalogoTestCase):
         respuesta = self.client.get(self.url())
 
         precio_publicado = next(
-            precio for precio in respuesta.context["precios"] if precio.pk == oferta.pk
+            precio
+            for precio in respuesta.context["precios"]
+            if precio.pk == oferta.pk
         )
-        historial = respuesta.context["historiales_precio"][precio_publicado.historial_clave]
+        historial = respuesta.context["historiales_precio"][
+            precio_publicado.historial_clave
+        ]
         self.assertEqual(
             {cambio["cambio_disponibilidad"] for cambio in historial},
             {"Reactivación", "Desactivación"},
         )
 
-    def test_el_historial_publico_cubre_exactamente_seis_meses_calendarios(self):
+    def test_el_historial_publico_cubre_exactamente_seis_meses_calendarios(
+        self,
+    ):
         tienda, oferta = self.crear_oferta()
         ahora = timezone.localtime(timezone.now())
         limite = limite_historial_publico(ahora)
@@ -409,9 +443,13 @@ class HistorialPreciosPublicoTests(CatalogoTestCase):
             respuesta = self.client.get(self.url())
 
         precio_publicado = next(
-            precio for precio in respuesta.context["precios"] if precio.pk == oferta.pk
+            precio
+            for precio in respuesta.context["precios"]
+            if precio.pk == oferta.pk
         )
-        historial = respuesta.context["historiales_precio"][precio_publicado.historial_clave]
+        historial = respuesta.context["historiales_precio"][
+            precio_publicado.historial_clave
+        ]
         self.assertEqual(len(historial), 1)
         fecha = historial[0]["fecha"]
         self.assertIn("T", fecha)
@@ -531,7 +569,9 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
 
         html = self.client.get(self.url()).content.decode()
 
-        self.assertLess(html.index("resenas-heading"), html.index("price-chart-heading"))
+        self.assertLess(
+            html.index("resenas-heading"), html.index("price-chart-heading")
+        )
 
     def test_cada_marcador_es_interactivo_y_describe_el_cambio(self):
         ahora = timezone.localtime(timezone.now())
@@ -551,9 +591,13 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         self.assertIn("Disponible", cambio["aria_label"])
         self.assertContains(respuesta, 'role="button"')
         self.assertContains(respuesta, 'tabindex="0"')
-        self.assertContains(respuesta, "aria-controls=\"price-chart-detail-grafica-1\"")
+        self.assertContains(
+            respuesta, 'aria-controls="price-chart-detail-grafica-1"'
+        )
 
-    def test_la_serie_de_un_producto_menor_de_seis_meses_comienza_en_su_creacion(self):
+    def test_la_serie_de_un_producto_menor_de_seis_meses_comienza_en_su_creacion(
+        self,
+    ):
         ahora = timezone.localtime(timezone.now())
         creacion = ahora - timedelta(days=20)
         self.crear_oferta(creada=creacion)
@@ -564,7 +608,9 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         serie = grafica["series"][0]
         self.assertEqual(serie["introduccion"], creacion.isoformat())
         self.assertEqual(serie["inicio_visible"], creacion.isoformat())
-        self.assertEqual(serie["tramos"][0]["desde_texto"], creacion.isoformat())
+        self.assertEqual(
+            serie["tramos"][0]["desde_texto"], creacion.isoformat()
+        )
         self.assertEqual(
             respuesta.context["grafica_precios"]["ventana"]["meses"],
             6,
@@ -628,7 +674,9 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         respuesta = self.client.get(self.url())
 
         serie = self.obtener_grafica(respuesta)["series"][0]
-        self.assertEqual([cambio["tipo"] for cambio in serie["cambios"]], ["desactivacion"])
+        self.assertEqual(
+            [cambio["tipo"] for cambio in serie["cambios"]], ["desactivacion"]
+        )
         self.assertEqual(
             [tramo["disponible"] for tramo in serie["tramos"]],
             [True, False],
@@ -641,13 +689,17 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         self.crear_auditoria(
             tienda,
             new_price=950,
-            creada=dia_anterior.replace(hour=9, minute=0, second=0, microsecond=0),
+            creada=dia_anterior.replace(
+                hour=9, minute=0, second=0, microsecond=0
+            ),
         )
         self.crear_auditoria(
             tienda,
             old_price=950,
             new_price=900,
-            creada=dia_anterior.replace(hour=15, minute=0, second=0, microsecond=0),
+            creada=dia_anterior.replace(
+                hour=15, minute=0, second=0, microsecond=0
+            ),
         )
 
         respuesta = self.client.get(self.url())
@@ -669,7 +721,9 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         self.assertEqual(len(grafica["series"]), 1)
         self.assertEqual(grafica["series"][0]["tienda"], "Tienda Gráfica")
 
-    def test_el_html_y_el_json_de_la_grafica_no_exponen_actores_ni_ids_internos(self):
+    def test_el_html_y_el_json_de_la_grafica_no_exponen_actores_ni_ids_internos(
+        self,
+    ):
         ahora = timezone.localtime(timezone.now())
         tienda, _ = self.crear_oferta()
         autor = User.objects.create_user(
@@ -731,7 +785,9 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         self.assertEqual(cambio["precio_anterior"], 661)
         self.assertEqual(cambio["precio_nuevo"], 671)
 
-    def test_primer_cambio_combinado_de_precio_y_disponibilidad_interrumpe_la_serie(self):
+    def test_primer_cambio_combinado_de_precio_y_disponibilidad_interrumpe_la_serie(
+        self,
+    ):
         ahora = timezone.localtime(timezone.now())
         tienda, oferta = self.crear_oferta()
         Prices.objects.filter(pk=oferta.pk).update(
@@ -755,7 +811,9 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
             [True, False],
         )
 
-    def test_un_precio_eliminado_no_extiende_la_serie_hasta_el_fin_de_la_ventana(self):
+    def test_un_precio_eliminado_no_extiende_la_serie_hasta_el_fin_de_la_ventana(
+        self,
+    ):
         ahora = timezone.localtime(timezone.now())
         tienda, oferta = self.crear_oferta()
         self.crear_auditoria(
@@ -778,10 +836,7 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
             eliminacion.isoformat(),
         )
         self.assertTrue(
-            all(
-                tramo["hasta"] <= eliminacion
-                for tramo in serie["tramos"]
-            )
+            all(tramo["hasta"] <= eliminacion for tramo in serie["tramos"])
         )
 
     def test_un_cambio_que_conserva_el_precio_final_se_marca_sin_cambio(self):

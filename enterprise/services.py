@@ -8,7 +8,13 @@ from django.utils import timezone
 
 from core.translations import translate_text_lazy
 from products.auditoria import registrar_cambio_precio
-from products.models import Currencies, Prices, ProductImages, ProductVariants, Products
+from products.models import (
+    Currencies,
+    Prices,
+    ProductImages,
+    ProductVariants,
+    Products,
+)
 
 from .imagenes import URLImagenInvalida, normalizar_urls_imagenes
 
@@ -393,7 +399,11 @@ def desactivar_precio_empresa(store, price_id, usuario=None):
             .first()
         )
         if precio is None:
-            raise ErrorEmpresa(translate_text_lazy("El precio no existe o no pertenece a su tienda."))
+            raise ErrorEmpresa(
+                translate_text_lazy(
+                    "El precio no existe o no pertenece a su tienda."
+                )
+            )
         antes = _estado_precio(precio)
         precio.is_available = False
         precio.updated_at = timezone.now()

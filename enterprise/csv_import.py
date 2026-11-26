@@ -321,7 +321,9 @@ def _procesar_fila(valores, store, resultado, vistos, usuario=None):
         "is_available": disponible,
         "product_web_url": url,
     }
-    existente = Prices.objects.filter(id_store_id=store.pk, gtin_id=gtin).first()
+    existente = Prices.objects.filter(
+        id_store_id=store.pk, gtin_id=gtin
+    ).first()
     if existente is not None:
         creado = editar_precio_empresa(
             store,

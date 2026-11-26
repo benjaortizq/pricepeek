@@ -19,7 +19,12 @@ import json
 import re
 from html.parser import HTMLParser
 
-from .base import Oferta, PrecioNoEncontrado, ProductoNoEncontrado, a_colones
+from .base import (
+    Oferta,
+    PrecioNoEncontrado,
+    ProductoNoEncontrado,
+    convertir_a_colones,
+)
 
 AGOTADO = ("OutOfStock", "SoldOut", "Discontinued")
 
@@ -128,34 +133,39 @@ def _precios(oferta):
     moneda = oferta.get("priceCurrency") or next(
         (e.get("priceCurrency") for e in especificaciones), None
     )
-    if moneda and moneda != "CRC":
-        raise PrecioNoEncontrado(
-            f"El precio viene en {moneda}, no en colones."
-        )
+    moneda = (moneda or "CRC").upper()
+
+    def en_colones(valor):
+        convertido = convertir_a_colones(valor, moneda)
+        if valor is not None and convertido is None:
+            raise PrecioNoEncontrado(
+                f"No hay una tasa de cambio configurada para {moneda}."
+            )
+        return convertido
 
     def es_de_lista(especificacion):
         return str(especificacion.get("priceType") or "").endswith("ListPrice")
 
     lista = next(
         (
-            a_colones(e.get("price"))
+            en_colones(e.get("price"))
             for e in especificaciones
             if es_de_lista(e)
         ),
         None,
     )
-    final = a_colones(oferta.get("price"))
+    final = en_colones(oferta.get("price"))
     if final is None:
         final = next(
             (
-                a_colones(e.get("price"))
+                en_colones(e.get("price"))
                 for e in especificaciones
                 if not es_de_lista(e) and e.get("price") is not None
             ),
             None,
         )
     if final is None:
-        final = a_colones(oferta.get("lowPrice")) or lista
+        final = en_colones(oferta.get("lowPrice")) or lista
     return lista, final
 
 

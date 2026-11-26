@@ -84,6 +84,7 @@ def _existe_precio_mejor_por_gtin() -> QuerySet:
             gtin_id=OuterRef("gtin_id"),
             is_available=True,
             price__isnull=False,
+            currency__name__iexact="colones",
         )
         .annotate(final_price_otro=_expresion_precio_final())
         .filter(
@@ -103,6 +104,7 @@ def _precio_minimo_disponible_por_gtin() -> QuerySet:
             gtin_id=OuterRef("gtin_id"),
             is_available=True,
             price__isnull=False,
+            currency__name__iexact="colones",
         )
         .annotate(final_price_minimo=_expresion_precio_final())
         .order_by("final_price_minimo", "id")
@@ -113,9 +115,10 @@ def _precio_minimo_disponible_por_gtin() -> QuerySet:
 def _consulta_precios_detalle(producto_id) -> QuerySet:
     """Prepara los precios y las diferencias de cada GTIN para el detalle."""
     precios = _anotar_precio_final(
-        Prices.visibles.filter(gtin__product_id=producto_id).select_related(
-            "id_store", "currency", "gtin"
-        )
+        Prices.visibles.filter(
+            gtin__product_id=producto_id,
+            currency__name__iexact="colones",
+        ).select_related("id_store", "currency", "gtin")
     ).annotate(
         final=Cast(Round("final_price"), output_field=IntegerField()),
         tienda=_expresion_tienda_limpia(),

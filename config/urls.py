@@ -39,6 +39,7 @@ urlpatterns = [
     path("reviews/", include("reviews.urls")),
     path("enterprise/", include("enterprise.urls")),
     path("ingestion/", include("ingestion.urls")),
+    path("auditoria/", include("auditoria.urls")),
 ]
 
 if settings.DEBUG:

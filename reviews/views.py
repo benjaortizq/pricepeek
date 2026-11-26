@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -14,6 +15,7 @@ from django.views.decorators.http import require_POST
 from accounts.decorators import role_required
 from accounts.models import User
 from accounts.views import INFRACCIONES_REITERADAS
+from auditoria.registro import Accion, registrar
 from core.panel import indicador, pestanas, plural
 from products.models import Products
 from .eliminacion import NoSePuedeEliminar, infracciones_por_autor
@@ -358,20 +360,65 @@ def moderar_resena(request, review_id):
             nota,
             form.cleaned_data["suspend"],
         )
+        registrar_eliminacion(request.user, eliminacion)
         avisar_eliminacion(request, eliminacion)
         return redirect("resenas_reportadas")
 
-    pendientes.update(
-        status=ReviewReport.Status.KEPT,
-        resolved_by_id=request.user.pk,
-        resolved_at=timezone.now(),
-        resolution_note=nota,
-        review_author_id=resena.user_id,  # por si el reporte se creó antes de guardar el autor
-    )
+    with transaction.atomic():
+        reportes = pendientes.update(
+            status=ReviewReport.Status.KEPT,
+            resolved_by_id=request.user.pk,
+            resolved_at=timezone.now(),
+            resolution_note=nota,
+            review_author_id=resena.user_id,  # por si el reporte se creó antes de guardar el autor
+        )
+        registrar(
+            request.user,
+            Accion.REVIEW_KEEP,
+            resena.pk,
+            nombre_de_la_resena(
+                resena.variant.product.name, getattr(resena.user, "email", "")
+            ),
+            {"Nota": nota or "—", "Reportes resueltos": reportes},
+        )
     messages.success(
         request, "La reseña se mantiene y los reportes quedaron resueltos."
     )
     return redirect("resenas_reportadas")
+
+
+def nombre_de_la_resena(producto, autor):
+    """Cómo aparece una reseña en la bitácora: su producto y su autor."""
+    return f"{producto} — {autor or 'autor desconocido'}"
+
+
+def registrar_eliminacion(administrador, eliminacion):
+    """Anota en la bitácora la reseña eliminada y, si se suspendió, la cuenta del autor."""
+    registro = eliminacion.registro
+    autor = getattr(registro.author, "email", "")
+    registrar(
+        administrador,
+        Accion.REVIEW_DELETE,
+        registro.review_id,
+        nombre_de_la_resena(registro.product_name, autor),
+        {
+            "Política incumplida": registro.get_policy_display(),
+            "Razón": registro.reason,
+            "Reportes resueltos": registro.reports,
+            "Autor suspendido": eliminacion.suspendido,
+        },
+    )
+    if eliminacion.suspendido:
+        registrar(
+            administrador,
+            Accion.CLIENT_SUSPEND,
+            registro.author_id,
+            autor,
+            {
+                "Motivo": registro.reason,
+                "Origen": "Eliminación de una reseña",
+            },
+        )
 
 
 def avisar_eliminacion(request, eliminacion):
@@ -604,5 +651,6 @@ def eliminar_por_incumplimiento(request, review_id):
     except NoSePuedeEliminar as error:
         messages.error(request, str(error))
     else:
+        registrar_eliminacion(request.user, eliminacion)
         avisar_eliminacion(request, eliminacion)
     return redirect(_volver_a_la_lista(request))

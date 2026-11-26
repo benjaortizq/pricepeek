@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load precios site_i18n %}
+{% load l10n precios site_i18n %}
 
 {% block title %}{{ producto.name }}{% endblock %}
 
@@ -642,13 +642,27 @@
         }
         .price-chart-marker {
           cursor: pointer;
-          outline: none;
+        }
+        .price-chart-marker:focus-visible {
+          outline: 3px solid rgb(var(--color-on-surface));
+          outline-offset: 3px;
+        }
+        .price-chart-marker-target {
+          fill: transparent;
+          stroke: none;
+          pointer-events: all;
+        }
+        .price-chart-marker-leader {
+          stroke: var(--chart-color);
+          stroke-width: 1.5;
+          stroke-dasharray: 3 2;
         }
         .price-chart-marker-shape {
           fill: var(--chart-color);
           stroke: rgb(var(--color-surface-container-lowest));
           stroke-width: 2;
           transition: stroke-width 120ms ease;
+          pointer-events: none;
         }
         .price-chart-marker:focus-visible .price-chart-marker-shape,
         .price-chart-marker[aria-expanded="true"] .price-chart-marker-shape {
@@ -661,6 +675,27 @@
         .price-chart-marker[data-tipo-codigo="reactivacion"] .price-chart-marker-shape {
           fill: rgb(var(--color-tertiary));
         }
+        .price-chart-marker[data-tipo-codigo="sin_cambio"] .price-chart-marker-shape {
+          fill: rgb(var(--color-secondary));
+        }
+        @media (forced-colors: active) {
+          .price-chart-marker:focus-visible {
+            outline-color: Highlight;
+          }
+        }
+        .price-chart-table {
+          border-collapse: collapse;
+        }
+        .price-chart-table th,
+        .price-chart-table td {
+          border-bottom: 1px solid rgb(var(--color-outline-variant) / 0.65);
+        }
+        .price-chart-table thead th {
+          border-bottom-width: 2px;
+        }
+        .price-chart-table tbody tr:last-child > * {
+          border-bottom: 0;
+        }
         .price-chart-series[data-color="0"], .price-chart-legend [data-color="0"] { --chart-color: #0057b8; }
         .price-chart-series[data-color="1"], .price-chart-legend [data-color="1"] { --chart-color: #b3261e; }
         .price-chart-series[data-color="2"], .price-chart-legend [data-color="2"] { --chart-color: #7b4f00; }
@@ -671,6 +706,16 @@
         .price-chart-series[data-color="7"], .price-chart-legend [data-color="7"] { --chart-color: #8b006e; }
         .price-chart-series[data-color="8"], .price-chart-legend [data-color="8"] { --chart-color: #536b00; }
         .price-chart-series[data-color="9"], .price-chart-legend [data-color="9"] { --chart-color: #4557c4; }
+        .price-chart-series[data-color="10"], .price-chart-legend [data-color="10"] { --chart-color: #00696e; }
+        .price-chart-series[data-color="11"], .price-chart-legend [data-color="11"] { --chart-color: #8b3a62; }
+        .price-chart-series[data-color="12"], .price-chart-legend [data-color="12"] { --chart-color: #3f6f00; }
+        .price-chart-series[data-color="13"], .price-chart-legend [data-color="13"] { --chart-color: #006b3c; }
+        .price-chart-series[data-color="14"], .price-chart-legend [data-color="14"] { --chart-color: #7a3e9d; }
+        .price-chart-series[data-color="15"], .price-chart-legend [data-color="15"] { --chart-color: #9a4a00; }
+        .price-chart-series[data-color="16"], .price-chart-legend [data-color="16"] { --chart-color: #006d77; }
+        .price-chart-series[data-color="17"], .price-chart-legend [data-color="17"] { --chart-color: #8a4f00; }
+        .price-chart-series[data-color="18"], .price-chart-legend [data-color="18"] { --chart-color: #5b5f97; }
+        .price-chart-series[data-color="19"], .price-chart-legend [data-color="19"] { --chart-color: #9c2f2f; }
         .dark .price-chart-series[data-color="0"], .dark .price-chart-legend [data-color="0"] { --chart-color: #7db7ff; }
         .dark .price-chart-series[data-color="1"], .dark .price-chart-legend [data-color="1"] { --chart-color: #ffb4ab; }
         .dark .price-chart-series[data-color="2"], .dark .price-chart-legend [data-color="2"] { --chart-color: #e9bd6f; }
@@ -681,6 +726,16 @@
         .dark .price-chart-series[data-color="7"], .dark .price-chart-legend [data-color="7"] { --chart-color: #f3a4dc; }
         .dark .price-chart-series[data-color="8"], .dark .price-chart-legend [data-color="8"] { --chart-color: #c4d77a; }
         .dark .price-chart-series[data-color="9"], .dark .price-chart-legend [data-color="9"] { --chart-color: #aeb8ff; }
+        .dark .price-chart-series[data-color="10"], .dark .price-chart-legend [data-color="10"] { --chart-color: #4dd9e6; }
+        .dark .price-chart-series[data-color="11"], .dark .price-chart-legend [data-color="11"] { --chart-color: #f4a0c4; }
+        .dark .price-chart-series[data-color="12"], .dark .price-chart-legend [data-color="12"] { --chart-color: #b6d77a; }
+        .dark .price-chart-series[data-color="13"], .dark .price-chart-legend [data-color="13"] { --chart-color: #72dfa7; }
+        .dark .price-chart-series[data-color="14"], .dark .price-chart-legend [data-color="14"] { --chart-color: #ddb8ff; }
+        .dark .price-chart-series[data-color="15"], .dark .price-chart-legend [data-color="15"] { --chart-color: #ffb785; }
+        .dark .price-chart-series[data-color="16"], .dark .price-chart-legend [data-color="16"] { --chart-color: #67dbe5; }
+        .dark .price-chart-series[data-color="17"], .dark .price-chart-legend [data-color="17"] { --chart-color: #e8bd75; }
+        .dark .price-chart-series[data-color="18"], .dark .price-chart-legend [data-color="18"] { --chart-color: #b9c2ff; }
+        .dark .price-chart-series[data-color="19"], .dark .price-chart-legend [data-color="19"] { --chart-color: #ffb4ab; }
         .price-chart-swatch {
           background: var(--chart-color);
         }
@@ -700,7 +755,7 @@
             data-price-chart="{{ grafica.clave }}"
           >
             <h3 class="font-headline-md text-headline-md font-bold text-on-surface">
-              {{ grafica.variante }}
+              {{ grafica.variante }}{% if grafica.moneda %} · {{ grafica.moneda }}{% endif %}
             </h3>
             <p class="mt-1 text-body-sm text-secondary">
               {% t 'La serie de cada tienda comienza cuando se registró su precio.' %}
@@ -729,13 +784,20 @@
               {% endfor %}
             </div>
 
-            <div class="mt-5 overflow-x-auto rounded-xl border border-outline-variant/50 bg-surface-container-lowest">
+            <div
+              class="mt-5 overflow-x-auto rounded-xl border border-outline-variant/50 bg-surface-container-lowest focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              role="region"
+              aria-label="{% t 'Historial de precios por tienda' %}: {{ grafica.variante }}"
+              tabindex="0"
+            >
+              {# SVG exige punto decimal aunque la interfaz use coma local. #}
+              {% localize off %}
               <svg
                 class="block h-auto min-w-[44rem] w-full"
                 viewBox="0 0 {{ grafica.ancho }} {{ grafica.alto }}"
                 aria-labelledby="price-chart-title-{{ grafica.clave }} price-chart-description-{{ grafica.clave }}"
               >
-                <title id="price-chart-title-{{ grafica.clave }}">{% t 'Historial de precios por tienda' %}: {{ grafica.variante }}</title>
+                <title id="price-chart-title-{{ grafica.clave }}">{% t 'Historial de precios por tienda' %}: {{ grafica.variante }}{% if grafica.moneda %} · {{ grafica.moneda }}{% endif %}</title>
                 <desc id="price-chart-description-{{ grafica.clave }}">{% t 'Los tramos en que una tienda no estuvo disponible se muestran como interrupciones.' %}</desc>
 
                 <text class="price-chart-axis-label" x="{{ grafica.x_inicio }}" y="14">{% t 'Precio final' %}</text>
@@ -783,6 +845,21 @@
                         aria-expanded="false"
                       >
                         <title>{{ cambio.aria_label }}</title>
+                        {% if cambio.desplazamiento_y %}
+                          <line
+                            class="price-chart-marker-leader"
+                            x1="{{ cambio.x }}"
+                            y1="{{ cambio.y_base }}"
+                            x2="{{ cambio.x }}"
+                            y2="{{ cambio.y }}"
+                          ></line>
+                        {% endif %}
+                        <circle
+                          class="price-chart-marker-target"
+                          cx="{{ cambio.x }}"
+                          cy="{{ cambio.y }}"
+                          r="22"
+                        ></circle>
                         {% if cambio.figura == "cuadrado" %}
                           <rect class="price-chart-marker-shape" x="{{ cambio.rectangulo.x }}" y="{{ cambio.rectangulo.y }}" width="{{ cambio.rectangulo.ancho }}" height="{{ cambio.rectangulo.alto }}"></rect>
                         {% elif cambio.figura == "triangulo" %}
@@ -795,6 +872,7 @@
                   </g>
                 {% endfor %}
               </svg>
+              {% endlocalize %}
             </div>
 
             <div
@@ -838,7 +916,7 @@
                 {% t 'Ver el resumen de los datos' %}
               </summary>
               <div class="mt-4 overflow-x-auto">
-                <table class="w-full min-w-[42rem] border-collapse text-left text-body-sm">
+                <table class="price-chart-table w-full min-w-[42rem] border-collapse text-left text-body-sm">
                   <caption class="sr-only">{% t 'Resumen accesible de los cambios' %}</caption>
                   <thead>
                     <tr class="border-b border-outline-variant/60 text-secondary">

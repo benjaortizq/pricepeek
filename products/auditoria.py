@@ -4,6 +4,7 @@ import calendar
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.formats import date_format
 from django.utils.translation import get_language
@@ -21,7 +22,7 @@ _MARGEN_IZQUIERDO_GRAFICA = 86
 _MARGEN_DERECHO_GRAFICA = 28
 _MARGEN_SUPERIOR_GRAFICA = 28
 _MARGEN_INFERIOR_GRAFICA = 56
-_COLORES_GRAFICA = 10
+_COLORES_GRAFICA = 20
 
 
 def _descuento(valor):
@@ -158,10 +159,17 @@ def _consultar_auditorias_publicas(precios, inicio, fin):
     if not precios:
         return []
 
+    combinaciones = {
+        (precio.id_store_id, precio.gtin_id)
+        for precio in precios
+    }
+    filtro_exacto = Q()
+    for id_store_id, gtin_id in combinaciones:
+        filtro_exacto |= Q(id_store_id=id_store_id, gtin_id=gtin_id)
+
     return list(
         AuditPriceChanges.objects.filter(
-            id_store_id__in={precio.id_store_id for precio in precios},
-            gtin_id__in={precio.gtin_id for precio in precios},
+            filtro_exacto,
             created_at__gte=inicio,
             created_at__lte=fin,
         )
@@ -236,22 +244,56 @@ def _preparar_serie(precio, registros, inicio_ventana, fin_ventana):
     if introduccion > fin_ventana:
         return None
 
-    inicio_visible = max(introduccion, inicio_ventana)
+    actualizacion = _fecha_local(precio.updated_at)
+    precio_actual = _precio_final(precio.price, precio.discount)
+    disponible_actual = bool(precio.is_available)
+    fin_conocido = fin_ventana
+
+    # Un precio NULL no genera auditoría. ``updated_at`` es el último límite
+    # verificable y evita prolongar un precio eliminado hasta el final de la
+    # ventana. Del mismo modo, una disponibilidad actual que contradiga el
+    # último evento se corta en esa actualización sin inventar otro cambio.
+    if precio_actual is None:
+        fin_conocido = min(
+            fin_ventana,
+            max(introduccion, actualizacion),
+        )
+
     eventos = [
         evento
         for evento in _eventos_de_precio(registros)
-        if evento["fecha"] >= introduccion and evento["fecha"] <= fin_ventana
+        if evento["fecha"] >= introduccion and evento["fecha"] <= fin_conocido
     ]
+    if (
+        eventos
+        and eventos[-1]["disponible"] != disponible_actual
+        and precio_actual is not None
+    ):
+        fin_conocido = min(
+            fin_conocido,
+            max(introduccion, actualizacion),
+        )
+        eventos = [
+            evento
+            for evento in eventos
+            if evento["fecha"] <= fin_conocido
+        ]
 
+    inicio_visible = max(introduccion, inicio_ventana)
     if eventos:
         precio_anterior = eventos[0]["precio_anterior"]
-        if eventos[0]["solo_disponibilidad"]:
-            disponible_anterior = not eventos[0]["disponible"]
+        # ``is_active`` guarda el estado resultante. Una reactivación exclusiva
+        # permite inferir el estado anterior con exactitud. En el primer
+        # cambio combinado se interpreta ``false`` como desactivación; una
+        # reactivación combinada no puede distinguirse sin guardar el estado
+        # anterior.
+        if eventos[0]["solo_disponibilidad"] and eventos[0]["disponible"]:
+            disponible_anterior = False
         else:
-            disponible_anterior = eventos[0]["disponible"]
+            disponible_anterior = True
     else:
-        precio_anterior = _precio_final(precio.price, precio.discount)
-        disponible_anterior = bool(precio.is_available)
+        precio_anterior = precio_actual
+        disponible_anterior = disponible_actual
 
     if precio_anterior is None and not eventos:
         return None
@@ -265,6 +307,7 @@ def _preparar_serie(precio, registros, inicio_ventana, fin_ventana):
         if fecha_evento < tiempo_anterior:
             continue
 
+        precio_anterior = evento["precio_anterior"]
         if fecha_evento > tiempo_anterior and precio_anterior is not None:
             tramos.append(
                 {
@@ -279,15 +322,17 @@ def _preparar_serie(precio, registros, inicio_ventana, fin_ventana):
             evento["tipo"] = (
                 "reactivacion" if evento["disponible"] else "desactivacion"
             )
-        else:
+        elif evento["precio_anterior"] != evento["precio_nuevo"]:
             evento["tipo"] = "precio"
+        else:
+            evento["tipo"] = "sin_cambio"
 
         if (
-            disponible_anterior
+            evento["tipo"] == "precio"
+            and disponible_anterior
             and evento["disponible"]
             and precio_anterior is not None
             and evento["precio_nuevo"] is not None
-            and precio_anterior != evento["precio_nuevo"]
         ):
             conectores.append(
                 {
@@ -301,11 +346,11 @@ def _preparar_serie(precio, registros, inicio_ventana, fin_ventana):
         disponible_anterior = evento["disponible"]
         tiempo_anterior = fecha_evento
 
-    if fin_ventana > tiempo_anterior and precio_anterior is not None:
+    if fin_conocido > tiempo_anterior and precio_anterior is not None:
         tramos.append(
             {
                 "desde": tiempo_anterior,
-                "hasta": fin_ventana,
+                "hasta": fin_conocido,
                 "precio_final": precio_anterior,
                 "disponible": disponible_anterior,
             }
@@ -345,6 +390,7 @@ def _etiqueta_accesible_cambio(serie, evento):
     tipo = translate_text(
         {
             "precio": "Cambio de precio",
+            "sin_cambio": "Sin cambio de precio final",
             "desactivacion": "Desactivación",
             "reactivacion": "Reactivación",
         }[evento["tipo"]]
@@ -375,21 +421,22 @@ def _x_grafica(fecha, inicio, fin, x_inicio, x_fin):
     return x_inicio + proporcion * (x_fin - x_inicio)
 
 
-def _ajustar_marcadores_mismo_dia(serie, x_inicio, x_fin):
-    """Separa visualmente cambios registrados el mismo día."""
-    por_dia = defaultdict(list)
+def _ajustar_marcadores_mismo_dia(serie):
+    """Separa marcadores coincidentes sin moverlos de su fecha real."""
+    por_posicion = defaultdict(list)
     for cambio in serie["cambios"]:
-        por_dia[cambio["fecha"].date()].append(cambio)
+        clave = (cambio["fecha"].date(), round(cambio["y"], 2))
+        por_posicion[clave].append(cambio)
 
-    for cambios in por_dia.values():
+    separaciones = (0, -9, 9, -18, 18)
+    for cambios in por_posicion.values():
         if len(cambios) < 2:
             continue
-        centro = sum(cambio["x_base"] for cambio in cambios) / len(cambios)
-        separacion = 16
-        ancho = separacion * (len(cambios) - 1)
         for indice, cambio in enumerate(cambios):
-            x = centro - ancho / 2 + indice * separacion
-            cambio["x"] = max(x_inicio, min(x_fin, x))
+            desplazamiento = separaciones[indice % len(separaciones)]
+            cambio["y_base"] = cambio["y"]
+            cambio["y"] += desplazamiento
+            cambio["desplazamiento_y"] = desplazamiento
 
 
 def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
@@ -508,6 +555,8 @@ def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
             )
             cambio["x"] = cambio["x_base"]
             cambio["y"] = y_precio(cambio["precio_nuevo"])
+            cambio["y_base"] = cambio["y"]
+            cambio["desplazamiento_y"] = 0
             cambio["fecha_texto"] = _formatear_fecha(cambio["fecha"])
             cambio["fecha_texto_iso"] = cambio["fecha"].isoformat()
             cambio["precio_anterior_texto"] = _formatear_monto(
@@ -519,6 +568,7 @@ def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
             cambio["tipo_texto"] = translate_text(
                 {
                     "precio": "Cambio de precio",
+                    "sin_cambio": "Sin cambio de precio final",
                     "desactivacion": "Desactivación",
                     "reactivacion": "Reactivación",
                 }[cambio["tipo"]]
@@ -528,7 +578,7 @@ def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
             )
             cambio["aria_label"] = _etiqueta_accesible_cambio(serie, cambio)
 
-        _ajustar_marcadores_mismo_dia(serie, x_inicio, x_fin)
+        _ajustar_marcadores_mismo_dia(serie)
         for cambio in serie["cambios"]:
             if cambio["tipo"] == "desactivacion":
                 cambio["figura"] = "cuadrado"
@@ -545,6 +595,14 @@ def _decorar_grafica(grafica, inicio_ventana, fin_ventana):
                     f"{cambio['x'] + 7},{cambio['y'] + 6} "
                     f"{cambio['x'] - 7},{cambio['y'] + 6}"
                 )
+            elif cambio["tipo"] == "sin_cambio":
+                cambio["figura"] = "rombo"
+                cambio["puntos"] = (
+                    f"{cambio['x']},{cambio['y'] - 7} "
+                    f"{cambio['x'] + 7},{cambio['y']} "
+                    f"{cambio['x']},{cambio['y'] + 7} "
+                    f"{cambio['x'] - 7},{cambio['y']}"
+                )
             else:
                 cambio["figura"] = "circulo"
 
@@ -559,10 +617,13 @@ def _preparar_graficas(precios, registros, inicio_ventana, fin_ventana):
 
     grupos = defaultdict(list)
     for precio in precios:
-        grupos[precio.gtin_id].append(precio)
+        moneda_id = getattr(precio, "currency_id", None)
+        if moneda_id is None:
+            moneda_id = getattr(getattr(precio, "currency", None), "symbol", "")
+        grupos[(precio.gtin_id, moneda_id)].append(precio)
 
     graficas = []
-    for indice, grupo in enumerate(grupos.values(), start=1):
+    for grupo in grupos.values():
         series = []
         for precio in grupo:
             serie = _preparar_serie(
@@ -577,10 +638,14 @@ def _preparar_graficas(precios, registros, inicio_ventana, fin_ventana):
         if not series:
             continue
 
+        series.sort(
+            key=lambda serie: (serie["tienda"].casefold(), serie["clave"])
+        )
         variante = getattr(getattr(grupo[0], "gtin", None), "name", "")
         grafica = {
-            "clave": f"grafica-{indice}",
+            "clave": f"grafica-{len(graficas) + 1}",
             "variante": variante or translate_text("Producto"),
+            "moneda": series[0]["moneda"],
             "series": series,
         }
         grafica = _decorar_grafica(grafica, inicio_ventana, fin_ventana)

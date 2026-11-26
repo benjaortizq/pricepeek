@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from decimal import Decimal
 from types import SimpleNamespace
@@ -727,6 +728,105 @@ class GraficaHistorialPreciosTests(CatalogoTestCase):
         cambio = self.obtener_grafica(respuesta)["series"][0]["cambios"][0]
         self.assertEqual(cambio["precio_anterior"], 661)
         self.assertEqual(cambio["precio_nuevo"], 671)
+
+    def test_primer_cambio_combinado_de_precio_y_disponibilidad_interrumpe_la_serie(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, oferta = self.crear_oferta()
+        Prices.objects.filter(pk=oferta.pk).update(
+            price=900,
+            is_available=False,
+        )
+        self.crear_auditoria(
+            tienda,
+            old_price=1000,
+            new_price=900,
+            is_active=False,
+            creada=ahora - timedelta(days=1),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        serie = self.obtener_grafica(respuesta)["series"][0]
+        self.assertEqual(serie["cambios"][0]["tipo"], "desactivacion")
+        self.assertEqual(
+            [tramo["disponible"] for tramo in serie["tramos"]],
+            [True, False],
+        )
+
+    def test_un_precio_eliminado_no_extiende_la_serie_hasta_el_fin_de_la_ventana(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, oferta = self.crear_oferta()
+        self.crear_auditoria(
+            tienda,
+            new_price=900,
+            creada=ahora - timedelta(days=10),
+        )
+        eliminacion = ahora - timedelta(days=1)
+        Prices.objects.filter(pk=oferta.pk).update(
+            price=None,
+            is_available=False,
+            updated_at=eliminacion,
+        )
+
+        respuesta = self.client.get(self.url())
+
+        serie = self.obtener_grafica(respuesta)["series"][0]
+        self.assertEqual(
+            serie["tramos"][-1]["hasta_texto"],
+            eliminacion.isoformat(),
+        )
+        self.assertTrue(
+            all(
+                tramo["hasta"] <= eliminacion
+                for tramo in serie["tramos"]
+            )
+        )
+
+    def test_un_cambio_que_conserva_el_precio_final_se_marca_sin_cambio(self):
+        ahora = timezone.localtime(timezone.now())
+        tienda, _ = self.crear_oferta(precio=1002, descuento="0.34")
+        self.crear_auditoria(
+            tienda,
+            old_price=1001,
+            new_price=1002,
+            old_discount="0.34",
+            new_discount="0.34",
+            creada=ahora - timedelta(days=1),
+        )
+
+        respuesta = self.client.get(self.url())
+
+        cambio = self.obtener_grafica(respuesta)["series"][0]["cambios"][0]
+        self.assertEqual(cambio["tipo"], "sin_cambio")
+        self.assertEqual(cambio["precio_anterior"], 661)
+        self.assertEqual(cambio["precio_nuevo"], 661)
+
+        self.client.cookies["django_language"] = "en"
+        respuesta_en = self.client.get(self.url())
+        self.assertContains(respuesta_en, "No change in final price")
+
+    def test_las_coordenadas_svg_no_se_localizan_en_espanol(self):
+        self.crear_oferta()
+
+        for idioma in ("es", "en"):
+            with self.subTest(idioma=idioma):
+                self.client.cookies["django_language"] = idioma
+                respuesta = self.client.get(self.url())
+                html = respuesta.content.decode()
+
+                linea = re.search(
+                    r'<line class="price-chart-line"([^>]*)>',
+                    html,
+                )
+                self.assertIsNotNone(linea)
+                coordenadas = re.findall(
+                    r'\b(?:x1|x2|y1|y2)="([^"]+)"',
+                    linea.group(1),
+                )
+                self.assertTrue(coordenadas)
+                for coordenada in coordenadas:
+                    self.assertNotIn(",", coordenada)
+                    float(coordenada)
 
     def test_la_grafica_se_traduce_al_ingles(self):
         self.crear_oferta()

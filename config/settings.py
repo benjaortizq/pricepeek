@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -21,6 +22,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(
     BASE_DIR / ".env", override=True
 )  # el .env manda sobre variables viejas de la terminal
+
+# Cuántos colones vale una unidad de cada moneda ISO 4217. La carga de precios
+# internacionales requiere tasas configuradas y vigentes; CRC siempre equivale a 1.
+try:
+    TIPOS_CAMBIO_A_CRC = {
+        codigo.upper(): str(tasa)
+        for codigo, tasa in json.loads(
+            os.environ.get("TIPOS_CAMBIO_A_CRC", "{}")
+        ).items()
+    }
+except (TypeError, ValueError):
+    TIPOS_CAMBIO_A_CRC = {}
+TIPOS_CAMBIO_A_CRC["CRC"] = "1"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/

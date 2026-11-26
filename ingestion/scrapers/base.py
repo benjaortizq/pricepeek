@@ -4,6 +4,8 @@ import time
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.conf import settings
+
 from curl_cffi import requests
 from curl_cffi.requests.exceptions import RequestException
 
@@ -42,6 +44,26 @@ def a_colones(valor):
     """19900.0, "19900" o Decimal -> 19900. Cero, vacío o inválido -> None."""
     try:
         colones = round(Decimal(str(valor)))
+    except (ArithmeticError, ValueError, TypeError):
+        return None
+    return int(colones) if colones > 0 else None
+
+
+def convertir_a_colones(valor, moneda="CRC"):
+    """Convierte un importe a colones usando las tasas configuradas en Django.
+
+    ``TIPOS_CAMBIO_A_CRC`` expresa cuántos colones vale una unidad de cada
+    moneda ISO 4217. No se asume una tasa para una moneda desconocida.
+    """
+    tasas = getattr(settings, "TIPOS_CAMBIO_A_CRC", {"CRC": Decimal("1")})
+    codigo = (moneda or "CRC").upper()
+    tasa = tasas.get(codigo)
+    if tasa is None:
+        return None
+    try:
+        colones = (Decimal(str(valor)) * Decimal(str(tasa))).quantize(
+            Decimal("1"), rounding=ROUND_HALF_UP
+        )
     except (ArithmeticError, ValueError, TypeError):
         return None
     return int(colones) if colones > 0 else None

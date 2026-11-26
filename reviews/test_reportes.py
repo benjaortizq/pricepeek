@@ -1,3 +1,5 @@
+"""Pruebas automatizadas de test_reportes para la aplicación reviews."""
+
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -22,7 +24,9 @@ from products.models import (
 # Las fotos se guardan en memoria para que las pruebas no toquen el Storage de Supabase.
 ALMACENAMIENTO_EN_MEMORIA = {
     "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+    },
 }
 
 
@@ -56,21 +60,43 @@ class ReportesBase(TestCase):
     @classmethod
     def setUpTestData(cls):
         now = timezone.now()
-        marca = Brands.objects.create(name="Marca", slug="marca", created_at=now, updated_at=now)
-        categoria = Categories.objects.create(name="Categoría", created_at=now, updated_at=now)
+        marca = Brands.objects.create(
+            name="Marca", slug="marca", created_at=now, updated_at=now
+        )
+        categoria = Categories.objects.create(
+            name="Categoría", created_at=now, updated_at=now
+        )
         cls.product = Products.objects.create(
-            name="Producto", brand=marca, category=categoria, created_at=now, updated_at=now
+            name="Producto",
+            brand=marca,
+            category=categoria,
+            created_at=now,
+            updated_at=now,
         )
         cls.variant = ProductVariants.objects.create(
-            product=cls.product, gtin="1234567890123", name="Variante", created_at=now, updated_at=now
+            product=cls.product,
+            gtin="1234567890123",
+            name="Variante",
+            created_at=now,
+            updated_at=now,
         )
         usuarios = get_user_model().objects
-        cls.autor = usuarios.create_user(email="autor@example.com", password="Clave2026segura")
-        cls.reportante = usuarios.create_user(email="reporta@example.com", password="Clave2026segura")
-        cls.otro_cliente = usuarios.create_user(email="otro@example.com", password="Clave2026segura")
-        cls.admin = usuarios.create_user(email="admin@example.com", password="Clave2026segura", role="admin")
+        cls.autor = usuarios.create_user(
+            email="autor@example.com", password="Clave2026segura"
+        )
+        cls.reportante = usuarios.create_user(
+            email="reporta@example.com", password="Clave2026segura"
+        )
+        cls.otro_cliente = usuarios.create_user(
+            email="otro@example.com", password="Clave2026segura"
+        )
+        cls.admin = usuarios.create_user(
+            email="admin@example.com", password="Clave2026segura", role="admin"
+        )
         cls.empresa = usuarios.create_user(
-            email="empresa@example.com", password="Clave2026segura", role="enterprise"
+            email="empresa@example.com",
+            password="Clave2026segura",
+            role="enterprise",
         )
         cls.resena = Reviews.objects.create(
             user_id=cls.autor.pk,
@@ -84,21 +110,29 @@ class ReportesBase(TestCase):
     def reportar(self, usuario, motivo="Es ofensiva.", review_id=None):
         self.client.force_login(usuario)
         return self.client.post(
-            reverse("reportar_resena", kwargs={"review_id": review_id or self.resena.pk}),
+            reverse(
+                "reportar_resena",
+                kwargs={"review_id": review_id or self.resena.pk},
+            ),
             {"reason": motivo},
             follow=True,
         )
 
     def crear_reporte(self, reportante=None, motivo="Es ofensiva."):
         return ReviewReport.objects.create(
-            review_id=self.resena.pk, reporter=reportante or self.reportante, reason=motivo
+            review_id=self.resena.pk,
+            reporter=reportante or self.reportante,
+            reason=motivo,
         )
 
 
 class ReportarResenaTests(ReportesBase):
     def test_cliente_reporta_una_resena_con_motivo(self):
         respuesta = self.reportar(self.reportante, "Insulta a otros usuarios.")
-        self.assertRedirects(respuesta, reverse("detalle_producto", kwargs={"pk": self.product.pk}))
+        self.assertRedirects(
+            respuesta,
+            reverse("detalle_producto", kwargs={"pk": self.product.pk}),
+        )
         self.assertContains(respuesta, "Su reporte fue enviado")
         reporte = ReviewReport.objects.get()
         self.assertEqual(reporte.review_id, self.resena.pk)
@@ -129,7 +163,9 @@ class ReportarResenaTests(ReportesBase):
     def test_otro_cliente_si_puede_reportar_la_misma_resena(self):
         self.reportar(self.reportante)
         self.reportar(self.otro_cliente)
-        self.assertEqual(ReviewReport.objects.filter(review_id=self.resena.pk).count(), 2)
+        self.assertEqual(
+            ReviewReport.objects.filter(review_id=self.resena.pk).count(), 2
+        )
 
     def test_no_se_puede_reportar_la_propia_resena(self):
         respuesta = self.reportar(self.autor)
@@ -147,8 +183,13 @@ class ReportarResenaTests(ReportesBase):
         for usuario in (self.empresa, self.admin):
             with self.subTest(rol=usuario.role):
                 self.client.force_login(usuario)
-                url = reverse("reportar_resena", kwargs={"review_id": self.resena.pk})
-                self.assertEqual(self.client.post(url, {"reason": "Ofensiva."}).status_code, 403)
+                url = reverse(
+                    "reportar_resena", kwargs={"review_id": self.resena.pk}
+                )
+                self.assertEqual(
+                    self.client.post(url, {"reason": "Ofensiva."}).status_code,
+                    403,
+                )
         self.assertEqual(ReviewReport.objects.count(), 0)
 
     def test_solo_acepta_post(self):
@@ -159,7 +200,9 @@ class ReportarResenaTests(ReportesBase):
     def test_resena_inexistente_da_404(self):
         self.client.force_login(self.reportante)
         url = reverse("reportar_resena", kwargs={"review_id": 99999})
-        self.assertEqual(self.client.post(url, {"reason": "Ofensiva."}).status_code, 404)
+        self.assertEqual(
+            self.client.post(url, {"reason": "Ofensiva."}).status_code, 404
+        )
 
 
 class BotonDeReporteEnElProductoTests(ReportesBase):
@@ -168,7 +211,9 @@ class BotonDeReporteEnElProductoTests(ReportesBase):
 
     def test_otro_cliente_ve_la_opcion_de_reportar(self):
         self.client.force_login(self.reportante)
-        self.assertContains(self.client.get(self.url), "Reportar como inapropiada")
+        self.assertContains(
+            self.client.get(self.url), "Reportar como inapropiada"
+        )
 
     def test_el_cliente_que_ya_reporto_ve_que_ya_lo_hizo(self):
         self.crear_reporte()
@@ -186,11 +231,15 @@ class BotonDeReporteEnElProductoTests(ReportesBase):
         self.assertNotContains(respuesta, self.reportante.email)  # RNF-32
 
     def test_visitante_y_otros_roles_no_ven_la_opcion(self):
-        self.assertNotContains(self.client.get(self.url), "Reportar como inapropiada")
+        self.assertNotContains(
+            self.client.get(self.url), "Reportar como inapropiada"
+        )
         for usuario in (self.empresa, self.admin):
             with self.subTest(rol=usuario.role):
                 self.client.force_login(usuario)
-                self.assertNotContains(self.client.get(self.url), "Reportar como inapropiada")
+                self.assertNotContains(
+                    self.client.get(self.url), "Reportar como inapropiada"
+                )
 
 
 class ListaDeResenasReportadasTests(ReportesBase):
@@ -198,13 +247,22 @@ class ListaDeResenasReportadasTests(ReportesBase):
         self.url = reverse("resenas_reportadas")
 
     def test_solo_el_administrador_puede_verla(self):
-        self.assertEqual(self.client.get(self.url).status_code, 302)  # visitante
-        for usuario in (self.reportante, self.otro_cliente, self.autor, self.empresa):
+        self.assertEqual(
+            self.client.get(self.url).status_code, 302
+        )  # visitante
+        for usuario in (
+            self.reportante,
+            self.otro_cliente,
+            self.autor,
+            self.empresa,
+        ):
             with self.subTest(rol=usuario.role):
                 self.client.force_login(usuario)
                 respuesta = self.client.get(self.url)
                 self.assertEqual(respuesta.status_code, 403)
-                self.assertNotContains(respuesta, self.reportante.email, status_code=403)
+                self.assertNotContains(
+                    respuesta, self.reportante.email, status_code=403
+                )
 
     def test_muestra_la_resena_reportada_con_sus_motivos_y_quien_reporto(self):
         self.crear_reporte(self.reportante, "Insulta a otros usuarios.")
@@ -214,7 +272,9 @@ class ListaDeResenasReportadasTests(ReportesBase):
         self.assertContains(respuesta, "Contenido ofensivo.")
         self.assertContains(respuesta, "Insulta a otros usuarios.")
         self.assertContains(respuesta, "Es spam.")
-        self.assertContains(respuesta, "reporta@example.com")  # solo el administrador lo ve
+        self.assertContains(
+            respuesta, "reporta@example.com"
+        )  # solo el administrador lo ve
         self.assertContains(respuesta, "2 reportes")
 
     def test_no_muestra_resenas_sin_reportes_ni_reportes_ya_resueltos(self):
@@ -241,14 +301,24 @@ class ListaDeResenasReportadasTests(ReportesBase):
         self.client.force_login(self.admin)
         respuesta = self.client.get(self.url)
         self.assertContains(respuesta, "Sin reseñas eliminadas antes")
-        url_historial = reverse("detalle_cliente", kwargs={"pk": self.autor.pk})
+        url_historial = reverse(
+            "detalle_cliente", kwargs={"pk": self.autor.pk}
+        )
         self.assertContains(respuesta, url_historial)
 
-        for review_id in (900, 901):  # reseñas del mismo autor eliminadas en el pasado
+        for review_id in (
+            900,
+            901,
+        ):  # reseñas del mismo autor eliminadas en el pasado
             ReviewDeletion.objects.create(
-                review_id=review_id, author=self.autor, policy=ReviewDeletion.Policy.PROMOTIONAL, reason="Spam."
+                review_id=review_id,
+                author=self.autor,
+                policy=ReviewDeletion.Policy.PROMOTIONAL,
+                reason="Spam.",
             )
-        self.assertContains(self.client.get(self.url), "Le eliminaron 2 reseñas antes")
+        self.assertContains(
+            self.client.get(self.url), "Le eliminaron 2 reseñas antes"
+        )
 
     def test_una_resena_que_ya_no_existe_no_rompe_la_lista(self):
         self.crear_reporte()
@@ -261,7 +331,9 @@ class ListaDeResenasReportadasTests(ReportesBase):
 
 class ModerarResenaTests(ReportesBase):
     def setUp(self):
-        self.url = reverse("moderar_resena", kwargs={"review_id": self.resena.pk})
+        self.url = reverse(
+            "moderar_resena", kwargs={"review_id": self.resena.pk}
+        )
         self.crear_reporte(self.reportante)
         self.crear_reporte(self.otro_cliente, "Es spam.")
         self.client.force_login(self.admin)
@@ -272,29 +344,57 @@ class ModerarResenaTests(ReportesBase):
         return self.client.post(self.url, datos, follow=True)
 
     def test_eliminar_exige_la_politica_que_incumple(self):
-        respuesta = self.decidir(action="delete", note="Lenguaje ofensivo.", policy="")
-        self.assertContains(respuesta, "Elija la política de uso que incumple la reseña.")
+        respuesta = self.decidir(
+            action="delete", note="Lenguaje ofensivo.", policy=""
+        )
+        self.assertContains(
+            respuesta, "Elija la política de uso que incumple la reseña."
+        )
         self.assertTrue(Reviews.objects.filter(pk=self.resena.pk).exists())
         self.assertFalse(ReviewDeletion.objects.exists())
 
     def test_eliminar_registra_la_politica_y_la_razon(self):
-        self.decidir(action="delete", note="Lenguaje ofensivo.", policy=ReviewDeletion.Policy.DEFAMATORY)
+        self.decidir(
+            action="delete",
+            note="Lenguaje ofensivo.",
+            policy=ReviewDeletion.Policy.DEFAMATORY,
+        )
         registro = ReviewDeletion.objects.get()
         self.assertEqual(
-            (registro.review_id, registro.author, registro.deleted_by, registro.policy, registro.reason, registro.reports),
-            (self.resena.pk, self.autor, self.admin, ReviewDeletion.Policy.DEFAMATORY, "Lenguaje ofensivo.", 2),
+            (
+                registro.review_id,
+                registro.author,
+                registro.deleted_by,
+                registro.policy,
+                registro.reason,
+                registro.reports,
+            ),
+            (
+                self.resena.pk,
+                self.autor,
+                self.admin,
+                ReviewDeletion.Policy.DEFAMATORY,
+                "Lenguaje ofensivo.",
+                2,
+            ),
         )
-        self.assertEqual((registro.content, registro.score), ("Contenido ofensivo.", 1))
+        self.assertEqual(
+            (registro.content, registro.score), ("Contenido ofensivo.", 1)
+        )
 
     def test_mantener_deja_la_resena_y_resuelve_los_reportes(self):
-        respuesta = self.decidir(action="keep", note="No incumple las políticas.")
+        respuesta = self.decidir(
+            action="keep", note="No incumple las políticas."
+        )
         self.assertRedirects(respuesta, reverse("resenas_reportadas"))
         self.assertTrue(Reviews.objects.filter(pk=self.resena.pk).exists())
         for reporte in ReviewReport.objects.all():
             self.assertEqual(reporte.status, ReviewReport.Status.KEPT)
             self.assertEqual(reporte.resolved_by, self.admin)
             self.assertIsNotNone(reporte.resolved_at)
-            self.assertEqual(reporte.resolution_note, "No incumple las políticas.")
+            self.assertEqual(
+                reporte.resolution_note, "No incumple las políticas."
+            )
 
     def test_eliminar_borra_la_resena_y_resuelve_todos_sus_reportes(self):
         respuesta = self.decidir(action="delete", note="Lenguaje ofensivo.")
@@ -305,50 +405,88 @@ class ModerarResenaTests(ReportesBase):
         for reporte in reportes:
             self.assertEqual(reporte.status, ReviewReport.Status.DELETED)
             self.assertEqual(reporte.resolution_note, "Lenguaje ofensivo.")
-        self.assertTrue(get_user_model().objects.get(pk=self.autor.pk).is_active)
+        self.assertTrue(
+            get_user_model().objects.get(pk=self.autor.pk).is_active
+        )
 
     def test_eliminar_exige_el_motivo(self):
         respuesta = self.decidir(action="delete", note="")
         self.assertContains(respuesta, "Indique el motivo de la eliminación")
         self.assertTrue(Reviews.objects.filter(pk=self.resena.pk).exists())
-        self.assertEqual(ReviewReport.objects.filter(status=ReviewReport.Status.PENDING).count(), 2)
+        self.assertEqual(
+            ReviewReport.objects.filter(
+                status=ReviewReport.Status.PENDING
+            ).count(),
+            2,
+        )
 
     def test_eliminar_y_suspender_desactiva_la_cuenta_del_autor(self):
-        respuesta = self.decidir(action="delete", note="Reiterado.", suspend="on")
+        respuesta = self.decidir(
+            action="delete", note="Reiterado.", suspend="on"
+        )
         self.assertContains(respuesta, "La cuenta del autor fue suspendida")
         autor = get_user_model().objects.get(pk=self.autor.pk)
         self.assertFalse(autor.is_active)
         self.assertEqual(autor.suspension_reason, "Reiterado.")
         self.assertEqual(autor.suspended_by, self.admin)
         self.assertIsNotNone(autor.suspended_at)
-        self.assertFalse(self.client.login(email="autor@example.com", password="Clave2026segura"))
+        self.assertFalse(
+            self.client.login(
+                email="autor@example.com", password="Clave2026segura"
+            )
+        )
 
     def test_la_resena_eliminada_cuenta_como_infraccion_del_autor(self):
         # Reportes creados antes de que se guardara el autor: se completa al resolverlos.
         ReviewReport.objects.update(review_author=None)
         self.decidir(action="delete", note="Lenguaje ofensivo.")
         self.assertEqual(
-            ReviewReport.objects.filter(review_author=self.autor, status=ReviewReport.Status.DELETED).count(), 2
+            ReviewReport.objects.filter(
+                review_author=self.autor, status=ReviewReport.Status.DELETED
+            ).count(),
+            2,
         )
-        respuesta = self.client.get(reverse("detalle_cliente", kwargs={"pk": self.autor.pk}))
-        self.assertContains(respuesta, "1 reseña de este cliente fue eliminada")
+        respuesta = self.client.get(
+            reverse("detalle_cliente", kwargs={"pk": self.autor.pk})
+        )
+        self.assertContains(
+            respuesta, "1 reseña de este cliente fue eliminada"
+        )
         self.assertContains(respuesta, "Lenguaje ofensivo.")
 
     def test_suspender_solo_aplica_cuando_se_elimina(self):
         self.decidir(action="keep", suspend="on")
-        self.assertTrue(get_user_model().objects.get(pk=self.autor.pk).is_active)
+        self.assertTrue(
+            get_user_model().objects.get(pk=self.autor.pk).is_active
+        )
 
     def test_nunca_suspende_cuentas_que_no_son_de_cliente(self):
         ahora = timezone.now()
         resena = Reviews.objects.create(
-            user_id=self.empresa.pk, variant=self.variant, content="De empresa.", score=3,
-            created_at=ahora, updated_at=ahora,
+            user_id=self.empresa.pk,
+            variant=self.variant,
+            content="De empresa.",
+            score=3,
+            created_at=ahora,
+            updated_at=ahora,
         )
-        ReviewReport.objects.create(review_id=resena.pk, reporter=self.reportante, reason="Spam.")
+        ReviewReport.objects.create(
+            review_id=resena.pk, reporter=self.reportante, reason="Spam."
+        )
         url = reverse("moderar_resena", kwargs={"review_id": resena.pk})
-        self.client.post(url, {"action": "delete", "note": "Spam.", "policy": "promocional", "suspend": "on"})
+        self.client.post(
+            url,
+            {
+                "action": "delete",
+                "note": "Spam.",
+                "policy": "promocional",
+                "suspend": "on",
+            },
+        )
         self.assertFalse(Reviews.objects.filter(pk=resena.pk).exists())
-        self.assertTrue(get_user_model().objects.get(pk=self.empresa.pk).is_active)
+        self.assertTrue(
+            get_user_model().objects.get(pk=self.empresa.pk).is_active
+        )
 
     @override_settings(STORAGES=ALMACENAMIENTO_EN_MEMORIA)
     def test_eliminar_tambien_borra_la_foto_de_la_resena(self):
@@ -357,17 +495,25 @@ class ModerarResenaTests(ReportesBase):
         nombre = foto.image.name
         self.assertTrue(default_storage.exists(nombre))
         self.decidir(action="delete", note="Ofensiva.")
-        self.assertFalse(ReviewPhoto.objects.filter(review_id=self.resena.pk).exists())
+        self.assertFalse(
+            ReviewPhoto.objects.filter(review_id=self.resena.pk).exists()
+        )
         self.assertFalse(default_storage.exists(nombre))
 
     def test_no_se_puede_moderar_una_resena_sin_reportes_pendientes(self):
         ahora = timezone.now()
         sin_reportes = Reviews.objects.create(
-            user_id=self.otro_cliente.pk, variant=self.variant, content="Sin reportes.", score=4,
-            created_at=ahora, updated_at=ahora,
+            user_id=self.otro_cliente.pk,
+            variant=self.variant,
+            content="Sin reportes.",
+            score=4,
+            created_at=ahora,
+            updated_at=ahora,
         )
         url = reverse("moderar_resena", kwargs={"review_id": sin_reportes.pk})
-        respuesta = self.client.post(url, {"action": "delete", "note": "Prueba."}, follow=True)
+        respuesta = self.client.post(
+            url, {"action": "delete", "note": "Prueba."}, follow=True
+        )
         self.assertContains(respuesta, "ya no tiene reportes pendientes")
         self.assertTrue(Reviews.objects.filter(pk=sin_reportes.pk).exists())
 
@@ -375,7 +521,9 @@ class ModerarResenaTests(ReportesBase):
         for usuario in (self.reportante, self.empresa):
             with self.subTest(rol=usuario.role):
                 self.client.force_login(usuario)
-                respuesta = self.client.post(self.url, {"action": "delete", "note": "x"})
+                respuesta = self.client.post(
+                    self.url, {"action": "delete", "note": "x"}
+                )
                 self.assertEqual(respuesta.status_code, 403)
         self.assertTrue(Reviews.objects.filter(pk=self.resena.pk).exists())
 

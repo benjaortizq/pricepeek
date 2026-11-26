@@ -18,7 +18,11 @@ from .correccion import olvidar_vocabulario
 from .models import AuditPriceChanges, Brands, Categories, Currencies, Prices, ProductImages, Products, ProductVariants, Stores
 
 from .busqueda import buscar_productos, con_imagen, con_imagen_variante
-from .views import _serializar_precio, buscar_variantes_por_nombre, obtener_precios_por_gtin
+from .views import (
+    _serializar_precio,
+    buscar_variantes_por_nombre,
+    obtener_precios_por_gtin,
+)
 
 # Los modelos son managed = False (las tablas viven en Supabase),
 # así que en la base de pruebas hay que crear las tablas a mano.
@@ -52,12 +56,21 @@ class CatalogoTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.dos_pinos = Brands.objects.create(name="Dos Pinos", slug="dos-pinos", **fechas())
-        cls.heinz = Brands.objects.create(name="Kraft Heinz", slug="kraft-heinz", **fechas())
+        cls.dos_pinos = Brands.objects.create(
+            name="Dos Pinos", slug="dos-pinos", **fechas()
+        )
+        cls.heinz = Brands.objects.create(
+            name="Kraft Heinz", slug="kraft-heinz", **fechas()
+        )
         cls.lacteos = Categories.objects.create(name="Lácteos", **fechas())
         cls.salsas = Categories.objects.create(name="Salsas", **fechas())
 
-        cls.leche = cls.producto("Leche entera 1L", cls.dos_pinos, cls.lacteos, "Leche entera pasteurizada.")
+        cls.leche = cls.producto(
+            "Leche entera 1L",
+            cls.dos_pinos,
+            cls.lacteos,
+            "Leche entera pasteurizada.",
+        )
         cls.variante_leche = cls.variante(cls.leche, "7441001234567")
         cls.ketchup = cls.producto("Salsa de tomate", cls.heinz, cls.salsas)
         cls.variante_ketchup = cls.variante(cls.ketchup, "0013000000765")
@@ -65,16 +78,24 @@ class CatalogoTestCase(TestCase):
     @classmethod
     def producto(cls, nombre, marca, categoria, descripcion=None):
         return Products.objects.create(
-            name=nombre, brand=marca, category=categoria, description=descripcion, **fechas()
+            name=nombre,
+            brand=marca,
+            category=categoria,
+            description=descripcion,
+            **fechas(),
         )
 
     @classmethod
     def variante(cls, producto, gtin):
-        return ProductVariants.objects.create(product=producto, gtin=gtin, name=producto.name, **fechas())
+        return ProductVariants.objects.create(
+            product=producto, gtin=gtin, name=producto.name, **fechas()
+        )
 
     @classmethod
     def precio(cls, variante, tienda, precio, descuento="0", disponible=True):
-        colones, _ = Currencies.objects.get_or_create(name="colones", symbol="₡", defaults=fechas())
+        colones, _ = Currencies.objects.get_or_create(
+            name="colones", symbol="₡", defaults=fechas()
+        )
         return Prices.objects.create(
             gtin=variante,
             id_store=tienda,
@@ -89,7 +110,11 @@ class CatalogoTestCase(TestCase):
     @classmethod
     def imagen(cls, variante, url, principal=False):
         return ProductImages.objects.create(
-            variant=variante, image_url=url, is_main=principal, number_image=1, **fechas()
+            variant=variante,
+            image_url=url,
+            is_main=principal,
+            number_image=1,
+            **fechas(),
         )
 
 
@@ -98,7 +123,11 @@ class DetalleProductoTests(CatalogoTestCase):
     def setUpTestData(cls):
         super().setUpTestData()
         cls.imagen(cls.variante_leche, "https://img.test/secundaria.png")
-        cls.imagen(cls.variante_leche, "https://img.test/principal.png", principal=True)
+        cls.imagen(
+            cls.variante_leche,
+            "https://img.test/principal.png",
+            principal=True,
+        )
 
     def url(self, pk=None):
         return reverse("detalle_producto", kwargs={"pk": pk or self.leche.pk})
@@ -132,7 +161,9 @@ class DetalleProductoTests(CatalogoTestCase):
         por_categoria = buscar_variantes_por_nombre(
             "leche", categoria=self.producto.category
         )
-        por_marca = buscar_variantes_por_nombre("leche", marca=self.producto.brand)
+        por_marca = buscar_variantes_por_nombre(
+            "leche", marca=self.producto.brand
+        )
 
         self.assertEqual(list(por_categoria), [self.variante])
         self.assertEqual(list(por_marca), [self.variante])
@@ -140,13 +171,17 @@ class DetalleProductoTests(CatalogoTestCase):
             buscar_variantes_por_nombre("leche", categoria="Bebidas").exists()
         )
         self.assertFalse(
-            buscar_variantes_por_nombre("leche", marca="Marca inexistente").exists()
+            buscar_variantes_por_nombre(
+                "leche", marca="Marca inexistente"
+            ).exists()
         )
 
     def test_obtiene_los_precios_del_mismo_gtin_rankeados(self):
         precios = list(obtener_precios_por_gtin(self.variante.gtin))
 
-        self.assertEqual([precio.price for precio in precios], [2000, 2000, 2500])
+        self.assertEqual(
+            [precio.price for precio in precios], [2000, 2000, 2500]
+        )
         self.assertEqual([precio.ranking for precio in precios], [1, 1, 3])
         self.assertEqual(
             {precio.id_store.name for precio in precios},
@@ -162,9 +197,14 @@ class DetalleProductoTests(CatalogoTestCase):
         self.assertEqual(respuesta.status_code, 200)
         contenido = respuesta.json()
         self.assertEqual(contenido["total"], 1)
-        self.assertEqual(contenido["resultados"][0]["gtin"], self.variante.gtin)
         self.assertEqual(
-            [precio["ranking"] for precio in contenido["resultados"][0]["precios"]],
+            contenido["resultados"][0]["gtin"], self.variante.gtin
+        )
+        self.assertEqual(
+            [
+                precio["ranking"]
+                for precio in contenido["resultados"][0]["precios"]
+            ],
             [1, 1, 3],
         )
 
@@ -197,7 +237,11 @@ class DetalleProductoTests(CatalogoTestCase):
             contenido["categorias"],
         )
         self.assertIn(
-            {"id": self.producto.brand_id, "name": "Dos Pinos", "slug": "dos-pinos"},
+            {
+                "id": self.producto.brand_id,
+                "name": "Dos Pinos",
+                "slug": "dos-pinos",
+            },
             contenido["marcas"],
         )
 
@@ -221,8 +265,14 @@ class DetalleProductoTests(CatalogoTestCase):
         self.assertContains(respuesta, "₡1.760")
         self.assertContains(respuesta, "₡1.455")  # 1940 con 25 % de descuento
         self.assertContains(respuesta, "Descuento de 25 %")
-        self.assertContains(respuesta, '<span class="font-bold text-on-surface text-body-lg">Walmart</span>', html=False)
-        self.assertContains(respuesta, 'href="https://tienda.test/7441001234567"')
+        self.assertContains(
+            respuesta,
+            '<span class="font-bold text-on-surface text-body-lg">Walmart</span>',
+            html=False,
+        )
+        self.assertContains(
+            respuesta, 'href="https://tienda.test/7441001234567"'
+        )
 
     def test_no_marca_ningun_precio_como_el_mejor(self):
         tienda = Stores.objects.create(name="Walmart", **fechas())
@@ -702,7 +752,9 @@ class DetalleMarcaTests(CatalogoTestCase):
 
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Dos Pinos")
-        self.assertContains(respuesta, "Productos lácteos de la familia Dos Pinos.")
+        self.assertContains(
+            respuesta, "Productos lácteos de la familia Dos Pinos."
+        )
         self.assertContains(respuesta, "Sobre la marca")
 
     def test_muestra_solo_los_productos_de_la_marca(self):
@@ -761,7 +813,9 @@ class BuscarProductosTests(CatalogoTestCase):
         galleta = self.producto("Galleta de vainilla", tutto, self.salsas)
         for palabra in ("tuto", "Tutto", "TUTTO", "tUtTo"):
             with self.subTest(palabra=palabra):
-                self.assertEqual(self.buscar(palabra), [bombon, galleta])  # por el nombre o por la marca
+                self.assertEqual(
+                    self.buscar(palabra), [bombon, galleta]
+                )  # por el nombre o por la marca
         self.assertEqual(self.buscar("galeta"), [galleta])
 
     def test_sin_importar_tildes(self):
@@ -775,7 +829,9 @@ class BuscarProductosTests(CatalogoTestCase):
     def test_sin_signos(self):
         mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
         chocolate = self.producto("Chocolate con maní", mars, self.salsas)
-        refresco = self.producto("Refresco Coca-Cola 600 ml", self.heinz, self.salsas)
+        refresco = self.producto(
+            "Refresco Coca-Cola 600 ml", self.heinz, self.salsas
+        )
         self.assertEqual(self.buscar("mms"), [chocolate])
         self.assertEqual(self.buscar("m&m"), [chocolate])
         self.assertEqual(self.buscar("cocacola"), [refresco])
@@ -789,19 +845,27 @@ class BuscarProductosTests(CatalogoTestCase):
     def test_m_y_m_no_es_cualquier_cosa_con_m(self):
         mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
         chocolate = self.producto("Chocolate con maní", mars, self.salsas)
-        self.assertEqual(self.buscar("m&m"), [chocolate])  # no "Salsa de tomate"
+        self.assertEqual(
+            self.buscar("m&m"), [chocolate]
+        )  # no "Salsa de tomate"
         self.assertEqual(self.buscar("mms"), [chocolate])
 
     def test_primero_lo_que_tiene_el_texto_tal_cual(self):
         mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
         chocolate = self.producto("Chocolate con maní", mars, self.salsas)
-        boquita = self.producto("Boquita Yummies", self.dos_pinos, self.salsas)  # "mm" se parece a "m&m"
+        boquita = self.producto(
+            "Boquita Yummies", self.dos_pinos, self.salsas
+        )  # "mm" se parece a "m&m"
         self.assertEqual(self.buscar("m&m"), [chocolate, boquita])
 
     def test_un_espacio_no_cuenta_como_signo(self):
-        crema = self.producto("Galletas a la crema", self.dos_pinos, self.lacteos)
+        crema = self.producto(
+            "Galletas a la crema", self.dos_pinos, self.lacteos
+        )
         sal = self.producto("Sal de mesa", self.dos_pinos, self.lacteos)
-        self.assertEqual(self.buscar("sal"), [sal, self.ketchup])  # "Salsa", pero no "galleta[s a l]a"
+        self.assertEqual(
+            self.buscar("sal"), [sal, self.ketchup]
+        )  # "Salsa", pero no "galleta[s a l]a"
         self.assertEqual(self.buscar("galletas"), [crema])
 
     def test_los_numeros_no_se_estiran(self):
@@ -814,33 +878,55 @@ class BuscarProductosTests(CatalogoTestCase):
 
     def test_imagen_de_cada_producto_en_una_sola_consulta(self):
         self.imagen(self.variante_leche, "https://img.test/secundaria.png")
-        self.imagen(self.variante_leche, "https://img.test/principal.png", principal=True)
+        self.imagen(
+            self.variante_leche,
+            "https://img.test/principal.png",
+            principal=True,
+        )
         self.imagen(self.variante_ketchup, "https://img.test/ketchup.png")
-        self.producto("Yogur natural", self.dos_pinos, self.lacteos)  # sin imagen
+        self.producto(
+            "Yogur natural", self.dos_pinos, self.lacteos
+        )  # sin imagen
         with self.assertNumQueries(2):  # los productos y las imágenes de todos
             productos = con_imagen(buscar_productos(""))
         self.assertEqual(
             [p.imagen_url for p in productos],
-            ["https://img.test/principal.png", "https://img.test/ketchup.png", None],
+            [
+                "https://img.test/principal.png",
+                "https://img.test/ketchup.png",
+                None,
+            ],
         )
 
     def test_imagen_de_cada_variante_en_una_sola_consulta(self):
-        otra_leche = self.variante(self.leche, "7441001234598")  # misma familia, sin imagen propia
+        otra_leche = self.variante(
+            self.leche, "7441001234598"
+        )  # misma familia, sin imagen propia
         self.imagen(self.variante_leche, "https://img.test/secundaria.png")
-        self.imagen(self.variante_leche, "https://img.test/principal.png", principal=True)
+        self.imagen(
+            self.variante_leche,
+            "https://img.test/principal.png",
+            principal=True,
+        )
         self.imagen(self.variante_ketchup, "https://img.test/ketchup.png")
         variantes = [self.variante_leche, otra_leche, self.variante_ketchup]
         with self.assertNumQueries(1):  # las imágenes de todas
             variantes = con_imagen_variante(variantes)
         self.assertEqual(
             [v.imagen_url for v in variantes],
-            ["https://img.test/principal.png", None, "https://img.test/ketchup.png"],
+            [
+                "https://img.test/principal.png",
+                None,
+                "https://img.test/ketchup.png",
+            ],
         )
 
 
 class PaginaBusquedaTests(CatalogoTestCase):
     def test_muestra_los_resultados(self):
-        respuesta = self.client.get(reverse("buscar_productos"), {"q": "heinz"})
+        respuesta = self.client.get(
+            reverse("buscar_productos"), {"q": "heinz"}
+        )
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Salsa de tomate")
         self.assertNotContains(respuesta, "Leche entera 1L")
@@ -848,45 +934,81 @@ class PaginaBusquedaTests(CatalogoTestCase):
     def test_todavia_no_muestra_precio(self):
         tienda = Stores.objects.create(name="Walmart", **fechas())
         self.precio(self.variante_ketchup, tienda, 1760)
-        respuesta = self.client.get(reverse("buscar_productos"), {"q": "heinz"})
+        respuesta = self.client.get(
+            reverse("buscar_productos"), {"q": "heinz"}
+        )
         self.assertNotContains(respuesta, "₡")
 
     def test_avisa_cuando_no_hay_resultados(self):
-        respuesta = self.client.get(reverse("buscar_productos"), {"q": "televisor"})
+        respuesta = self.client.get(
+            reverse("buscar_productos"), {"q": "televisor"}
+        )
         self.assertContains(respuesta, "No encontramos productos")
 
     def test_los_resultados_se_paginan_de_24_en_24(self):
         for i in range(25):
-            yogur = self.producto(f"Yogur {i:02d}", self.dos_pinos, self.lacteos)
-            self.variante(yogur, f"7441000{i:06d}")  # la búsqueda muestra variantes
+            yogur = self.producto(
+                f"Yogur {i:02d}", self.dos_pinos, self.lacteos
+            )
+            self.variante(
+                yogur, f"7441000{i:06d}"
+            )  # la búsqueda muestra variantes
         primera = self.client.get(reverse("buscar_productos"), {"q": "yogur"})
         self.assertEqual(len(primera.context["variantes"]), 24)
         self.assertContains(primera, "Página 1 de 2")
-        segunda = self.client.get(reverse("buscar_productos"), {"q": "yogur", "pagina": 2})
+        segunda = self.client.get(
+            reverse("buscar_productos"), {"q": "yogur", "pagina": 2}
+        )
         self.assertEqual(len(segunda.context["variantes"]), 1)
 
     def test_la_pagina_busca_sin_tildes_ni_signos_ni_letras_repetidas(self):
         mars = Brands.objects.create(name="M&M's", slug="mms", **fechas())
-        cafe = self.variante(self.producto("Café molido", self.dos_pinos, self.lacteos), "7441000999901")
-        tutto = self.variante(self.producto("Bombón TUTTO", self.dos_pinos, self.salsas), "7441000999902")
-        mms = self.variante(self.producto("Chocolate con maní", mars, self.salsas), "7441000999903")
-        for palabra, esperada in (("cafe", cafe), ("tuto", tutto), ("mms", mms), ("pinos leche", self.variante_leche)):
+        cafe = self.variante(
+            self.producto("Café molido", self.dos_pinos, self.lacteos),
+            "7441000999901",
+        )
+        tutto = self.variante(
+            self.producto("Bombón TUTTO", self.dos_pinos, self.salsas),
+            "7441000999902",
+        )
+        mms = self.variante(
+            self.producto("Chocolate con maní", mars, self.salsas),
+            "7441000999903",
+        )
+        for palabra, esperada in (
+            ("cafe", cafe),
+            ("tuto", tutto),
+            ("mms", mms),
+            ("pinos leche", self.variante_leche),
+        ):
             with self.subTest(palabra=palabra):
-                respuesta = self.client.get(reverse("buscar_productos"), {"q": palabra})
-                self.assertEqual(list(respuesta.context["variantes"]), [esperada])
+                respuesta = self.client.get(
+                    reverse("buscar_productos"), {"q": palabra}
+                )
+                self.assertEqual(
+                    list(respuesta.context["variantes"]), [esperada]
+                )
 
     def test_la_correccion_respeta_los_filtros(self):
-        sin_filtro = self.client.get(reverse("buscar_productos"), {"q": "lece"})
+        sin_filtro = self.client.get(
+            reverse("buscar_productos"), {"q": "lece"}
+        )
         self.assertContains(sin_filtro, "Mostrando resultados para «leche»")
         respuesta = self.client.get(
-            reverse("buscar_productos"), {"q": "lece", "categoria": self.salsas.pk}
+            reverse("buscar_productos"),
+            {"q": "lece", "categoria": self.salsas.pk},
         )  # «leche» existe, pero no en Salsas
         self.assertEqual(list(respuesta.context["variantes"]), [])
         self.assertNotContains(respuesta, "Mostrando resultados")
-        self.assertContains(respuesta, "No encontramos productos con «lece» en la categoría o marca seleccionada")
+        self.assertContains(
+            respuesta,
+            "No encontramos productos con «lece» en la categoría o marca seleccionada",
+        )
 
     def test_la_pantalla_principal_muestra_los_productos(self):
-        cliente = User.objects.create_user(email="ana@correo.com", password="Clave2026segura")
+        cliente = User.objects.create_user(
+            email="ana@correo.com", password="Clave2026segura"
+        )
         self.client.force_login(cliente)
         respuesta = self.client.get(reverse("inicio_cliente"))
         self.assertContains(respuesta, "Salsa de tomate")

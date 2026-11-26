@@ -25,7 +25,12 @@ SITEMAP = f"https://{DOMINIO}/media/sitemap_tienda_monge_cr.xml"
 def es_url_de_producto(url):
     partes = urlsplit(url)
     ruta = partes.path.strip("/")
-    return partes.netloc == DOMINIO and not partes.query and ruta != "" and "/" not in ruta
+    return (
+        partes.netloc == DOMINIO
+        and not partes.query
+        and ruta != ""
+        and "/" not in ruta
+    )
 
 
 def listar_urls(http, avisar=None):
@@ -47,7 +52,11 @@ class _Flixmedia(HTMLParser):
     def handle_starttag(self, tag, attrs):
         atributos = dict(attrs)
         if not self.datos and "data-flix-brand" in atributos:
-            self.datos = {k.removeprefix("data-flix-"): (v or "").strip() for k, v in atributos.items() if k.startswith("data-flix-")}
+            self.datos = {
+                k.removeprefix("data-flix-"): (v or "").strip()
+                for k, v in atributos.items()
+                if k.startswith("data-flix-")
+            }
 
 
 def datos_de_flixmedia(html):
@@ -75,7 +84,9 @@ def obtener_ficha(url, http):
     return Ficha(
         url=url,
         nombre=_texto(producto.get("name")),
-        oferta=ld_json.oferta_del_producto(producto),  # sin códigos de barras: Monge no los publica
+        oferta=ld_json.oferta_del_producto(
+            producto
+        ),  # sin códigos de barras: Monge no los publica
         sku=_texto(producto.get("sku")),
         marca=datos_de_flixmedia(html).get("brand", ""),
         modelo=_texto(producto.get("model")),

@@ -212,7 +212,7 @@
                   <div class="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 items-center border-b border-outline-variant/40 last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
                     <div class="md:col-span-3 flex items-center gap-3">
                       <span class="w-10 h-10 rounded-full bg-surface-container-lowest border border-outline-variant/60 flex items-center justify-center font-bold text-xs text-on-surface uppercase shrink-0">{{ precio.tienda|slice:":2" }}</span>
-                      <div>
+                      <div class="min-w-0 break-words">
                         <span class="font-bold text-on-surface text-body-lg">{{ precio.tienda }}</span>
                         <span class="block text-xs text-secondary">{{ grupo.variante.name }}</span>
                         <span class="block text-[11px] text-secondary font-price-row tracking-wider">{{ grupo.gtin }}</span>
@@ -564,7 +564,7 @@
               <span class="material-symbols-outlined material-symbols-fill text-[18px]">star</span>{{ resena.score }}
             </span>
           </div>
-          <p class="text-body-md font-body-md text-secondary leading-relaxed">{{ resena.content }}</p>
+          <p class="text-body-md font-body-md text-secondary leading-relaxed break-words">{{ resena.content }}</p>
           {% if resena.review_photo %}
             <img src="{{ resena.review_photo.image.url }}" alt="{% t 'Foto de la reseña' %}" class="mt-4 rounded-xl border border-outline-variant/50 max-h-64 object-cover">
           {% endif %}

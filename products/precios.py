@@ -19,10 +19,7 @@ def expresion_precio_final() -> ExpressionWrapper:
     """Expresión SQL reutilizable para calcular el precio con descuento."""
     return ExpressionWrapper(
         F("price")
-        * (
-            Value(Decimal("1"))
-            - Coalesce(F("discount"), Value(Decimal("0")))
-        ),
+        * (Value(Decimal("1")) - Coalesce(F("discount"), Value(Decimal("0")))),
         output_field=DecimalField(max_digits=12, decimal_places=2),
     )
 
@@ -44,9 +41,10 @@ def precio_minimo_por_gtin(
     if not gtin:
         return Prices.objects.none()
 
-    precios = Prices.objects.select_related("id_store", "currency").filter(
+    precios = Prices.visibles.select_related("id_store", "currency").filter(
         gtin_id=gtin,
         price__isnull=False,
+        currency__name__iexact="colones",
     )
     if solo_disponibles:
         precios = precios.filter(is_available=True)
@@ -58,9 +56,7 @@ def precio_minimo_por_gtin(
     )
 
 
-def precios_por_gtin(
-    gtin: str, solo_disponibles: bool = True
-) -> QuerySet:
+def precios_por_gtin(gtin: str, solo_disponibles: bool = True) -> QuerySet:
     """Devuelve todos los precios de un GTIN ordenados por precio final.
 
     Los precios nulos y, por defecto, las ofertas no disponibles se excluyen.
@@ -69,16 +65,19 @@ def precios_por_gtin(
     if not gtin:
         return Prices.objects.none()
 
-    precios = Prices.objects.select_related("id_store", "currency").filter(
+    precios = Prices.visibles.select_related("id_store", "currency").filter(
         gtin_id=gtin,
         price__isnull=False,
+        currency__name__iexact="colones",
     )
     if solo_disponibles:
         precios = precios.filter(is_available=True)
 
-    return anotar_precio_final(precios).annotate(
-        ranking=Window(Rank(), order_by=F("final_price").asc())
-    ).order_by("final_price", "id_store__name", "id")
+    return (
+        anotar_precio_final(precios)
+        .annotate(ranking=Window(Rank(), order_by=F("final_price").asc()))
+        .order_by("final_price", "id_store__name", "id")
+    )
 
 
 def con_precio_minimo(variantes):
@@ -93,22 +92,24 @@ def con_precio_minimo(variantes):
         return variantes
 
     gtins = [variante.gtin for variante in variantes]
+    precios = Prices.visibles.filter(
+        gtin_id__in=gtins,
+        is_available=True,
+        price__isnull=False,
+        currency__name__iexact="colones",
+    ).select_related("id_store", "currency")
     precios = (
-        Prices.objects.filter(
-            gtin_id__in=gtins,
-            is_available=True,
-            price__isnull=False,
+        anotar_precio_final(precios)
+        .annotate(
+            posicion=Window(
+                RowNumber(),
+                partition_by=F("gtin_id"),
+                order_by=(F("final_price").asc(), F("id")),
+            ),
+            ranking=Value(1),
         )
-        .select_related("id_store", "currency")
+        .filter(posicion=1)
     )
-    precios = anotar_precio_final(precios).annotate(
-        posicion=Window(
-            RowNumber(),
-            partition_by=F("gtin_id"),
-            order_by=(F("final_price").asc(), F("id")),
-        ),
-        ranking=Value(1),
-    ).filter(posicion=1)
 
     minimos = {precio.gtin_id: precio for precio in precios}
     for variante in variantes:

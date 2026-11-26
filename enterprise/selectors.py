@@ -36,7 +36,7 @@ PRODUCTOS_POR_PAGINA = 20
 
 def _competidor_menor(store_id):
     competidores = (
-        Prices.objects.filter(
+        Prices.visibles.filter(
             gtin_id=OuterRef("gtin_id"),
             is_available=True,
             price__isnull=False,
@@ -91,7 +91,15 @@ def _anotar_competitividad(queryset):
     )
 
 
-def filtrar_catalogo(queryset, busqueda="", estado="", competitividad="", categoria="", marca="", orden=""):
+def filtrar_catalogo(
+    queryset,
+    busqueda="",
+    estado="",
+    competitividad="",
+    categoria="",
+    marca="",
+    orden="",
+):
     """Aplica búsqueda, filtros y orden del catálogo."""
     if busqueda:
         queryset = queryset.filter(
@@ -214,7 +222,9 @@ def estadisticas_catalogo(store, ahora=None):
     queryset = _anotar_competitividad(catalogo_base(store))
     conteos = {
         fila["competitiveness"]: fila["total"]
-        for fila in queryset.values("competitiveness").annotate(total=Count("id"))
+        for fila in queryset.values("competitiveness").annotate(
+            total=Count("id")
+        )
     }
     total = queryset.count()
     activos = queryset.filter(is_available=True).count()
@@ -274,14 +284,18 @@ def problemas_de_precio(precio, ahora=None):
         problemas.append(
             {
                 "key": "above_market",
-                "title": translate_text_lazy("El precio está por encima del mercado"),
+                "title": translate_text_lazy(
+                    "El precio está por encima del mercado"
+                ),
                 "description": translate_text_lazy(
                     "Revise el precio o aplique un descuento para competir."
                 ),
                 "action_label": translate_text_lazy("Revisar precio"),
             }
         )
-    if precio.updated_at and precio.updated_at <= limite_precio_desactualizado(ahora):
+    if precio.updated_at and precio.updated_at <= limite_precio_desactualizado(
+        ahora
+    ):
         problemas.append(
             {
                 "key": "stale",
@@ -324,7 +338,9 @@ def problemas_de_precio(precio, ahora=None):
         problemas.append(
             {
                 "key": "missing_attributes",
-                "title": translate_text_lazy("Faltan características del producto"),
+                "title": translate_text_lazy(
+                    "Faltan características del producto"
+                ),
                 "description": translate_text_lazy(
                     "La información canónica es compartida y debe revisarse en el catálogo."
                 ),

@@ -101,7 +101,9 @@ def catalogo(request):
         "orden": request.GET.get("orden", "").strip(),
     }
     queryset = catalogo_de_tienda(store, parametros)
-    pagina = Paginator(queryset, PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    pagina = Paginator(queryset, PRODUCTOS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
     return render(
         request,
         "enterprise/catalogo.html",
@@ -159,12 +161,16 @@ def nuevo_producto(request):
                             "El producto se agregó al catálogo de su tienda."
                         ),
                     )
-                return redirect("enterprise:detalle_producto", price_id=precio.pk)
+                return redirect(
+                    "enterprise:detalle_producto", price_id=precio.pk
+                )
     else:
         form = ProductoEmpresaForm()
 
     if request.method == "POST":
-        gtin_existente = form.cleaned_data.get("variante_existente") is not None
+        gtin_existente = (
+            form.cleaned_data.get("variante_existente") is not None
+        )
 
     imagenes_enviadas = (
         request.POST.getlist("image_urls") if request.method == "POST" else []
@@ -246,9 +252,13 @@ def editar_producto(request, price_id):
                 else:
                     messages.success(
                         request,
-                        translate_text_lazy("El precio se actualizó correctamente."),
+                        translate_text_lazy(
+                            "El precio se actualizó correctamente."
+                        ),
                     )
-                return redirect("enterprise:detalle_producto", price_id=price_id)
+                return redirect(
+                    "enterprise:detalle_producto", price_id=price_id
+                )
     else:
         form = PrecioEmpresaForm(
             initial={
@@ -317,7 +327,9 @@ def detalle_producto(request, price_id):
                         "Las imágenes del producto se actualizaron correctamente."
                     ),
                 )
-                return redirect("enterprise:detalle_producto", price_id=price_id)
+                return redirect(
+                    "enterprise:detalle_producto", price_id=price_id
+                )
     else:
         form = ImagenesEmpresaForm(current_image_count=len(imagenes))
 
@@ -325,7 +337,9 @@ def detalle_producto(request, price_id):
         request.POST.getlist("image_urls") if request.method == "POST" else []
     )
     nuevas_urls = (
-        request.POST.getlist("new_image_urls") if request.method == "POST" else []
+        request.POST.getlist("new_image_urls")
+        if request.method == "POST"
+        else []
     )
     for indice, imagen in enumerate(imagenes):
         imagen.url_ingresada = (
@@ -412,7 +426,9 @@ def desactivar_producto(request, price_id):
         else:
             messages.success(
                 request,
-                translate_text_lazy("El producto se marcó como no disponible."),
+                translate_text_lazy(
+                    "El producto se marcó como no disponible."
+                ),
             )
             return redirect("enterprise:detalle_producto", price_id=price_id)
     return render(
@@ -447,7 +463,9 @@ def cargar_csv(request):
             except ErrorCSV as error:
                 messages.error(request, str(error))
             else:
-                importados = sum(1 for resultado in resultados if resultado.importado)
+                importados = sum(
+                    1 for resultado in resultados if resultado.importado
+                )
                 errores = len(resultados) - importados
                 messages.success(
                     request,
@@ -472,7 +490,9 @@ def cargar_csv(request):
 @role_required(User.Role.ENTERPRISE)
 def plantilla_csv(request):
     respuesta = HttpResponse(content_type="text/csv; charset=utf-8")
-    respuesta["Content-Disposition"] = 'attachment; filename="plantilla_productos.csv"'
+    respuesta["Content-Disposition"] = (
+        'attachment; filename="plantilla_productos.csv"'
+    )
     writer = csv.writer(respuesta)
     writer.writerow(COLUMNAS)
     return respuesta
@@ -485,5 +505,7 @@ def reporte_pdf(request):
     pdf = generar_pdf_empresa(store)
     respuesta = HttpResponse(pdf, content_type="application/pdf")
     nombre = slugify(store.name) or "empresa"
-    respuesta["Content-Disposition"] = f'attachment; filename="reporte-{nombre}.pdf"'
+    respuesta["Content-Disposition"] = (
+        f'attachment; filename="reporte-{nombre}.pdf"'
+    )
     return respuesta

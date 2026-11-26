@@ -1,0 +1,7 @@
+{% load site_i18n %}{# Un campo de los formularios de comercios (frontend/html/business-producto-formulario.html). campo: el BoundField; obligatorio: para el asterisco. #}
+<div>
+  <label class="block text-body-sm font-semibold text-on-surface mb-1.5" for="{{ campo.id_for_label }}">{{ campo.label }}{% if obligatorio %} <span class="text-error">*</span>{% endif %}</label>
+  {{ campo }}
+  {% for error in campo.errors %}<p class="mt-1.5 text-body-sm text-error">{{ error }}</p>{% endfor %}
+  {% if ayuda %}<p class="mt-1.5 text-body-sm text-secondary">{% t ayuda %}</p>{% endif %}
+</div>

@@ -1,3 +1,5 @@
+"""Modelos de datos de la aplicación ingestion."""
+
 from django.conf import settings
 from django.db import models
 
@@ -17,26 +19,52 @@ class Incident(models.Model):
         INVALID_BARCODE = "invalid_barcode", "Código de barras inválido"
         # Actualización de precios desde las tiendas (SCRUM-56)
         DOWNLOAD_FAILED = "download_failed", "No se pudo descargar la página"
-        PRODUCT_NOT_FOUND = "product_not_found", "Producto no encontrado en la tienda"
-        PRICE_NOT_FOUND = "price_not_found", "Precio no encontrado en la página"
-        BARCODE_MISMATCH = "barcode_mismatch", "El código de barras no coincide"
+        PRODUCT_NOT_FOUND = (
+            "product_not_found",
+            "Producto no encontrado en la tienda",
+        )
+        PRICE_NOT_FOUND = (
+            "price_not_found",
+            "Precio no encontrado en la página",
+        )
+        BARCODE_MISMATCH = (
+            "barcode_mismatch",
+            "El código de barras no coincide",
+        )
         SUSPICIOUS_PRICE = "suspicious_price", "Cambio de precio sospechoso"
 
-    kind = models.CharField("tipo", max_length=30, choices=Kind.choices, default=Kind.INVALID_BARCODE)
-    store_name = models.CharField("comercio", max_length=NAME_MAX_LENGTH, blank=True)
-    product_name = models.CharField("producto", max_length=NAME_MAX_LENGTH, blank=True)
+    kind = models.CharField(
+        "tipo",
+        max_length=30,
+        choices=Kind.choices,
+        default=Kind.INVALID_BARCODE,
+    )
+    store_name = models.CharField(
+        "comercio", max_length=NAME_MAX_LENGTH, blank=True
+    )
+    product_name = models.CharField(
+        "producto", max_length=NAME_MAX_LENGTH, blank=True
+    )
     # Tal como llegó de la fuente: puede estar vacío o ser basura, por eso no es una FK.
-    gtin = models.CharField("código de barras recibido", max_length=GTIN_MAX_LENGTH, blank=True)
+    gtin = models.CharField(
+        "código de barras recibido", max_length=GTIN_MAX_LENGTH, blank=True
+    )
     reason = models.TextField("motivo")
     # Los campos nuevos llevan db_default para que el código que ya está corriendo (el
     # actualizar_precios de cada hora) pueda seguir guardando incidencias antes de actualizarse.
 
     # Lo que se leyó de la tienda, para resolverla sin volver a descargar la página: el precio
     # nuevo de un cambio sospechoso o los códigos de barras que publica la tienda.
-    details = models.JSONField("datos leídos de la tienda", default=dict, db_default={}, blank=True)
+    details = models.JSONField(
+        "datos leídos de la tienda", default=dict, db_default={}, blank=True
+    )
     created_at = models.DateTimeField("fecha", auto_now_add=True)
     status = models.CharField(
-        "estado", max_length=20, choices=Status.choices, default=Status.PENDING, db_default=Status.PENDING
+        "estado",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_default=Status.PENDING,
     )
     resolved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -47,7 +75,12 @@ class Incident(models.Model):
         related_name="+",
     )
     resolved_at = models.DateTimeField("resuelta el", null=True, blank=True)
-    resolution = models.CharField("qué se hizo", max_length=RESOLUTION_MAX_LENGTH, blank=True, db_default="")
+    resolution = models.CharField(
+        "qué se hizo",
+        max_length=RESOLUTION_MAX_LENGTH,
+        blank=True,
+        db_default="",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -97,18 +130,33 @@ class StoreProduct(models.Model):
     brand = models.CharField("marca", max_length=100, blank=True)
     product_model = models.CharField("modelo", max_length=100, blank=True)
     color = models.CharField("color", max_length=60, blank=True)
-    category = models.CharField("categoría en la tienda", max_length=255, blank=True)
+    category = models.CharField(
+        "categoría en la tienda", max_length=255, blank=True
+    )
     image_url = models.URLField("imagen", max_length=1000, blank=True)
-    list_price = models.PositiveIntegerField("precio de lista", null=True, blank=True)
-    final_price = models.PositiveIntegerField("precio final", null=True, blank=True)
+    list_price = models.PositiveIntegerField(
+        "precio de lista", null=True, blank=True
+    )
+    final_price = models.PositiveIntegerField(
+        "precio final", null=True, blank=True
+    )
     is_available = models.BooleanField("disponible", default=True)
     barcodes = models.JSONField("códigos de barras", default=list, blank=True)
-    status = models.CharField("estado", max_length=20, choices=Status.choices, default=Status.NO_MATCH)
+    status = models.CharField(
+        "estado",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NO_MATCH,
+    )
     # El gtin de la variante sugerida (product_variants.gtin, la misma llave que usa prices).
     # No es una llave foránea para no depender de las migraciones de products.
-    suggested_gtin = models.CharField("variante del catálogo (código de barras)", max_length=14, blank=True)
+    suggested_gtin = models.CharField(
+        "variante del catálogo (código de barras)", max_length=14, blank=True
+    )
     score = models.PositiveSmallIntegerField("puntaje", null=True, blank=True)
-    match_reason = models.CharField("por qué coincide", max_length=255, blank=True)
+    match_reason = models.CharField(
+        "por qué coincide", max_length=255, blank=True
+    )
     created_at = models.DateTimeField("obtenido", auto_now_add=True)
     updated_at = models.DateTimeField("actualizado", auto_now=True)
 
@@ -126,7 +174,11 @@ class StoreProduct(models.Model):
 
         if not self.suggested_gtin:
             return None
-        return ProductVariants.objects.select_related("product__brand").filter(gtin=self.suggested_gtin).first()
+        return (
+            ProductVariants.objects.select_related("product__brand")
+            .filter(gtin=self.suggested_gtin)
+            .first()
+        )
 
 
 class ManualRun(models.Model):
@@ -154,9 +206,15 @@ class ManualRun(models.Model):
     store_name = models.CharField("comercio", max_length=100)
     # La fila de stores (tabla de Supabase): no es una llave foránea, como en StoreProduct.
     store_id = models.BigIntegerField("id del comercio", null=True, blank=True)
-    runner = models.CharField("dónde corre", max_length=20, choices=Runner.choices)
-    status = models.CharField("estado", max_length=20, choices=Status.choices, default=Status.PENDING)
-    minutes = models.PositiveSmallIntegerField("minutos como máximo", default=20)
+    runner = models.CharField(
+        "dónde corre", max_length=20, choices=Runner.choices
+    )
+    status = models.CharField(
+        "estado", max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    minutes = models.PositiveSmallIntegerField(
+        "minutos como máximo", default=20
+    )
     all_prices = models.BooleanField("revisar todos los precios", default=True)
     dry_run = models.BooleanField("modo de prueba", default=False)
     requested_by = models.ForeignKey(
@@ -171,9 +229,13 @@ class ManualRun(models.Model):
     updated_at = models.DateTimeField("actualizada el", auto_now=True)
     started_at = models.DateTimeField("empezó", null=True, blank=True)
     finished_at = models.DateTimeField("terminó", null=True, blank=True)
-    summary = models.CharField("resultado", max_length=SUMMARY_MAX_LENGTH, blank=True)
+    summary = models.CharField(
+        "resultado", max_length=SUMMARY_MAX_LENGTH, blank=True
+    )
     output = models.TextField("salida del comando", blank=True)
-    github_run_id = models.BigIntegerField("corrida de GitHub", null=True, blank=True)
+    github_run_id = models.BigIntegerField(
+        "corrida de GitHub", null=True, blank=True
+    )
     github_url = models.URLField("enlace a GitHub", max_length=500, blank=True)
 
     class Meta:

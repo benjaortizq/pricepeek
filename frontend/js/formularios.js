@@ -8,9 +8,12 @@ document.querySelectorAll('.campo input[type="password"]').forEach(function (inp
   boton.type = 'button';
   boton.className = 'absolute right-3.5 text-secondary hover:text-on-surface p-1 rounded-full transition-colors flex items-center justify-center';
   boton.setAttribute('aria-label', 'Mostrar u ocultar contraseña');
-  boton.innerHTML = '<span class="material-symbols-outlined text-[20px]">visibility</span>';
+  const icono = document.createElement('span');
+  icono.className = 'material-symbols-outlined text-[20px]';
+  icono.textContent = 'visibility';
+  boton.appendChild(icono);
   boton.addEventListener('click', function () {
-    PricePeek.togglePassword(input, boton.firstElementChild);
+    PricePeek.togglePassword(input, icono);
   });
   input.classList.add('con-ojo');
   input.parentElement.appendChild(boton);

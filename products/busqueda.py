@@ -15,18 +15,29 @@ from django.db.models import Case, IntegerField, Q, Value, When
 from .models import ProductImages, ProductVariants, Products
 
 # Las letras que en el catálogo pueden venir con tilde (en mayúscula o minúscula).
-_CON_TILDE = {"a": "aáàäâ", "e": "eéèëê", "i": "iíìïî", "o": "oóòöô", "u": "uúùüû", "n": "nñ"}
+_CON_TILDE = {
+    "a": "aáàäâ",
+    "e": "eéèëê",
+    "i": "iíìïî",
+    "o": "oóòöô",
+    "u": "uúùüû",
+    "n": "nñ",
+}
 # Entre dos letras puede haber un signo (Coca-Cola, M&M's), pero no un espacio: si no, "sal"
 # encontraría "galleta[s a l]a crema". Sirve igual en Postgres y en SQLite (Python).
 _SIGNO = r"[^\w\s]?"
 
 
 def _sin_tildes(texto):
-    return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFD", texto)
+        if unicodedata.category(c) != "Mn"
+    )
 
 
 def palabra_normalizada(palabra):
-    """"Café" -> "cafe", "M&M's" -> "mms": en minúscula, sin tildes y solo con letras y números."""
+    """ "Café" -> "cafe", "M&M's" -> "mms": en minúscula, sin tildes y solo con letras y números."""
     return re.sub(r"[^a-z0-9]", "", _sin_tildes(palabra.lower()))
 
 
@@ -34,7 +45,11 @@ def _patron_de_letra(letra):
     if letra.isdigit():
         return letra  # los números, tal cual: 100 no es 10
     variantes = _CON_TILDE.get(letra, letra)
-    return f"[{variantes}{variantes.upper()}]+" if len(variantes) > 1 else f"{letra}+"
+    return (
+        f"[{variantes}{variantes.upper()}]+"
+        if len(variantes) > 1
+        else f"{letra}+"
+    )
 
 
 def patron_de_busqueda(palabra):
@@ -55,14 +70,23 @@ def buscar_productos(palabra):
     """
     palabra = (palabra or "").strip()
     productos = Products.objects.select_related("brand", "category")
-    patrones = [patron for patron in map(patron_de_busqueda, palabra.split()) if patron]
+    patrones = [
+        patron for patron in map(patron_de_busqueda, palabra.split()) if patron
+    ]
     if not patrones:
         return productos.order_by("name")
     for patron in patrones:
-        productos = productos.filter(Q(name__iregex=patron) | Q(brand__name__iregex=patron))
+        productos = productos.filter(
+            Q(name__iregex=patron) | Q(brand__name__iregex=patron)
+        )
     tal_cual = Q(name__icontains=palabra) | Q(brand__name__icontains=palabra)
-    orden = Case(When(tal_cual, then=Value(0)), default=Value(1), output_field=IntegerField())
+    orden = Case(
+        When(tal_cual, then=Value(0)),
+        default=Value(1),
+        output_field=IntegerField(),
+    )
     return productos.annotate(parecido=orden).order_by("parecido", "name")
+
 
 def buscar_variantes(palabra):
     """Variantes que tienen cada palabra (escrita parecido) en la presentación, el producto o la marca.
@@ -76,7 +100,9 @@ def buscar_variantes(palabra):
         "product", "product__brand", "product__category"
     )
     palabra = (palabra or "").strip()
-    patrones = [patron for patron in map(patron_de_busqueda, palabra.split()) if patron]
+    patrones = [
+        patron for patron in map(patron_de_busqueda, palabra.split()) if patron
+    ]
     if not patrones:
         return variantes.order_by("product__name", "name", "gtin")
     for patron in patrones:
@@ -90,8 +116,14 @@ def buscar_variantes(palabra):
         | Q(product__name__icontains=palabra)
         | Q(product__brand__name__icontains=palabra)
     )
-    orden = Case(When(tal_cual, then=Value(0)), default=Value(1), output_field=IntegerField())
-    return variantes.annotate(parecido=orden).order_by("parecido", "product__name", "name", "gtin")
+    orden = Case(
+        When(tal_cual, then=Value(0)),
+        default=Value(1),
+        output_field=IntegerField(),
+    )
+    return variantes.annotate(parecido=orden).order_by(
+        "parecido", "product__name", "name", "gtin"
+    )
 
 
 def _con_imagen(objetos, campo):
@@ -102,7 +134,9 @@ def _con_imagen(objetos, campo):
     """
     objetos = list(objetos)
     imagenes = (
-        ProductImages.objects.filter(**{f"{campo}__in": [objeto.pk for objeto in objetos]})
+        ProductImages.objects.filter(
+            **{f"{campo}__in": [objeto.pk for objeto in objetos]}
+        )
         .order_by(campo, "-is_main", "id")
         .values_list(campo, "image_url")
     )

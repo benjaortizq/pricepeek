@@ -1,7 +1,10 @@
+"""Vistas HTTP de la aplicación reviews."""
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -12,11 +15,19 @@ from django.views.decorators.http import require_POST
 from accounts.decorators import role_required
 from accounts.models import User
 from accounts.views import INFRACCIONES_REITERADAS
+from auditoria.registro import Accion, registrar
 from core.panel import indicador, pestanas, plural
 from products.models import Products
 from .eliminacion import NoSePuedeEliminar, infracciones_por_autor
-from .eliminacion import eliminar_resena as eliminar_por_politicas  # eliminar_resena es la vista del autor
-from .forms import EliminarResenaForm, ModerationForm, ReviewForm, ReviewReportForm
+from .eliminacion import (
+    eliminar_resena as eliminar_por_politicas,
+)  # eliminar_resena es la vista del autor
+from .forms import (
+    EliminarResenaForm,
+    ModerationForm,
+    ReviewForm,
+    ReviewReportForm,
+)
 from .indicadores import resumen_de_moderacion
 from .models import ReviewDeletion, ReviewPhoto, ReviewReport, Reviews
 
@@ -35,7 +46,11 @@ def _delete_review_photo(photo):
 def _owned_review(request, pk):
     if not request.user.is_authenticated or request.user.role != "client":
         raise PermissionDenied
-    return get_object_or_404(Reviews.objects.select_related("variant"), pk=pk, user_id=request.user.pk)
+    return get_object_or_404(
+        Reviews.objects.select_related("variant"),
+        pk=pk,
+        user_id=request.user.pk,
+    )
 
 
 @login_required
@@ -61,7 +76,9 @@ def editar_resena(request, pk):
                 _delete_review_photo(foto)
             return redirect("detalle_producto", pk=producto_id)
     else:
-        form = ReviewForm(initial={"rating": resena.score, "content": resena.content})
+        form = ReviewForm(
+            initial={"rating": resena.score, "content": resena.content}
+        )
     producto = get_object_or_404(Products, pk=producto_id)
     return render(
         request,
@@ -80,7 +97,9 @@ def eliminar_resena(request, pk):
     if foto:
         _delete_review_photo(foto)
     # Sin la reseña ya no hay nada que moderar: que no queden en la cola del administrador.
-    ReviewReport.objects.filter(review_id=resena.pk, status=ReviewReport.Status.PENDING).delete()
+    ReviewReport.objects.filter(
+        review_id=resena.pk, status=ReviewReport.Status.PENDING
+    ).delete()
     resena.delete()
     return redirect("detalle_producto", pk=producto_id)
 
@@ -106,27 +125,44 @@ def producto_reseñas(request, pk):
 @require_POST
 def reportar_resena(request, review_id):
     """El cliente reporta una reseña ajena como inapropiada (RF-28)."""
-    resena = get_object_or_404(Reviews.objects.select_related("variant"), pk=review_id)
+    resena = get_object_or_404(
+        Reviews.objects.select_related("variant"), pk=review_id
+    )
     destino = redirect("detalle_producto", pk=resena.variant.product_id)
 
     if resena.user_id == request.user.pk:
-        messages.error(request, "No se envió el reporte porque corresponde a su propia reseña. Solo puede reportar reseñas de otras personas.")
+        messages.error(
+            request,
+            "No se envió el reporte porque corresponde a su propia reseña. Solo puede reportar reseñas de otras personas.",
+        )
         return destino
 
     form = ReviewReportForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "No se envió el reporte porque el motivo está vacío o supera los 500 caracteres. Escriba un motivo de hasta 500 caracteres e inténtelo de nuevo.")
+        messages.error(
+            request,
+            "No se envió el reporte porque el motivo está vacío o supera los 500 caracteres. Escriba un motivo de hasta 500 caracteres e inténtelo de nuevo.",
+        )
         return destino
 
     _, creado = ReviewReport.objects.get_or_create(
         review_id=resena.pk,
         reporter=request.user,
-        defaults={"reason": form.cleaned_data["reason"], "review_author_id": resena.user_id},
+        defaults={
+            "reason": form.cleaned_data["reason"],
+            "review_author_id": resena.user_id,
+        },
     )
     if creado:
-        messages.success(request, "Gracias. Su reporte fue enviado y el equipo de PricePeek lo revisará.")
+        messages.success(
+            request,
+            "Gracias. Su reporte fue enviado y el equipo de PricePeek lo revisará.",
+        )
     else:
-        messages.info(request, "Esta reseña ya fue reportada por usted; no necesita enviarla de nuevo.")
+        messages.info(
+            request,
+            "Esta reseña ya fue reportada por usted; no necesita enviarla de nuevo.",
+        )
     return destino
 
 
@@ -140,20 +176,29 @@ def resenas_reportadas(request):
     )
     resenas = {
         resena.pk: resena
-        for resena in Reviews.objects.select_related("variant__product", "user").filter(
-            pk__in={reporte.review_id for reporte in pendientes}
-        )
+        for resena in Reviews.objects.select_related(
+            "variant__product", "user"
+        ).filter(pk__in={reporte.review_id for reporte in pendientes})
     }
     grupos = {}
     for reporte in pendientes:
         resena = resenas.get(reporte.review_id)
-        if resena is None:  # la reseña ya no existe (por ejemplo, su autor la borró)
+        if (
+            resena is None
+        ):  # la reseña ya no existe (por ejemplo, su autor la borró)
             continue
-        grupo = grupos.setdefault(reporte.review_id, {"resena": resena, "reportes": []})
+        grupo = grupos.setdefault(
+            reporte.review_id, {"resena": resena, "reportes": []}
+        )
         grupo["reportes"].append(reporte)
-    fotos = {foto.review_id: foto for foto in ReviewPhoto.objects.filter(review_id__in=list(grupos))}
+    fotos = {
+        foto.review_id: foto
+        for foto in ReviewPhoto.objects.filter(review_id__in=list(grupos))
+    }
     # Reseñas de cada autor que ya se eliminaron antes, para saber si incumple de forma reiterada.
-    infracciones = infracciones_por_autor({grupo["resena"].user_id for grupo in grupos.values()})
+    infracciones = infracciones_por_autor(
+        {grupo["resena"].user_id for grupo in grupos.values()}
+    )
     for review_id, grupo in grupos.items():
         grupo["foto"] = fotos.get(review_id)
         grupo["infracciones"] = infracciones.get(grupo["resena"].user_id, 0)
@@ -164,16 +209,24 @@ def resenas_reportadas(request):
     filtros = {
         "": grupos,
         "con-foto": [grupo for grupo in grupos if grupo["foto"]],
-        "reiterados": [grupo for grupo in grupos if grupo["infracciones"] >= INFRACCIONES_REITERADAS],
+        "reiterados": [
+            grupo
+            for grupo in grupos
+            if grupo["infracciones"] >= INFRACCIONES_REITERADAS
+        ],
     }
     filtro = request.GET.get("filtro", "")
     if filtro not in filtros:
         filtro = ""
-    pagina = Paginator(filtros[filtro], RESENAS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    pagina = Paginator(filtros[filtro], RESENAS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
 
     # La que se ve en el panel de inspección: la elegida con «Inspeccionar» o la primera de la página.
     revisar = request.GET.get("revisar", "")
-    seleccionado = next((g for g in grupos if str(g["resena"].pk) == revisar), None)
+    seleccionado = next(
+        (g for g in grupos if str(g["resena"].pk) == revisar), None
+    )
     if seleccionado is None and pagina.object_list:
         seleccionado = pagina.object_list[0]
 
@@ -192,11 +245,19 @@ def resenas_reportadas(request):
                 [
                     ("", "Todas las reportadas", len(filtros[""])),
                     ("con-foto", "Con foto", len(filtros["con-foto"])),
-                    ("reiterados", "Autor reiterado", len(filtros["reiterados"])),
+                    (
+                        "reiterados",
+                        "Autor reiterado",
+                        len(filtros["reiterados"]),
+                    ),
                 ],
                 filtro,
             ),
-            "total_texto": plural(pagina.paginator.count, "reseña reportada", "reseñas reportadas"),
+            "total_texto": plural(
+                pagina.paginator.count,
+                "reseña reportada",
+                "reseñas reportadas",
+            ),
             "reiteradas": INFRACCIONES_REITERADAS,
             "politicas": ReviewDeletion.SELECTABLE,
         },
@@ -215,22 +276,36 @@ def tarjetas_de_moderacion(datos):
             insignia=f"+{datos['reportes_hoy']} hoy",
             tono="alerta" if datos["reportes_hoy"] else "",
             icono="arrow_upward" if datos["reportes_hoy"] else "",
-            pie_izq=plural(datos["reportes_pendientes"], "reporte pendiente", "reportes pendientes"),
+            pie_izq=plural(
+                datos["reportes_pendientes"],
+                "reporte pendiente",
+                "reportes pendientes",
+            ),
             destacada=True,
         ),
         indicador(
             "Tiempo prom. resolución",
             tiempo[0],
             unidad=tiempo[1],
-            pie_izq="Últimos 30 días" if datos["tiempo_promedio"] else "Sin datos",
+            pie_izq="Últimos 30 días"
+            if datos["tiempo_promedio"]
+            else "Sin datos",
         ),
         indicador(
             "Tasa de eliminación",
             "—" if tasa is None else tasa,
             unidad="" if tasa is None else "%",
             insignia="Últimos 30 días",
-            pie_izq=plural(datos["eliminadas_30"], "reseña eliminada", "reseñas eliminadas"),
-            pie_der=plural(datos["mantenidas_30"], "reseña mantenida", "reseñas mantenidas"),
+            pie_izq=plural(
+                datos["eliminadas_30"],
+                "reseña eliminada",
+                "reseñas eliminadas",
+            ),
+            pie_der=plural(
+                datos["mantenidas_30"],
+                "reseña mantenida",
+                "reseñas mantenidas",
+            ),
         ),
         indicador(
             "Eliminadas este mes",
@@ -249,7 +324,10 @@ def moderar_resena(request, review_id):
         review_id=review_id, status=ReviewReport.Status.PENDING
     )
     if not pendientes.exists():
-        messages.info(request, "Esta reseña ya no tiene reportes pendientes. Actualice la lista para ver las reseñas que todavía requieren revisión.")
+        messages.info(
+            request,
+            "Esta reseña ya no tiene reportes pendientes. Actualice la lista para ver las reseñas que todavía requieren revisión.",
+        )
         return redirect("resenas_reportadas")
 
     form = ModerationForm(request.POST)
@@ -260,29 +338,87 @@ def moderar_resena(request, review_id):
         return redirect("resenas_reportadas")
 
     nota = form.cleaned_data["note"]
-    resena = Reviews.objects.select_related("variant__product", "user").filter(pk=review_id).first()
+    resena = (
+        Reviews.objects.select_related("variant__product", "user")
+        .filter(pk=review_id)
+        .first()
+    )
     if resena is None:
         # Su autor la borró: ya no hay nada que moderar.
         pendientes.delete()
-        messages.info(request, "Esa reseña ya no existe; sus reportes salieron de la cola.")
+        messages.info(
+            request,
+            "Esa reseña ya no existe; sus reportes salieron de la cola.",
+        )
         return redirect("resenas_reportadas")
 
     if form.cleaned_data["action"] == ModerationForm.DELETE:
         eliminacion = eliminar_por_politicas(
-            resena, request.user, form.cleaned_data["policy"], nota, form.cleaned_data["suspend"]
+            resena,
+            request.user,
+            form.cleaned_data["policy"],
+            nota,
+            form.cleaned_data["suspend"],
         )
+        registrar_eliminacion(request.user, eliminacion)
         avisar_eliminacion(request, eliminacion)
         return redirect("resenas_reportadas")
 
-    pendientes.update(
-        status=ReviewReport.Status.KEPT,
-        resolved_by_id=request.user.pk,
-        resolved_at=timezone.now(),
-        resolution_note=nota,
-        review_author_id=resena.user_id,  # por si el reporte se creó antes de guardar el autor
+    with transaction.atomic():
+        reportes = pendientes.update(
+            status=ReviewReport.Status.KEPT,
+            resolved_by_id=request.user.pk,
+            resolved_at=timezone.now(),
+            resolution_note=nota,
+            review_author_id=resena.user_id,  # por si el reporte se creó antes de guardar el autor
+        )
+        registrar(
+            request.user,
+            Accion.REVIEW_KEEP,
+            resena.pk,
+            nombre_de_la_resena(
+                resena.variant.product.name, getattr(resena.user, "email", "")
+            ),
+            {"Nota": nota or "—", "Reportes resueltos": reportes},
+        )
+    messages.success(
+        request, "La reseña se mantiene y los reportes quedaron resueltos."
     )
-    messages.success(request, "La reseña se mantiene y los reportes quedaron resueltos.")
     return redirect("resenas_reportadas")
+
+
+def nombre_de_la_resena(producto, autor):
+    """Cómo aparece una reseña en la bitácora: su producto y su autor."""
+    return f"{producto} — {autor or 'autor desconocido'}"
+
+
+def registrar_eliminacion(administrador, eliminacion):
+    """Anota en la bitácora la reseña eliminada y, si se suspendió, la cuenta del autor."""
+    registro = eliminacion.registro
+    autor = getattr(registro.author, "email", "")
+    registrar(
+        administrador,
+        Accion.REVIEW_DELETE,
+        registro.review_id,
+        nombre_de_la_resena(registro.product_name, autor),
+        {
+            "Política incumplida": registro.get_policy_display(),
+            "Razón": registro.reason,
+            "Reportes resueltos": registro.reports,
+            "Autor suspendido": eliminacion.suspendido,
+        },
+    )
+    if eliminacion.suspendido:
+        registrar(
+            administrador,
+            Accion.CLIENT_SUSPEND,
+            registro.author_id,
+            autor,
+            {
+                "Motivo": registro.reason,
+                "Origen": "Eliminación de una reseña",
+            },
+        )
 
 
 def avisar_eliminacion(request, eliminacion):
@@ -291,7 +427,10 @@ def avisar_eliminacion(request, eliminacion):
         mensaje += " La cuenta del autor fue suspendida."
     messages.success(request, mensaje)
     if eliminacion.foto_sin_borrar:
-        messages.warning(request, "La reseña se eliminó, pero no se pudo borrar su foto del almacenamiento. Avise al equipo de soporte para que elimine el archivo pendiente.")
+        messages.warning(
+            request,
+            "La reseña se eliminó, pero no se pudo borrar su foto del almacenamiento. Avise al equipo de soporte para que elimine el archivo pendiente.",
+        )
 
 
 # --- Todas las reseñas (issue «Eliminación de reseñas») ---
@@ -337,35 +476,54 @@ def todas_las_resenas(request):
         calificacion = ""
 
     con_reportes = set(
-        ReviewReport.objects.filter(status=ReviewReport.Status.PENDING).values_list("review_id", flat=True)
+        ReviewReport.objects.filter(
+            status=ReviewReport.Status.PENDING
+        ).values_list("review_id", flat=True)
     )
-    resenas = Reviews.objects.select_related("variant__product__brand", "user").order_by("-created_at", "-id")
+    resenas = Reviews.objects.select_related(
+        "variant__product__brand", "user"
+    ).order_by("-created_at", "-id")
     resenas = _buscar_resenas(resenas, busqueda)
-    eliminadas = _buscar_eliminadas(ReviewDeletion.objects.select_related("author", "deleted_by"), busqueda)
+    eliminadas = _buscar_eliminadas(
+        ReviewDeletion.objects.select_related("author", "deleted_by"), busqueda
+    )
     if calificacion:
         resenas = resenas.filter(score=int(calificacion))
         eliminadas = eliminadas.filter(score=int(calificacion))
     reportadas = resenas.filter(pk__in=con_reportes)
 
-    lista = {"": resenas, "reportadas": reportadas, "eliminadas": eliminadas}[vista]
-    pagina = Paginator(lista, RESENAS_EN_LA_LISTA).get_page(request.GET.get("pagina"))
+    lista = {"": resenas, "reportadas": reportadas, "eliminadas": eliminadas}[
+        vista
+    ]
+    pagina = Paginator(lista, RESENAS_EN_LA_LISTA).get_page(
+        request.GET.get("pagina")
+    )
     if vista != "eliminadas":
         ids = [resena.pk for resena in pagina.object_list]
-        fotos = {foto.review_id: foto for foto in ReviewPhoto.objects.filter(review_id__in=ids)}
+        fotos = {
+            foto.review_id: foto
+            for foto in ReviewPhoto.objects.filter(review_id__in=ids)
+        }
         reportes = dict(
-            ReviewReport.objects.filter(status=ReviewReport.Status.PENDING, review_id__in=ids)
+            ReviewReport.objects.filter(
+                status=ReviewReport.Status.PENDING, review_id__in=ids
+            )
             .values("review_id")
             .annotate(total=Count("id"))
             .values_list("review_id", "total")
         )
         primeros = {}
         for review_id, motivo in (
-            ReviewReport.objects.filter(status=ReviewReport.Status.PENDING, review_id__in=ids)
+            ReviewReport.objects.filter(
+                status=ReviewReport.Status.PENDING, review_id__in=ids
+            )
             .order_by("created_at")
             .values_list("review_id", "reason")
         ):
             primeros.setdefault(review_id, motivo)
-        infracciones = infracciones_por_autor({resena.user_id for resena in pagina.object_list})
+        infracciones = infracciones_por_autor(
+            {resena.user_id for resena in pagina.object_list}
+        )
         for resena in pagina.object_list:
             resena.foto = fotos.get(resena.pk)
             resena.reportes = reportes.get(resena.pk, 0)
@@ -389,15 +547,25 @@ def todas_las_resenas(request):
             "politicas": ReviewDeletion.SELECTABLE,
             "reiteradas": INFRACCIONES_REITERADAS,
             "total_texto": (
-                plural(pagina.paginator.count, "reseña eliminada", "reseñas eliminadas")
+                plural(
+                    pagina.paginator.count,
+                    "reseña eliminada",
+                    "reseñas eliminadas",
+                )
                 if vista == "eliminadas"
-                else plural(pagina.paginator.count, "reseña encontrada", "reseñas encontradas")
+                else plural(
+                    pagina.paginator.count,
+                    "reseña encontrada",
+                    "reseñas encontradas",
+                )
             ),
             "kpis": [
                 indicador(
                     "Reseñas publicadas",
                     total,
-                    insignia=f"Promedio {promedio:.1f} ★" if promedio is not None else "",
+                    insignia=f"Promedio {promedio:.1f} ★"
+                    if promedio is not None
+                    else "",
                     tono="marca",
                     pie_izq="De todos los clientes",
                     destacada=True,
@@ -405,12 +573,18 @@ def todas_las_resenas(request):
                 indicador(
                     "Con reportes pendientes",
                     moderacion["en_cola"],
-                    insignia=f"+{moderacion['reportes_hoy']} hoy" if moderacion["reportes_hoy"] else "",
+                    insignia=f"+{moderacion['reportes_hoy']} hoy"
+                    if moderacion["reportes_hoy"]
+                    else "",
                     tono="alerta",
                     icono="arrow_upward",
                     pie_izq="En la cola de revisión",
                 ),
-                indicador("Eliminadas este mes", moderacion["eliminadas_mes"], pie_izq="Por incumplir las políticas"),
+                indicador(
+                    "Eliminadas este mes",
+                    moderacion["eliminadas_mes"],
+                    pie_izq="Por incumplir las políticas",
+                ),
                 indicador(
                     "Eliminadas en total",
                     total_eliminadas,
@@ -425,7 +599,11 @@ def todas_las_resenas(request):
                 "vista",
                 [
                     ("", "Publicadas", resenas.count()),
-                    ("reportadas", "Con reportes pendientes", reportadas.count()),
+                    (
+                        "reportadas",
+                        "Con reportes pendientes",
+                        reportadas.count(),
+                    ),
                     ("eliminadas", "Eliminadas", eliminadas.count()),
                 ],
                 vista,
@@ -437,8 +615,12 @@ def todas_las_resenas(request):
 
 def _volver_a_la_lista(request):
     volver = request.POST.get("volver", "")
-    if volver.startswith(reverse("todas_las_resenas")) and url_has_allowed_host_and_scheme(
-        volver, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    if volver.startswith(
+        reverse("todas_las_resenas")
+    ) and url_has_allowed_host_and_scheme(
+        volver,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
     ):
         return volver
     return reverse("todas_las_resenas")
@@ -448,7 +630,10 @@ def _volver_a_la_lista(request):
 @require_POST
 def eliminar_por_incumplimiento(request, review_id):
     """Elimina una reseña desde «Todas las reseñas»: con la política que incumple y la razón."""
-    resena = get_object_or_404(Reviews.objects.select_related("variant__product", "user"), pk=review_id)
+    resena = get_object_or_404(
+        Reviews.objects.select_related("variant__product", "user"),
+        pk=review_id,
+    )
     form = EliminarResenaForm(request.POST)
     if not form.is_valid():
         for errores in form.errors.values():
@@ -466,5 +651,6 @@ def eliminar_por_incumplimiento(request, review_id):
     except NoSePuedeEliminar as error:
         messages.error(request, str(error))
     else:
+        registrar_eliminacion(request.user, eliminacion)
         avisar_eliminacion(request, eliminacion)
     return redirect(_volver_a_la_lista(request))

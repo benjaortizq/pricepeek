@@ -46,36 +46,44 @@ class HttpFalso:
     texto = json = _responder
 
 
-URL_WALMART = "https://www.walmart.co.cr/apple-iphone-17-8gb-256g-neg-768-6-8/p"
+URL_WALMART = (
+    "https://www.walmart.co.cr/apple-iphone-17-8gb-256g-neg-768-6-8/p"
+)
 API_WALMART = "https://www.walmart.co.cr/api/catalog_system/pub/products/search/apple-iphone-17-8gb-256g-neg-768-6-8/p"
 URL_PERI = "https://www.peridomicilio.com/p/nescafe-clasico-nestle120g-38962"
 URL_MEGASUPER = "https://www.megasuper.com/p/refresco-gaseoso-envase-desechable-coca-cola-25ml-7401006400901"
-URL_AUTOMERCADO = (
-    "https://automercado.cr/p/cereal-endulzado-zucaritas-kelloggs-caja-490-g/id/a4a118ed-f90a-4468-8929-9a3425246bc3"
-)
+URL_AUTOMERCADO = "https://automercado.cr/p/cereal-endulzado-zucaritas-kelloggs-caja-490-g/id/a4a118ed-f90a-4468-8929-9a3425246bc3"
 
 
 class OfertaTests(SimpleTestCase):
     def test_descuento_con_dos_decimales(self):
-        self.assertEqual(Oferta(619900, 472131, True).descuento, Decimal("0.24"))
+        self.assertEqual(
+            Oferta(619900, 472131, True).descuento, Decimal("0.24")
+        )
         self.assertEqual(Oferta(3230, 2745, True).descuento, Decimal("0.15"))
 
     def test_sin_descuento(self):
         self.assertEqual(Oferta(6350, 6350, True).descuento, Decimal("0.00"))
         self.assertEqual(Oferta(None, None, False).descuento, Decimal("0.00"))
-        self.assertEqual(Oferta(1000, 1200, True).descuento, Decimal("0.00"))  # precio final mayor: no es descuento
+        self.assertEqual(
+            Oferta(1000, 1200, True).descuento, Decimal("0.00")
+        )  # precio final mayor: no es descuento
 
 
 class ExtractorParaTests(SimpleTestCase):
     def test_elige_el_extractor_por_dominio(self):
         self.assertIs(extractor_para(URL_WALMART), vtex.extraer)
-        self.assertIs(extractor_para("https://maxipali.co.cr/algo/p"), vtex.extraer)
+        self.assertIs(
+            extractor_para("https://maxipali.co.cr/algo/p"), vtex.extraer
+        )
         self.assertIs(extractor_para(URL_AUTOMERCADO), automercado.extraer)
         self.assertIs(extractor_para(URL_PERI), ld_json.extraer)
         self.assertIs(extractor_para(URL_MEGASUPER), ld_json.extraer)
 
     def test_tienda_no_soportada(self):
-        self.assertIsNone(extractor_para("https://www.pequeno-mundo.com/producto/1"))
+        self.assertIsNone(
+            extractor_para("https://www.pequeno-mundo.com/producto/1")
+        )
         self.assertIsNone(extractor_para(""))
         self.assertIsNone(extractor_para(None))
 
@@ -95,13 +103,21 @@ class VtexTests(SimpleTestCase):
             vtex.url_api("https://www.walmart.co.cr/busca?q=leche")
 
     def test_extrae_precio_de_lista_precio_final_y_codigo(self):
-        self.assertEqual(self.extraer(self.api), [Oferta(619900, 472131, True, ("0195950643411",))])
+        self.assertEqual(
+            self.extraer(self.api),
+            [Oferta(619900, 472131, True, ("0195950643411",))],
+        )
 
     def test_producto_agotado_queda_sin_precio(self):
         agotado = copy.deepcopy(self.api)
         detalle = agotado[0]["items"][0]["sellers"][0]["commertialOffer"]
-        detalle.update(Price=0, ListPrice=0, IsAvailable=False, AvailableQuantity=0)
-        self.assertEqual(self.extraer(agotado), [Oferta(None, None, False, ("0195950643411",))])
+        detalle.update(
+            Price=0, ListPrice=0, IsAvailable=False, AvailableQuantity=0
+        )
+        self.assertEqual(
+            self.extraer(agotado),
+            [Oferta(None, None, False, ("0195950643411",))],
+        )
 
     def test_busqueda_vacia_es_producto_no_encontrado(self):
         with self.assertRaises(ProductoNoEncontrado):
@@ -121,7 +137,19 @@ class LdJsonTests(SimpleTestCase):
     def test_peri_precio_y_todos_sus_codigos_de_barras(self):
         self.assertEqual(
             self.extraer(URL_PERI, muestra("peri_nescafe.html")),
-            [Oferta(6350, 6350, True, ("088169002950", "7501058631442", "7501059283282", "7891000057667"))],
+            [
+                Oferta(
+                    6350,
+                    6350,
+                    True,
+                    (
+                        "088169002950",
+                        "7501058631442",
+                        "7501059283282",
+                        "7891000057667",
+                    ),
+                )
+            ],
         )
 
     def test_megasuper(self):
@@ -131,7 +159,9 @@ class LdJsonTests(SimpleTestCase):
         )
 
     def test_producto_agotado(self):
-        html = muestra("peri_nescafe.html").replace("schema.org/InStock", "schema.org/OutOfStock")
+        html = muestra("peri_nescafe.html").replace(
+            "schema.org/InStock", "schema.org/OutOfStock"
+        )
         [oferta] = self.extraer(URL_PERI, html)
         self.assertFalse(oferta.disponible)
 
@@ -141,11 +171,15 @@ class LdJsonTests(SimpleTestCase):
             '"offers": {"@type": "AggregateOffer", "offers": [{"price": "1500.00", "priceCurrency": "CRC"}]}}]}'
             "</script>"
         )
-        self.assertEqual(self.extraer(URL_PERI, html), [Oferta(1500, 1500, True)])
+        self.assertEqual(
+            self.extraer(URL_PERI, html), [Oferta(1500, 1500, True)]
+        )
 
     def test_pagina_sin_datos_de_producto(self):
         with self.assertRaises(PrecioNoEncontrado):
-            self.extraer(URL_PERI, "<html><body>Página en mantenimiento</body></html>")
+            self.extraer(
+                URL_PERI, "<html><body>Página en mantenimiento</body></html>"
+            )
 
     def test_pagina_de_no_encontrado_con_codigo_200(self):
         # Así responde Peri (Next.js) cuando el producto ya no existe.
@@ -154,24 +188,33 @@ class LdJsonTests(SimpleTestCase):
         with self.assertRaises(ProductoNoEncontrado):
             self.extraer(URL_PERI, no_existe)
         # Una página de producto también carga ese componente, pero junto con el de la página.
-        cambio_de_formato = no_existe.replace("</head>", f'<script src="{chunks}/page-4c187fc354556241.js"></script></head>')
+        cambio_de_formato = no_existe.replace(
+            "</head>",
+            f'<script src="{chunks}/page-4c187fc354556241.js"></script></head>',
+        )
         with self.assertRaises(PrecioNoEncontrado):
             self.extraer(URL_PERI, cambio_de_formato)
 
     def test_disponible_pero_sin_precio(self):
-        html = muestra("peri_nescafe.html").replace('"price": 6350', '"price": null')
+        html = muestra("peri_nescafe.html").replace(
+            '"price": 6350', '"price": null'
+        )
         with self.assertRaises(PrecioNoEncontrado):
             self.extraer(URL_PERI, html)
 
     def test_precio_en_otra_moneda(self):
-        html = muestra("peri_nescafe.html").replace('"priceCurrency": "CRC"', '"priceCurrency": "USD"')
+        html = muestra("peri_nescafe.html").replace(
+            '"priceCurrency": "CRC"', '"priceCurrency": "USD"'
+        )
         with self.assertRaisesMessage(PrecioNoEncontrado, "USD"):
             self.extraer(URL_PERI, html)
 
 
 class AutomercadoTests(SimpleTestCase):
     def extraer(self, html):
-        return automercado.extraer(URL_AUTOMERCADO, HttpFalso({URL_AUTOMERCADO: html}))
+        return automercado.extraer(
+            URL_AUTOMERCADO, HttpFalso({URL_AUTOMERCADO: html})
+        )
 
     def estado(self):
         html = muestra("automercado_zucaritas.html")
@@ -188,16 +231,24 @@ class AutomercadoTests(SimpleTestCase):
 
     def test_ignora_las_sucursales_donde_no_esta_disponible(self):
         estado = self.estado()
-        for sucursal in estado["product-detail.ssr-algolia"]["products"][0]["hits"][0]["storeDetail"].values():
+        for sucursal in estado["product-detail.ssr-algolia"]["products"][0][
+            "hits"
+        ][0]["storeDetail"].values():
             if sucursal["amount"] == 2745:
                 sucursal["productAvailable"] = False
-        self.assertEqual(self.extraer(self.con_estado(estado)), [Oferta(3310, 2810, True)])
+        self.assertEqual(
+            self.extraer(self.con_estado(estado)), [Oferta(3310, 2810, True)]
+        )
 
     def test_agotado_en_todas_las_sucursales(self):
         estado = self.estado()
-        for sucursal in estado["product-detail.ssr-algolia"]["products"][0]["hits"][0]["storeDetail"].values():
+        for sucursal in estado["product-detail.ssr-algolia"]["products"][0][
+            "hits"
+        ][0]["storeDetail"].values():
             sucursal["productAvailable"] = False
-        self.assertEqual(self.extraer(self.con_estado(estado)), [Oferta(None, None, False)])
+        self.assertEqual(
+            self.extraer(self.con_estado(estado)), [Oferta(None, None, False)]
+        )
 
     def test_producto_que_ya_no_existe(self):
         estado = {"product-detail.ssr-algolia": {"products": [{"hits": []}]}}
@@ -227,7 +278,9 @@ class ClienteHttpTests(SimpleTestCase):
 
     def test_devuelve_el_texto(self):
         self.get.return_value = respuesta_http(200, "<html>ok</html>")
-        self.assertEqual(self.http.texto("https://tienda.test/p"), "<html>ok</html>")
+        self.assertEqual(
+            self.http.texto("https://tienda.test/p"), "<html>ok</html>"
+        )
 
     def test_404_es_producto_no_encontrado_y_no_se_reintenta(self):
         self.get.return_value = respuesta_http(404)

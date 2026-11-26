@@ -19,20 +19,40 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 from accounts.decorators import role_required
 from accounts.models import User
+from auditoria.registro import Accion, registrar
 from core.panel import indicador, pestanas, plural
 from core.translations import translate_text
 
 from .busqueda import con_imagen
-from .edicion import CARPETA_DE_IMAGENES, NOMBRE_DE_IMAGEN, editar_producto as guardar_edicion, imagen_actual
+from .edicion import (
+    CARPETA_DE_IMAGENES,
+    NOMBRE_DE_IMAGEN,
+    editar_producto as guardar_edicion,
+    imagen_actual,
+)
 from .forms import EditarProductoForm
-from .models import Brands, Categories, Prices, ProductImages, Products, ProductVariants
+from .models import (
+    Brands,
+    Categories,
+    PartnerStore,
+    Prices,
+    ProductImages,
+    Products,
+    ProductVariants,
+)
 
 PRODUCTOS_POR_PAGINA = 20
 
-SIN_IMAGEN = ~Exists(ProductImages.objects.filter(variant__product_id=OuterRef("pk")))
+SIN_IMAGEN = ~Exists(
+    ProductImages.objects.filter(variant__product_id=OuterRef("pk"))
+)
 SIN_DESCRIPCION = Q(description__isnull=True) | Q(description="")
 SIN_PRECIOS = ~Exists(Prices.objects.filter(gtin__product_id=OuterRef("pk")))
-FILTROS = {"sin-imagen": SIN_IMAGEN, "sin-descripcion": SIN_DESCRIPCION, "sin-precios": SIN_PRECIOS}
+FILTROS = {
+    "sin-imagen": SIN_IMAGEN,
+    "sin-descripcion": SIN_DESCRIPCION,
+    "sin-precios": SIN_PRECIOS,
+}
 
 
 @role_required(User.Role.ADMIN)
@@ -51,7 +71,11 @@ def catalogo_de_productos(request):
         lista = lista.filter(
             Q(name__icontains=busqueda)
             | Q(brand__name__icontains=busqueda)
-            | Q(pk__in=ProductVariants.objects.filter(gtin__icontains=busqueda).values("product_id"))
+            | Q(
+                pk__in=ProductVariants.objects.filter(
+                    gtin__icontains=busqueda
+                ).values("product_id")
+            )
         )
     if categoria:
         lista = lista.filter(category_id=categoria)
@@ -61,12 +85,18 @@ def catalogo_de_productos(request):
         tiendas=Count("productvariants__prices__id_store", distinct=True),
         presentaciones=Count("productvariants", distinct=True),
     ).order_by("name", "id")
-    pagina = Paginator(lista, PRODUCTOS_POR_PAGINA).get_page(request.GET.get("pagina"))
+    pagina = Paginator(lista, PRODUCTOS_POR_PAGINA).get_page(
+        request.GET.get("pagina")
+    )
     con_imagen(pagina.object_list)
     codigos = {}
-    for producto_id, gtin in ProductVariants.objects.filter(
-        product_id__in=[producto.pk for producto in pagina.object_list]
-    ).order_by("id").values_list("product_id", "gtin"):
+    for producto_id, gtin in (
+        ProductVariants.objects.filter(
+            product_id__in=[producto.pk for producto in pagina.object_list]
+        )
+        .order_by("id")
+        .values_list("product_id", "gtin")
+    ):
         codigos.setdefault(producto_id, []).append(gtin)
     for producto in pagina.object_list:
         producto.codigos = codigos.get(producto.pk, [])
@@ -101,8 +131,16 @@ def catalogo_de_productos(request):
                     icono="hide_image",
                     pie_izq="Ninguna presentación tiene foto",
                 ),
-                indicador("Sin descripción", sin_descripcion, pie_izq="El detalle dice «Sin descripción.»"),
-                indicador("Sin precio en ninguna tienda", sin_precios, pie_izq="Ninguna tienda lo ofrece"),
+                indicador(
+                    "Sin descripción",
+                    sin_descripcion,
+                    pie_izq="El detalle dice «Sin descripción.»",
+                ),
+                indicador(
+                    "Sin precio en ninguna tienda",
+                    sin_precios,
+                    pie_izq="Ninguna tienda lo ofrece",
+                ),
             ],
             "pestanas": pestanas(
                 reverse("catalogo_de_productos"),
@@ -116,7 +154,9 @@ def catalogo_de_productos(request):
                 estado,
                 conservar={"q": busqueda, "categoria": categoria},
             ),
-            "total_texto": plural(pagina.paginator.count, "producto", "productos"),
+            "total_texto": plural(
+                pagina.paginator.count, "producto", "productos"
+            ),
         },
     )
 
@@ -130,7 +170,9 @@ def _mensaje_de_cambios(cambios, tiendas):
     if tiendas == 1:
         alcance = translate_text("Se ven en la tienda que lo ofrece.")
     elif tiendas:
-        alcance = translate_text("Se ven igual en las {n} tiendas que lo ofrecen.", n=tiendas)
+        alcance = translate_text(
+            "Se ven igual en las {n} tiendas que lo ofrecen.", n=tiendas
+        )
     else:
         alcance = translate_text("Todavía ninguna tienda lo ofrece.")
     return f"{guardado} {alcance}"
@@ -139,8 +181,12 @@ def _mensaje_de_cambios(cambios, tiendas):
 def _volver(request):
     """La lista de donde vino el administrador, con sus filtros y su página."""
     volver = request.POST.get("volver") or request.GET.get("volver", "")
-    if volver.startswith(reverse("catalogo_de_productos")) and url_has_allowed_host_and_scheme(
-        volver, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    if volver.startswith(
+        reverse("catalogo_de_productos")
+    ) and url_has_allowed_host_and_scheme(
+        volver,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
     ):
         return volver
     return reverse("catalogo_de_productos")
@@ -148,12 +194,19 @@ def _volver(request):
 
 @role_required(User.Role.ADMIN)
 def editar_producto(request, pk):
-    producto = get_object_or_404(Products.objects.select_related("brand", "category"), pk=pk)
-    presentaciones = list(ProductVariants.objects.filter(product_id=producto.pk).order_by("id"))
+    producto = get_object_or_404(
+        Products.objects.select_related("brand", "category"), pk=pk
+    )
+    presentaciones = list(
+        ProductVariants.objects.filter(product_id=producto.pk).order_by("id")
+    )
     volver = _volver(request)
     if request.method == "POST":
         form = EditarProductoForm(
-            request.POST, request.FILES, producto=producto, tiene_presentaciones=bool(presentaciones)
+            request.POST,
+            request.FILES,
+            producto=producto,
+            tiene_presentaciones=bool(presentaciones),
         )
         if form.is_valid():
             datos = form.cleaned_data
@@ -167,21 +220,45 @@ def editar_producto(request, pk):
                 imagen_url=datos["image_url"],
             )
             if edicion.cambios:
-                tiendas = Prices.objects.filter(gtin__product_id=producto.pk).values("id_store").distinct().count()
-                messages.success(request, _mensaje_de_cambios(edicion.cambios, tiendas))
+                detalles = {"Cambios": edicion.cambios}
+                if edicion.marca_nueva:
+                    detalles["Marca nueva"] = producto.brand.name
+                registrar(
+                    request.user,
+                    Accion.PRODUCT_EDIT,
+                    producto.pk,
+                    producto.name,
+                    detalles,
+                )
+                tiendas = (
+                    Prices.objects.filter(gtin__product_id=producto.pk)
+                    .values("id_store")
+                    .distinct()
+                    .count()
+                )
+                messages.success(
+                    request, _mensaje_de_cambios(edicion.cambios, tiendas)
+                )
                 if edicion.marca_nueva:
                     messages.info(
                         request,
-                        translate_text("Se creó la marca «{marca}» en el catálogo.", marca=producto.brand.name),
+                        translate_text(
+                            "Se creó la marca «{marca}» en el catálogo.",
+                            marca=producto.brand.name,
+                        ),
                     )
             else:
-                messages.info(request, translate_text("No había cambios que guardar."))
+                messages.info(
+                    request, translate_text("No había cambios que guardar.")
+                )
             destino = reverse("editar_producto", args=[producto.pk])
             if volver != reverse("catalogo_de_productos"):
                 destino += "?" + urlencode({"volver": volver})
             return redirect(destino)
     else:
-        form = EditarProductoForm(producto=producto, tiene_presentaciones=bool(presentaciones))
+        form = EditarProductoForm(
+            producto=producto, tiene_presentaciones=bool(presentaciones)
+        )
 
     precios = list(
         Prices.objects.filter(gtin__product_id=producto.pk)
@@ -200,8 +277,16 @@ def editar_producto(request, pk):
             "presentaciones": presentaciones,
             "precios": precios,
             "cantidad_tiendas": len(tiendas),
+            # Los comercios desactivados tienen precio, pero no se muestra (products/comercios.py).
+            "desactivados": set(
+                PartnerStore.objects.filter(is_active=False).values_list(
+                    "store_id", flat=True
+                )
+            ),
             "imagen": imagen_actual(producto),
-            "marcas": Brands.objects.order_by("name").values_list("name", flat=True),
+            "marcas": Brands.objects.order_by("name").values_list(
+                "name", flat=True
+            ),
             "volver": volver,
         },
     )

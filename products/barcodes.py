@@ -16,8 +16,12 @@ LONGITUD_NORMALIZADA = 14
 class ResultadoCodigo:
     valido: bool
     codigo: str = ""  # el código sin espacios en los extremos
-    formato: str = ""  # "EAN-8", "UPC-A", "EAN-13" o "GTIN-14" (solo si es válido)
-    normalizado: str = ""  # el código con 14 dígitos: es el que hay que guardar y buscar
+    formato: str = (
+        ""  # "EAN-8", "UPC-A", "EAN-13" o "GTIN-14" (solo si es válido)
+    )
+    normalizado: str = (
+        ""  # el código con 14 dígitos: es el que hay que guardar y buscar
+    )
     motivo: str = ""  # por qué se rechazó (solo si es inválido)
 
     def __bool__(self):
@@ -30,7 +34,10 @@ def calcular_digito_verificador(cuerpo):
     Desde la derecha, los dígitos se multiplican por 3, 1, 3, 1... y el
     verificador es lo que falta para llegar al siguiente múltiplo de 10.
     """
-    total = sum(int(d) * (3 if i % 2 == 0 else 1) for i, d in enumerate(reversed(cuerpo)))
+    total = sum(
+        int(d) * (3 if i % 2 == 0 else 1)
+        for i, d in enumerate(reversed(cuerpo))
+    )
     return (10 - total % 10) % 10
 
 

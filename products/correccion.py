@@ -39,7 +39,10 @@ def levenshtein(a, b):
                 min(
                     anterior[j] + 1,  # quitar letra_a
                     actual[j - 1] + 1,  # agregar letra_b
-                    anterior[j - 1] + (letra_a != letra_b),  # cambiar (o dejar, si son iguales)
+                    anterior[j - 1]
+                    + (
+                        letra_a != letra_b
+                    ),  # cambiar (o dejar, si son iguales)
                 )
             )
         anterior = actual
@@ -110,7 +113,9 @@ class ArbolBK:
             if distancia <= tolerancia:
                 encontradas.append((distancia, nodo.palabra))
             pendientes.extend(
-                hijo for colgado, hijo in nodo.hijos.items() if distancia - tolerancia <= colgado <= distancia + tolerancia
+                hijo
+                for colgado, hijo in nodo.hijos.items()
+                if distancia - tolerancia <= colgado <= distancia + tolerancia
             )
         return encontradas
 
@@ -133,7 +138,9 @@ class Vocabulario:
             for palabra in map(palabra_normalizada, str(texto or "").split())
             if len(palabra) >= 3 and palabra.isalpha()
         )
-        self.arbol = ArbolBK(palabra for palabra, _ in self.frecuencia.most_common())
+        self.arbol = ArbolBK(
+            palabra for palabra, _ in self.frecuencia.most_common()
+        )
 
     def mas_parecidas(self, buscadas):
         """{palabra buscada: la más parecida del vocabulario} para {palabra: tolerancia}."""
@@ -142,7 +149,13 @@ class Vocabulario:
             candidatas = self.arbol.buscar(palabra, tolerancia)
             if candidatas:
                 _, mejores[palabra] = min(
-                    candidatas, key=lambda c: (c[0], -similitud(c[1], palabra), -self.frecuencia[c[1]], c[1])
+                    candidatas,
+                    key=lambda c: (
+                        c[0],
+                        -similitud(c[1], palabra),
+                        -self.frecuencia[c[1]],
+                        c[1],
+                    ),
                 )
         return mejores
 
@@ -163,8 +176,14 @@ def corregir_texto(texto, mas_parecidas):
         if tolerancia := tolerancia_para(palabra):
             buscadas[palabra] = tolerancia
     mejores = mas_parecidas(buscadas) if buscadas else {}
-    corregidas = [mejores.get(palabra_normalizada(palabra), palabra) for palabra in palabras]
-    corregidas = [c if c != palabra_normalizada(p) else p for c, p in zip(corregidas, palabras)]
+    corregidas = [
+        mejores.get(palabra_normalizada(palabra), palabra)
+        for palabra in palabras
+    ]
+    corregidas = [
+        c if c != palabra_normalizada(p) else p
+        for c, p in zip(corregidas, palabras)
+    ]
     return " ".join(corregidas) if corregidas != palabras else None
 
 
@@ -199,10 +218,15 @@ def mas_parecidas_en_postgres(buscadas):
     sql = _SQL_MAS_PARECIDAS.format(
         productos=connection.ops.quote_name(Products._meta.db_table),
         marcas=connection.ops.quote_name(Brands._meta.db_table),
-        marca=connection.ops.quote_name(Products._meta.get_field("brand").column),
+        marca=connection.ops.quote_name(
+            Products._meta.get_field("brand").column
+        ),
     )
     with connection.cursor() as cursor:
-        cursor.execute(sql, [_TILDES, _SIN_TILDES, list(buscadas), list(buscadas.values())])
+        cursor.execute(
+            sql,
+            [_TILDES, _SIN_TILDES, list(buscadas), list(buscadas.values())],
+        )
         return dict(cursor.fetchall())
 
 
@@ -216,7 +240,9 @@ def hay_extensiones():
         _con_extensiones = False
         if connection.vendor == "postgresql":
             with connection.cursor() as cursor:
-                cursor.execute("SELECT count(*) FROM pg_extension WHERE extname IN ('fuzzystrmatch', 'pg_trgm')")
+                cursor.execute(
+                    "SELECT count(*) FROM pg_extension WHERE extname IN ('fuzzystrmatch', 'pg_trgm')"
+                )
                 _con_extensiones = cursor.fetchone()[0] == 2
     return _con_extensiones
 
@@ -230,9 +256,14 @@ def vocabulario_del_catalogo():
     """El vocabulario de los nombres y las marcas del catálogo; se vuelve a armar una vez al día."""
     global _vocabulario, _armado_en
     with _candado:
-        if _vocabulario is None or time.monotonic() - _armado_en > VIGENCIA_DEL_VOCABULARIO:
+        if (
+            _vocabulario is None
+            or time.monotonic() - _armado_en > VIGENCIA_DEL_VOCABULARIO
+        ):
             textos = Products.objects.values_list("name", "brand__name")
-            _vocabulario = Vocabulario(texto for fila in textos for texto in fila)
+            _vocabulario = Vocabulario(
+                texto for fila in textos for texto in fila
+            )
             _armado_en = time.monotonic()
         return _vocabulario
 

@@ -24,6 +24,8 @@ def pantalla(request, nombre):
     if not re.fullmatch(r"[a-z0-9-]+", nombre) or not archivo.is_file():
         raise Http404("No existe esa pantalla de diseño.")
     html = archivo.read_text(encoding="utf-8")
-    html = html.replace('"../css/', f'"{static("css/")}').replace('"../js/', f'"{static("js/")}')
+    html = html.replace('"../css/', f'"{static("css/")}').replace(
+        '"../js/', f'"{static("js/")}'
+    )
     html = re.sub(r'href="([a-z0-9-]+)\.html"', r'href="/diseno/\1/"', html)
     return HttpResponse(html)

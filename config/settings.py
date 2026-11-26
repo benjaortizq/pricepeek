@@ -10,14 +10,31 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import json
+import os
+import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-import os
-from dotenv import load_dotenv
+load_dotenv(
+    BASE_DIR / ".env", override=True
+)  # el .env manda sobre variables viejas de la terminal
 
-load_dotenv(BASE_DIR / ".env", override=True)  # el .env manda sobre variables viejas de la terminal
+# Cuántos colones vale una unidad de cada moneda ISO 4217. La carga de precios
+# internacionales requiere tasas configuradas y vigentes; CRC siempre equivale a 1.
+try:
+    TIPOS_CAMBIO_A_CRC = {
+        codigo.upper(): str(tasa)
+        for codigo, tasa in json.loads(
+            os.environ.get("TIPOS_CAMBIO_A_CRC", "{}")
+        ).items()
+    }
+except (TypeError, ValueError):
+    TIPOS_CAMBIO_A_CRC = {}
+TIPOS_CAMBIO_A_CRC["CRC"] = "1"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -28,18 +45,28 @@ load_dotenv(BASE_DIR / ".env", override=True)  # el .env manda sobre variables v
 DEBUG = os.environ.get("DEBUG") == "True"
 # Separados por comas. Vacío = solo localhost (con DEBUG). Para probar desde el celular en la
 # misma red: ALLOWED_HOSTS=localhost,127.0.0.1,<IP de la computadora> y runserver 0.0.0.0:8000
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
+# Orígenes completos, con esquema; ejemplo: https://www.ejemplo.com.
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     "core",
     "accounts",
     "products",
@@ -47,39 +74,40 @@ INSTALLED_APPS = [
     "reviews",
     "ingestion",
     "enterprise",
+    "auditoria",
 ]
 AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "accounts.middleware.PrivacyConsentMiddleware",
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "templates"],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
@@ -95,6 +123,7 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5432"),
         "CONN_MAX_AGE": 60,
         "CONN_HEALTH_CHECKS": True,
+        "DISABLE_SERVER_SIDE_CURSORS": True,
         "OPTIONS": {
             "sslmode": os.environ.get("DB_SSLMODE", "require"),
         },
@@ -107,19 +136,19 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
     {
-        'NAME': 'accounts.validators.LetraYNumeroValidator',  # RNF-07
+        "NAME": "accounts.validators.LetraYNumeroValidator",  # RNF-07
     },
 ]
 
@@ -127,14 +156,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'es'  # RNF-22 / RNF-23
+LANGUAGE_CODE = "es"  # RNF-22 / RNF-23
 LANGUAGES = [
     ("es", "Español"),
     ("en", "English"),
 ]
 
 # Con USE_TZ la base guarda todo en UTC; esto solo cambia cómo se muestran las fechas.
-TIME_ZONE = 'America/Costa_Rica'
+TIME_ZONE = "America/Costa_Rica"
 
 USE_I18N = True
 
@@ -144,7 +173,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "frontend"]  # css/ y js/ del diseño
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -194,8 +223,8 @@ if os.environ.get("EMAIL_HOST_USER"):
     }
 else:
     MAILERS = {
-        'default': {
-            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        "default": {
+            "BACKEND": "django.core.mail.backends.console.EmailBackend",
         },
     }
 LOGIN_URL = "login"
@@ -210,30 +239,59 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+SECURE_SSL_REDIRECT = (
+    os.environ.get("SECURE_SSL_REDIRECT", "False" if DEBUG else "True").lower()
+    == "true"
+)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = (
+    os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", "False").lower() == "true"
+)
+SECURE_HSTS_PRELOAD = (
+    os.environ.get("SECURE_HSTS_PRELOAD", "False").lower() == "true"
+)
 
-PASSWORD_RESET_TIMEOUT = 60 * 60 * 24  # RF-04: el enlace de recuperación vale 24 horas
-PASSWORD_CHANGE_CODE_TIMEOUT = 60 * 10  # el código para confirmar el cambio vale 10 minutos
+PASSWORD_RESET_TIMEOUT = (
+    60 * 60 * 24
+)  # RF-04: el enlace de recuperación vale 24 horas
+PASSWORD_CHANGE_CODE_TIMEOUT = (
+    60 * 10
+)  # el código para confirmar el cambio vale 10 minutos
 PASSWORD_CHANGE_CODE_MAX_ATTEMPTS = 5
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "PricePeek <no-reply@pricepeek.local>")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "DEFAULT_FROM_EMAIL", "PricePeek <no-reply@pricepeek.local>"
+)
 
 # SCRUM-56: cada cuántas horas se vuelve a revisar un precio en la página de su tienda
 # (python manage.py actualizar_precios se salta los que se revisaron hace menos tiempo).
-PRECIOS_FRECUENCIA_HORAS = int(os.environ.get("PRECIOS_FRECUENCIA_HORAS", "24"))
+PRECIOS_FRECUENCIA_HORAS = int(
+    os.environ.get("PRECIOS_FRECUENCIA_HORAS", "24")
+)
 
 # Ejecución manual de la obtención de datos desde el panel de administración.
 # En el servidor: corre actualizar_precios en segundo plano dentro de este mismo proceso.
-OBTENCION_EN_EL_SERVIDOR = os.environ.get("OBTENCION_EN_EL_SERVIDOR", "True") == "True"
+OBTENCION_EN_EL_SERVIDOR = (
+    os.environ.get("OBTENCION_EN_EL_SERVIDOR", "True") == "True"
+)
 # En GitHub Actions: pide una corrida del workflow .github/workflows/actualizar-precios.yml.
 # GITHUB_ACTIONS_TOKEN es un token «fine-grained» con permiso Actions: Read and write sobre el
 # repositorio. Sin token ni repositorio, la opción aparece desactivada en el panel.
 GITHUB_ACTIONS_TOKEN = os.environ.get("GITHUB_ACTIONS_TOKEN", "")
-GITHUB_REPOSITORIO = os.environ.get("GITHUB_REPOSITORIO", "")  # por ejemplo: usuario/pricepeek
-GITHUB_WORKFLOW_PRECIOS = os.environ.get("GITHUB_WORKFLOW_PRECIOS", "actualizar-precios.yml")
+GITHUB_REPOSITORIO = os.environ.get(
+    "GITHUB_REPOSITORIO", ""
+)  # por ejemplo: usuario/pricepeek
+GITHUB_WORKFLOW_PRECIOS = os.environ.get(
+    "GITHUB_WORKFLOW_PRECIOS", "actualizar-precios.yml"
+)
 GITHUB_RAMA = os.environ.get("GITHUB_RAMA", "main")
-import sys
- 
 if "test" in sys.argv:
-    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        }
+    }
 
 
 # Dirección pública del sitio, para los enlaces de los correos (alertas de baja de precio).

@@ -24,6 +24,7 @@ from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
+from products.comercios import sin_obtencion_automatica
 from products.models import Prices, Stores
 
 from .models import Incident, ManualRun
@@ -33,9 +34,16 @@ from .scrapers import extractor_para
 Status = ManualRun.Status
 Runner = ManualRun.Runner
 
-MINUTOS = (10, 20, 30, 45)  # lo que se puede elegir; GitHub corta el trabajo a los 55 minutos
+MINUTOS = (
+    10,
+    20,
+    30,
+    45,
+)  # lo que se puede elegir; GitHub corta el trabajo a los 55 minutos
 MINUTOS_POR_DEFECTO = 20
-HORAS_DESACTUALIZADO = 48  # como el aviso de precios desactualizados del detalle del producto
+HORAS_DESACTUALIZADO = (
+    48  # como el aviso de precios desactualizados del detalle del producto
+)
 SALIDA_MAXIMA = 60_000  # caracteres de la salida que se guardan (los últimos)
 GUARDAR_SALIDA_CADA = 3  # segundos
 # Una ejecución en el servidor escribe una línea por precio; si se queda callada tanto tiempo,
@@ -57,29 +65,58 @@ def comercios_con_scraping():
     saber antes de actualizarlos."""
     limite = timezone.now() - timedelta(hours=HORAS_DESACTUALIZADO)
     filas = {}
-    for tienda_id, url, revisado in Prices.objects.values_list("id_store_id", "product_web_url", "updated_at"):
+    for tienda_id, url, revisado in Prices.objects.values_list(
+        "id_store_id", "product_web_url", "updated_at"
+    ):
         if extractor_para(url) is None:
             continue
-        fila = filas.setdefault(tienda_id, {"precios": 0, "desactualizados": 0, "ultima_revision": None})
+        fila = filas.setdefault(
+            tienda_id,
+            {"precios": 0, "desactualizados": 0, "ultima_revision": None},
+        )
         fila["precios"] += 1
         fila["desactualizados"] += revisado < limite
-        if fila["ultima_revision"] is None or revisado > fila["ultima_revision"]:
+        if (
+            fila["ultima_revision"] is None
+            or revisado > fila["ultima_revision"]
+        ):
             fila["ultima_revision"] = revisado
     incidencias = dict(
-        Incident.objects.filter(kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING)
+        Incident.objects.filter(
+            kind__in=EXTRACCION_FALLIDA, status=Incident.Status.PENDING
+        )
         .order_by()
         .values_list("store_name")
         .annotate(total=Count("pk"))
     )
     comercios = []
-    for tienda in Stores.objects.filter(pk__in=list(filas)):
+    # Los desactivados y los que proveen sus propios datos no se obtienen por web scraping (products/comercios.py).
+    for tienda in Stores.objects.filter(pk__in=list(filas)).exclude(
+        pk__in=sin_obtencion_automatica()
+    ):
         nombre = tienda.name.strip()
-        comercios.append({"id": tienda.pk, "nombre": nombre, "incidencias": incidencias.get(nombre, 0), **filas[tienda.pk]})
-    return sorted(comercios, key=lambda comercio: comercio["nombre"].casefold())
+        comercios.append(
+            {
+                "id": tienda.pk,
+                "nombre": nombre,
+                "incidencias": incidencias.get(nombre, 0),
+                **filas[tienda.pk],
+            }
+        )
+    return sorted(
+        comercios, key=lambda comercio: comercio["nombre"].casefold()
+    )
 
 
 def comercio_con_scraping(tienda_id):
-    return next((comercio for comercio in comercios_con_scraping() if str(comercio["id"]) == str(tienda_id)), None)
+    return next(
+        (
+            comercio
+            for comercio in comercios_con_scraping()
+            if str(comercio["id"]) == str(tienda_id)
+        ),
+        None,
+    )
 
 
 # --- Estado de las ejecuciones ---
@@ -88,7 +125,9 @@ def comercio_con_scraping(tienda_id):
 def marcar_interrumpidas():
     """Las del servidor que dejaron de dar noticias: el proceso que las corría ya no existe."""
     return ManualRun.objects.filter(
-        runner=Runner.SERVER, status__in=ManualRun.ACTIVE, updated_at__lt=timezone.now() - SIN_NOTICIAS
+        runner=Runner.SERVER,
+        status__in=ManualRun.ACTIVE,
+        updated_at__lt=timezone.now() - SIN_NOTICIAS,
     ).update(
         status=Status.INTERRUPTED,
         finished_at=timezone.now(),
@@ -101,7 +140,9 @@ def en_curso_para(nombre):
     # Las de GitHub que nunca se encontraron no se esperan para siempre.
     reciente = timezone.now() - timedelta(minutes=max(MINUTOS) + 15)
     return (
-        ManualRun.objects.filter(store_name=nombre, status__in=ManualRun.ACTIVE)
+        ManualRun.objects.filter(
+            store_name=nombre, status__in=ManualRun.ACTIVE
+        )
         .filter(Q(runner=Runner.SERVER) | Q(created_at__gte=reciente))
         .first()
     )
@@ -112,23 +153,39 @@ def github_configurado():
 
 
 def opciones_disponibles():
-    return {Runner.SERVER: settings.OBTENCION_EN_EL_SERVIDOR, Runner.GITHUB: github_configurado()}
+    return {
+        Runner.SERVER: settings.OBTENCION_EN_EL_SERVIDOR,
+        Runner.GITHUB: github_configurado(),
+    }
 
 
 # --- Pedir una ejecución ---
 
 
-def solicitar(tienda_id, runner, usuario, minutos=MINUTOS_POR_DEFECTO, todos=True, prueba=False):
+def solicitar(
+    tienda_id,
+    runner,
+    usuario,
+    minutos=MINUTOS_POR_DEFECTO,
+    todos=True,
+    prueba=False,
+):
     """Registra la ejecución y la pone a correr donde se pidió."""
     comercio = comercio_con_scraping(tienda_id)
     if comercio is None:
-        raise NoSePuedeEjecutar("Ese comercio no tiene precios que se obtengan por web scraping.")
+        raise NoSePuedeEjecutar(
+            "Ese comercio no tiene precios que se obtengan por web scraping."
+        )
     if runner not in Runner.values:
         raise NoSePuedeEjecutar("Elija dónde ejecutar la obtención de datos.")
     if not opciones_disponibles()[runner]:
         if runner == Runner.GITHUB:
-            raise NoSePuedeEjecutar("GitHub Actions no está configurado en este servidor.")
-        raise NoSePuedeEjecutar("La ejecución en el servidor está desactivada.")
+            raise NoSePuedeEjecutar(
+                "GitHub Actions no está configurado en este servidor."
+            )
+        raise NoSePuedeEjecutar(
+            "La ejecución en el servidor está desactivada."
+        )
     try:
         minutos = int(minutos)
     except (TypeError, ValueError):
@@ -139,7 +196,9 @@ def solicitar(tienda_id, runner, usuario, minutos=MINUTOS_POR_DEFECTO, todos=Tru
     marcar_interrumpidas()
     actual = en_curso_para(comercio["nombre"])
     if actual is not None:
-        raise NoSePuedeEjecutar(f"Ya hay una ejecución en curso para {comercio['nombre']}; espere a que termine.")
+        raise NoSePuedeEjecutar(
+            f"Ya hay una ejecución en curso para {comercio['nombre']}; espere a que termine."
+        )
 
     ejecucion = ManualRun.objects.create(
         store_name=comercio["nombre"],
@@ -163,8 +222,11 @@ def solicitar(tienda_id, runner, usuario, minutos=MINUTOS_POR_DEFECTO, todos=Tru
 
 def iniciar_en_el_servidor(ejecucion_id):
     threading.Thread(
-        target=correr_en_el_servidor, args=(ejecucion_id,), kwargs={"en_hilo": True},
-        name=f"obtencion-manual-{ejecucion_id}", daemon=True,
+        target=correr_en_el_servidor,
+        args=(ejecucion_id,),
+        kwargs={"en_hilo": True},
+        name=f"obtencion-manual-{ejecucion_id}",
+        daemon=True,
     ).start()
 
 
@@ -187,7 +249,9 @@ class SalidaEnVivo(io.TextIOBase):
         return len(texto)
 
     def guardar(self):
-        ManualRun.objects.filter(pk=self.ejecucion_id).update(output=self.texto, updated_at=timezone.now())
+        ManualRun.objects.filter(pk=self.ejecucion_id).update(
+            output=self.texto, updated_at=timezone.now()
+        )
         self._guardada = time.monotonic()
 
     def flush(self):
@@ -199,7 +263,9 @@ class SalidaEnVivo(io.TextIOBase):
 def resumen_de_la_salida(texto):
     """La línea final de actualizar_precios: «120 revisados · 3 actualizados · …»."""
     for linea in reversed(texto.splitlines()):
-        if " revisados · " in linea or linea.startswith("No hay precios pendientes"):
+        if " revisados · " in linea or linea.startswith(
+            "No hay precios pendientes"
+        ):
             return linea.strip()[: ManualRun.SUMMARY_MAX_LENGTH]
     return ""
 
@@ -210,23 +276,42 @@ def correr_en_el_servidor(ejecucion_id, en_hilo=False):
     try:
         ejecucion = ManualRun.objects.get(pk=ejecucion_id)
         ahora = timezone.now()
-        ManualRun.objects.filter(pk=ejecucion_id).update(status=Status.RUNNING, started_at=ahora, updated_at=ahora)
+        ManualRun.objects.filter(pk=ejecucion_id).update(
+            status=Status.RUNNING, started_at=ahora, updated_at=ahora
+        )
         salida = SalidaEnVivo(ejecucion_id)
-        opciones = {"tienda": ejecucion.store_name, "minutos": ejecucion.minutes, "todos": ejecucion.all_prices}
+        opciones = {
+            "tienda": ejecucion.store_name,
+            "minutos": ejecucion.minutes,
+            "todos": ejecucion.all_prices,
+        }
         estado = Status.FINISHED
         try:
-            call_command("actualizar_precios", dry_run=ejecucion.dry_run, stdout=salida, stderr=salida, **opciones)
+            call_command(
+                "actualizar_precios",
+                dry_run=ejecucion.dry_run,
+                stdout=salida,
+                stderr=salida,
+                **opciones,
+            )
             if not ejecucion.dry_run:
                 salida.write("\nRevisando las alertas de baja de precio…\n")
-                call_command("enviar_alertas_de_precio", stdout=salida, stderr=salida)
+                call_command(
+                    "enviar_alertas_de_precio", stdout=salida, stderr=salida
+                )
         except Exception as error:  # que la ejecución quede marcada como fallida, no «en curso»
             salida.write(f"\nError: {error.__class__.__name__}: {error}\n")
             estado = Status.FAILED
         resumen = resumen_de_la_salida(salida.texto)
         if estado == Status.FAILED:
-            resumen = f"Falló: {salida.texto.strip().splitlines()[-1]}"[: ManualRun.SUMMARY_MAX_LENGTH]
+            resumen = f"Falló: {salida.texto.strip().splitlines()[-1]}"[
+                : ManualRun.SUMMARY_MAX_LENGTH
+            ]
         ManualRun.objects.filter(pk=ejecucion_id).update(
-            status=estado, finished_at=timezone.now(), output=salida.texto, summary=resumen
+            status=estado,
+            finished_at=timezone.now(),
+            output=salida.texto,
+            summary=resumen,
         )
     finally:
         if en_hilo:
@@ -268,9 +353,15 @@ def pedir_a_github(ejecucion):
         "solicitud": str(ejecucion.pk),
     }
     try:
-        respuesta = _github("POST", ruta, json={"ref": settings.GITHUB_RAMA, "inputs": entradas})
+        respuesta = _github(
+            "POST",
+            ruta,
+            json={"ref": settings.GITHUB_RAMA, "inputs": entradas},
+        )
     except requests.RequestException as error:
-        motivo = f"No se pudo conectar con GitHub ({error.__class__.__name__})."
+        motivo = (
+            f"No se pudo conectar con GitHub ({error.__class__.__name__})."
+        )
     else:
         if respuesta.status_code in (200, 201, 204):
             ManualRun.objects.filter(pk=ejecucion.pk).update(
@@ -279,12 +370,17 @@ def pedir_a_github(ejecucion):
             return
         motivo = f"GitHub rechazó la solicitud ({respuesta.status_code}): {_mensaje_de_github(respuesta)}"
     ManualRun.objects.filter(pk=ejecucion.pk).update(
-        status=Status.FAILED, finished_at=timezone.now(), summary=motivo[: ManualRun.SUMMARY_MAX_LENGTH]
+        status=Status.FAILED,
+        finished_at=timezone.now(),
+        summary=motivo[: ManualRun.SUMMARY_MAX_LENGTH],
     )
     raise NoSePuedeEjecutar(motivo)
 
 
-ESTADOS_DE_GITHUB = {"in_progress": Status.RUNNING, "completed": Status.FINISHED}
+ESTADOS_DE_GITHUB = {
+    "in_progress": Status.RUNNING,
+    "completed": Status.FINISHED,
+}
 
 
 def sincronizar_con_github():
@@ -295,7 +391,9 @@ def sincronizar_con_github():
     pendientes = {
         ejecucion.pk: ejecucion
         for ejecucion in ManualRun.objects.filter(
-            runner=Runner.GITHUB, status__in=ManualRun.ACTIVE, created_at__gte=timezone.now() - timedelta(days=2)
+            runner=Runner.GITHUB,
+            status__in=ManualRun.ACTIVE,
+            created_at__gte=timezone.now() - timedelta(days=2),
         )
     }
     if not pendientes or not github_configurado():
@@ -313,33 +411,50 @@ def sincronizar_con_github():
     encontradas = set()
     for corrida in corridas:
         titulo = corrida.get("display_title") or ""
-        ejecucion = next((e for pk, e in pendientes.items() if f"#{pk}:" in titulo), None)
+        ejecucion = next(
+            (e for pk, e in pendientes.items() if f"#{pk}:" in titulo), None
+        )
         if ejecucion is None:
             continue
         encontradas.add(ejecucion.pk)
         estado = ESTADOS_DE_GITHUB.get(corrida.get("status"), Status.PENDING)
-        cambios = {"github_run_id": corrida.get("id"), "github_url": corrida.get("html_url") or ejecucion.github_url, "status": estado}
+        cambios = {
+            "github_run_id": corrida.get("id"),
+            "github_url": corrida.get("html_url") or ejecucion.github_url,
+            "status": estado,
+        }
         if corrida.get("run_started_at"):
             cambios["started_at"] = parse_datetime(corrida["run_started_at"])
         if estado == Status.FINISHED:
             conclusion = corrida.get("conclusion") or ""
             if conclusion != "success":
                 cambios["status"] = Status.FAILED
-            cambios["finished_at"] = parse_datetime(corrida.get("updated_at") or "") or timezone.now()
+            cambios["finished_at"] = (
+                parse_datetime(corrida.get("updated_at") or "")
+                or timezone.now()
+            )
             cambios["summary"] = {
                 "success": "Terminó bien en GitHub Actions. El detalle está en la corrida.",
                 "cancelled": "Se canceló en GitHub Actions.",
-            }.get(conclusion, f"Falló en GitHub Actions ({conclusion or 'sin conclusión'}).")
+            }.get(
+                conclusion,
+                f"Falló en GitHub Actions ({conclusion or 'sin conclusión'}).",
+            )
         ManualRun.objects.filter(pk=ejecucion.pk).update(**cambios)
 
     # Si GitHub nunca creó la corrida (o ya no aparece entre las últimas), no se espera para siempre.
     perdidas = [
-        pk for pk, ejecucion in pendientes.items()
-        if pk not in encontradas and not ejecucion.github_run_id
-        and ejecucion.created_at < timezone.now() - timedelta(minutes=max(MINUTOS) + 15)
+        pk
+        for pk, ejecucion in pendientes.items()
+        if pk not in encontradas
+        and not ejecucion.github_run_id
+        and ejecucion.created_at
+        < timezone.now() - timedelta(minutes=max(MINUTOS) + 15)
     ]
     ManualRun.objects.filter(pk__in=perdidas).update(
-        status=Status.INTERRUPTED, finished_at=timezone.now(), summary="No se encontró la corrida en GitHub Actions."
+        status=Status.INTERRUPTED,
+        finished_at=timezone.now(),
+        summary="No se encontró la corrida en GitHub Actions.",
     )
     return True
 

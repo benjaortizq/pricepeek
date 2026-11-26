@@ -13,7 +13,10 @@ from reportlab.platypus import Paragraph, Table
 
 from accounts.models import AccountsUser, PrivacyConsent, User
 from accounts.privacy import PRIVACY_POLICY_VERSION
-from enterprise.forms import TIENDA_DESCRIPCION_MAX_LENGTH, TIENDA_NOMBRE_MAX_LENGTH
+from enterprise.forms import (
+    TIENDA_DESCRIPCION_MAX_LENGTH,
+    TIENDA_NOMBRE_MAX_LENGTH,
+)
 from enterprise.reports import construir_historia, datos_reporte
 from products.models import (
     AuditPriceChanges,
@@ -91,19 +94,27 @@ class EmpresaTestCase(TestCase):
         self.marca = Brands.objects.create(
             name="Marca de prueba", slug="marca-prueba", **self.fechas
         )
-        self.categoria = Categories.objects.create(name="Categoría de prueba", **self.fechas)
+        self.categoria = Categories.objects.create(
+            name="Categoría de prueba", **self.fechas
+        )
         self.moneda = Currencies.objects.create(
             name="colones", symbol="₡", **self.fechas
         )
-        self.store = Stores.objects.create(name="Tienda Empresa\n", **self.fechas)
-        self.otra_store = Stores.objects.create(name="Tienda Competencia", **self.fechas)
+        self.store = Stores.objects.create(
+            name="Tienda Empresa\n", **self.fechas
+        )
+        self.otra_store = Stores.objects.create(
+            name="Tienda Competencia", **self.fechas
+        )
         self.usuario = User.objects.create_user(
             email="empresa@example.com",
             password="ClaveSegura123",
             role=User.Role.ENTERPRISE,
             first_name="Empresa",
         )
-        AccountsUser.objects.filter(pk=self.usuario.pk).update(from_store=self.store.pk)
+        AccountsUser.objects.filter(pk=self.usuario.pk).update(
+            from_store=self.store.pk
+        )
         self.usuario_sin_tienda = User.objects.create_user(
             email="sin-tienda@example.com",
             password="ClaveSegura123",
@@ -123,10 +134,14 @@ class EmpresaTestCase(TestCase):
             attributes={"color": "azul"},
             **self.fechas,
         )
-        self.precio = self.crear_precio(self.store, self.variante, 1000, "0.20")
+        self.precio = self.crear_precio(
+            self.store, self.variante, 1000, "0.20"
+        )
         self.client.force_login(self.usuario)
 
-    def crear_precio(self, store, variante, precio, descuento="0", disponible=True, **extra):
+    def crear_precio(
+        self, store, variante, precio, descuento="0", disponible=True, **extra
+    ):
         return Prices.objects.create(
             id_store=store,
             gtin=variante,
@@ -223,14 +238,19 @@ class AutorizacionEmpresaTests(EmpresaTestCase):
                     {filtro: "no-es-un-identificador"},
                 )
                 self.assertEqual(respuesta.status_code, 200)
-                self.assertEqual(len(respuesta.context["pagina"].object_list), 0)
+                self.assertEqual(
+                    len(respuesta.context["pagina"].object_list), 0
+                )
 
     def test_no_puede_editar_un_precio_de_otra_tienda(self):
         otra_variante = self.crear_variante("7441001234576", "Competencia")
         otro_precio = self.crear_precio(self.otra_store, otra_variante, 800)
 
         respuesta = self.client.get(
-            reverse("enterprise:editar_producto", kwargs={"price_id": otro_precio.pk})
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": otro_precio.pk},
+            )
         )
 
         self.assertEqual(respuesta.status_code, 404)
@@ -271,7 +291,9 @@ class EditarTiendaEmpresaTests(EmpresaTestCase):
         )
         self.assertContains(respuesta, reverse("enterprise:editar_tienda"))
 
-    def test_actualiza_solo_el_nombre_y_la_descripcion_de_la_tienda_asignada(self):
+    def test_actualiza_solo_el_nombre_y_la_descripcion_de_la_tienda_asignada(
+        self,
+    ):
         created_at_original = self.store.created_at
         updated_at_original = self.store.updated_at
 
@@ -288,7 +310,10 @@ class EditarTiendaEmpresaTests(EmpresaTestCase):
         )
 
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, "La información de la tienda se actualizó correctamente.")
+        self.assertContains(
+            respuesta,
+            "La información de la tienda se actualizó correctamente.",
+        )
         self.assertContains(respuesta, "Automercado")
         self.store.refresh_from_db()
         self.otra_store.refresh_from_db()
@@ -310,7 +335,9 @@ class EditarTiendaEmpresaTests(EmpresaTestCase):
 
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn("name", respuesta.context["form"].errors)
-        self.assertContains(respuesta, "El nombre de la tienda es obligatorio.")
+        self.assertContains(
+            respuesta, "El nombre de la tienda es obligatorio."
+        )
         self.store.refresh_from_db()
         self.assertEqual(self.store.name, "Tienda Empresa\n")
         self.assertIsNone(self.store.description)
@@ -359,15 +386,21 @@ class EditarTiendaEmpresaTests(EmpresaTestCase):
         )
         _consentir_privacidad(cliente)
         self.client.force_login(cliente)
-        respuesta_cliente = self.client.get(reverse("enterprise:editar_tienda"))
+        respuesta_cliente = self.client.get(
+            reverse("enterprise:editar_tienda")
+        )
         self.assertEqual(respuesta_cliente.status_code, 403)
 
         self.client.force_login(self.usuario_sin_tienda)
-        respuesta_sin_tienda = self.client.get(reverse("enterprise:editar_tienda"))
+        respuesta_sin_tienda = self.client.get(
+            reverse("enterprise:editar_tienda")
+        )
         self.assertEqual(respuesta_sin_tienda.status_code, 403)
 
         self.client.logout()
-        respuesta_anonima = self.client.get(reverse("enterprise:editar_tienda"))
+        respuesta_anonima = self.client.get(
+            reverse("enterprise:editar_tienda")
+        )
         self.assertEqual(respuesta_anonima.status_code, 302)
         self.assertIn(reverse("login"), respuesta_anonima["Location"])
 
@@ -464,7 +497,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         otro_precio = self.crear_precio(self.otra_store, otra_variante, 800)
 
         respuesta = self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {
                 "price": "1250",
                 "discount": "0.10",
@@ -475,7 +511,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
         self.assertRedirects(
             respuesta,
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
         )
         self.precio.refresh_from_db()
         otro_precio.refresh_from_db()
@@ -524,7 +563,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_descuento_vacio_se_guarda_como_cero(self):
         self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {"price": "1250", "discount": "", "is_available": "on"},
         )
         self.precio.refresh_from_db()
@@ -532,7 +574,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_descuento_fuera_de_rango_se_rechaza(self):
         self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {"price": "1250", "discount": "1.5", "is_available": "on"},
         )
         self.precio.refresh_from_db()
@@ -540,7 +585,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_precio_negativo_se_quita_y_se_desactiva(self):
         self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {"price": "-50", "discount": "0", "is_available": "on"},
         )
         self.precio.refresh_from_db()
@@ -549,7 +597,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_precio_vacio_se_quita_y_se_desactiva(self):
         self.client.post(
-            reverse("enterprise:editar_producto", kwargs={"price_id": self.precio.pk}),
+            reverse(
+                "enterprise:editar_producto",
+                kwargs={"price_id": self.precio.pk},
+            ),
             {"price": "", "discount": "0", "is_available": "on"},
         )
         self.precio.refresh_from_db()
@@ -558,7 +609,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_quitar_precio_solo_afecta_la_tienda_y_no_borra_la_variante(self):
         self.client.post(
-            reverse("enterprise:eliminar_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:eliminar_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
         self.precio.refresh_from_db()
         self.assertIsNone(self.precio.price)
@@ -568,7 +622,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_desactivar_conserva_el_precio_de_la_tienda(self):
         self.client.post(
-            reverse("enterprise:desactivar_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:desactivar_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
         self.precio.refresh_from_db()
         self.assertEqual(self.precio.price, 1000)
@@ -585,7 +642,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
 
     def test_la_confirmacion_por_get_no_modifica_el_precio(self):
         respuesta = self.client.get(
-            reverse("enterprise:desactivar_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:desactivar_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertEqual(respuesta.status_code, 200)
@@ -598,7 +658,10 @@ class EscrituraPreciosEmpresaTests(EmpresaTestCase):
         cliente.force_login(self.usuario)
 
         respuesta = cliente.post(
-            reverse("enterprise:desactivar_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:desactivar_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertEqual(respuesta.status_code, 403)
@@ -700,7 +763,9 @@ class HistorialPreciosEmpresaTests(EmpresaTestCase):
 
 class AltaProductosEmpresaTests(EmpresaTestCase):
     def test_gtin_existente_crea_solo_el_precio_propio(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         productos_antes = Products.objects.count()
         variantes_antes = ProductVariants.objects.count()
         nombre_canonico = variante_existente.product.name
@@ -727,12 +792,16 @@ class AltaProductosEmpresaTests(EmpresaTestCase):
         variante_existente.refresh_from_db()
         self.assertEqual(variante_existente.product.name, nombre_canonico)
         self.assertEqual(variante_existente.attributes, {})
-        nuevo = Prices.objects.get(id_store=self.store, gtin=variante_existente)
+        nuevo = Prices.objects.get(
+            id_store=self.store, gtin=variante_existente
+        )
         self.assertEqual(nuevo.price, 1500)
         self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_gtin_existente_heredado_acepta_su_registro_sin_revalidarlo(self):
-        variante_heredada = self.crear_variante("7441001234567", "GTIN heredado")
+        variante_heredada = self.crear_variante(
+            "7441001234567", "GTIN heredado"
+        )
 
         respuesta = self.client.post(
             reverse("enterprise:nuevo_producto"),
@@ -807,7 +876,9 @@ class AltaProductosEmpresaTests(EmpresaTestCase):
         self.assertEqual(precio.price, 2000)
         self.assertEqual(precio.discount, Decimal("0.05"))
         imagenes = list(
-            ProductImages.objects.filter(variant=variante).order_by("number_image")
+            ProductImages.objects.filter(variant=variante).order_by(
+                "number_image"
+            )
         )
         self.assertEqual(
             [
@@ -901,7 +972,9 @@ class AltaProductosEmpresaTests(EmpresaTestCase):
                 self.assertEqual(respuesta.status_code, 200)
                 self.assertIn("image_urls", respuesta.context["form"].errors)
                 self.assertFalse(
-                    ProductVariants.objects.filter(gtin="7441001234576").exists()
+                    ProductVariants.objects.filter(
+                        gtin="7441001234576"
+                    ).exists()
                 )
 
     def test_gtin_existente_no_modifica_sus_imagenes(self):
@@ -928,10 +1001,14 @@ class AltaProductosEmpresaTests(EmpresaTestCase):
         )
 
         self.assertEqual(respuesta.status_code, 302)
-        self.assertTrue(Prices.objects.filter(id_store=self.store, gtin=variante).exists())
+        self.assertTrue(
+            Prices.objects.filter(id_store=self.store, gtin=variante).exists()
+        )
         imagen.refresh_from_db()
         self.assertEqual(imagen.image_url, "https://img.test/original.png")
-        self.assertEqual(ProductImages.objects.filter(variant=variante).count(), 1)
+        self.assertEqual(
+            ProductImages.objects.filter(variant=variante).count(), 1
+        )
         self.assertIn(
             "Las imágenes del producto se gestionan en su pantalla de detalle.",
             [str(mensaje) for mensaje in get_messages(respuesta.wsgi_request)],
@@ -978,7 +1055,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         )
 
     def test_importa_filas_validas_y_reporta_errores_por_fila(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         contenido = (
             "gtin,product_name,variant_name,brand_name,category_name,attributes,price,discount,is_available,product_web_url,image_urls\n"
             f"{variante_existente.gtin},,,,,,1000,0.10,true,https://tienda.test/a,\n"
@@ -999,10 +1078,14 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertTrue(resultados[1].errores)
         self.assertTrue(resultados[2].importado)
         self.assertTrue(
-            Prices.objects.filter(id_store=self.store, gtin=variante_existente).exists()
+            Prices.objects.filter(
+                id_store=self.store, gtin=variante_existente
+            ).exists()
         )
         self.assertTrue(
-            Prices.objects.filter(id_store=self.store, gtin_id="7441001234576").exists()
+            Prices.objects.filter(
+                id_store=self.store, gtin_id="7441001234576"
+            ).exists()
         )
         producto = ProductVariants.objects.get(gtin="7441001234576").product
         self.assertEqual(producto.brand_id, self.marca.pk)
@@ -1042,7 +1125,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertFalse(AuditPriceChanges.objects.exists())
 
     def test_una_fila_invalida_no_bloquea_la_siguiente_del_mismo_gtin(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         contenido = (
             "gtin,product_name,variant_name,brand_name,category_name,attributes,price,discount,is_available,product_web_url\n"
             f"{variante_existente.gtin},,,,,,no-es-un-precio,0,true,\n"
@@ -1057,14 +1142,18 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertFalse(resultados[0].importado)
         self.assertTrue(resultados[1].importado)
         self.assertTrue(
-            Prices.objects.filter(id_store=self.store, gtin=variante_existente).exists()
+            Prices.objects.filter(
+                id_store=self.store, gtin=variante_existente
+            ).exists()
         )
 
     def test_json_no_finito_se_rechaza_sin_romper_las_filas_siguientes(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         contenido = (
             "gtin,attributes,price\n"
-            f"{variante_existente.gtin},{{\"valor\": NaN}},1000\n"
+            f'{variante_existente.gtin},{{"valor": NaN}},1000\n'
             f"{variante_existente.gtin},{{}},1000\n"
         )
         respuesta = self.client.post(
@@ -1077,7 +1166,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertTrue(resultados[1].importado)
 
     def test_un_precio_fuera_del_rango_no_rompe_las_filas_siguientes(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         contenido = (
             "gtin,price\n"
             f"{variante_existente.gtin},2147483648\n"
@@ -1093,11 +1184,10 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertTrue(resultados[1].importado)
 
     def test_acepta_encabezados_con_espacios_y_mayusculas(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
-        contenido = (
-            " GTIN , PRICE \n"
-            f"{variante_existente.gtin},1000\n"
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
         )
+        contenido = f" GTIN , PRICE \n{variante_existente.gtin},1000\n"
         respuesta = self.client.post(
             reverse("enterprise:cargar_csv"),
             {"archivo": self._subir(contenido)},
@@ -1106,11 +1196,15 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         resultado = respuesta.context["resultados"][0]
         self.assertTrue(resultado.importado)
         self.assertTrue(
-            Prices.objects.filter(id_store=self.store, gtin=variante_existente).exists()
+            Prices.objects.filter(
+                id_store=self.store, gtin=variante_existente
+            ).exists()
         )
 
     def test_rechaza_un_gtin_duplicado_dentro_del_archivo(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         contenido = (
             "gtin,price\n"
             f"{variante_existente.gtin},1000\n"
@@ -1127,7 +1221,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertTrue(resultados[1].errores)
 
     def test_precio_negativo_en_csv_deja_el_producto_no_disponible(self):
-        variante_existente = self.crear_variante("7441001234583", "GTIN existente")
+        variante_existente = self.crear_variante(
+            "7441001234583", "GTIN existente"
+        )
         contenido = (
             "gtin,product_name,variant_name,brand_name,category_name,attributes,price,discount,is_available,product_web_url\n"
             f"{variante_existente.gtin},,,,,,-5,0,true,\n"
@@ -1140,7 +1236,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         resultado = respuesta.context["resultados"][0]
         self.assertTrue(resultado.importado)
         self.assertTrue(resultado.avisos)
-        precio = Prices.objects.get(id_store=self.store, gtin=variante_existente)
+        precio = Prices.objects.get(
+            id_store=self.store, gtin=variante_existente
+        )
         self.assertIsNone(precio.price)
         self.assertFalse(precio.is_available)
 
@@ -1183,7 +1281,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
             ).exists()
         )
 
-    def test_rechaza_nombres_ambiguos_para_evitar_una_asociacion_incorrecta(self):
+    def test_rechaza_nombres_ambiguos_para_evitar_una_asociacion_incorrecta(
+        self,
+    ):
         Brands.objects.create(
             name=self.marca.name,
             slug="marca-prueba-duplicada",
@@ -1209,7 +1309,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
             ProductVariants.objects.filter(gtin="7441001234576").exists()
         )
 
-    def test_crea_varias_imagenes_con_la_principal_y_numeracion_consecutiva(self):
+    def test_crea_varias_imagenes_con_la_principal_y_numeracion_consecutiva(
+        self,
+    ):
         contenido = (
             "gtin,product_name,variant_name,brand_name,category_name,attributes,price,discount,is_available,product_web_url,image_urls\n"
             "7441001234576,Nuevo,Variante,"
@@ -1226,7 +1328,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertTrue(respuesta.context["resultados"][0].importado)
         variante = ProductVariants.objects.get(gtin="7441001234576")
         imagenes = list(
-            ProductImages.objects.filter(variant=variante).order_by("number_image")
+            ProductImages.objects.filter(variant=variante).order_by(
+                "number_image"
+            )
         )
         self.assertEqual(
             [
@@ -1314,7 +1418,9 @@ class ImportacionCSVEmpresaTests(EmpresaTestCase):
         self.assertTrue(resultado.avisos)
         imagen.refresh_from_db()
         self.assertEqual(imagen.image_url, "https://img.test/original.png")
-        self.assertEqual(ProductImages.objects.filter(variant=variante).count(), 1)
+        self.assertEqual(
+            ProductImages.objects.filter(variant=variante).count(), 1
+        )
 
 
 class DetalleYReporteEmpresaTests(EmpresaTestCase):
@@ -1332,14 +1438,19 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
         self.precio.save(update_fields=["product_web_url", "updated_at"])
 
         respuesta = self.client.get(
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "Producto de prueba")
         self.assertContains(respuesta, "Problemas y alertas")
         self.assertContains(respuesta, "Falta el enlace del producto")
-        self.assertContains(respuesta, "El precio no cambia desde hace 2 días o más")
+        self.assertContains(
+            respuesta, "El precio no cambia desde hace 2 días o más"
+        )
         self.assertContains(respuesta, "https://img.test/producto.png")
 
     def test_editar_una_imagen_y_agregar_otra_conserva_la_principal(self):
@@ -1384,8 +1495,12 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
         self.assertEqual(respuesta.status_code, 302)
         principal.refresh_from_db()
         secundaria.refresh_from_db()
-        nueva = ProductImages.objects.get(image_url="https://img.test/nueva.png")
-        self.assertEqual(principal.image_url, "https://img.test/principal-editada.png")
+        nueva = ProductImages.objects.get(
+            image_url="https://img.test/nueva.png"
+        )
+        self.assertEqual(
+            principal.image_url, "https://img.test/principal-editada.png"
+        )
         self.assertTrue(principal.is_main)
         self.assertEqual(principal.number_image, 1)
         self.assertEqual(principal.created_at, ahora)
@@ -1434,7 +1549,9 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
         principal.refresh_from_db()
         secundaria.refresh_from_db()
         self.assertEqual(principal.image_url, "https://img.test/principal.png")
-        self.assertEqual(secundaria.image_url, "https://img.test/secundaria.png")
+        self.assertEqual(
+            secundaria.image_url, "https://img.test/secundaria.png"
+        )
         self.assertEqual(ProductImages.objects.count(), 2)
 
     def test_editar_una_imagen_existente_pide_confirmacion(self):
@@ -1606,7 +1723,10 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
         self.precio.save(update_fields=["updated_at"])
 
         respuesta = self.client.get(
-            reverse("enterprise:detalle_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:detalle_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertEqual(respuesta.status_code, 200)
@@ -1640,7 +1760,10 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
     def test_la_confirmacion_se_traduce_al_ingles(self):
         self.client.cookies["django_language"] = "en"
         respuesta = self.client.get(
-            reverse("enterprise:desactivar_producto", kwargs={"price_id": self.precio.pk})
+            reverse(
+                "enterprise:desactivar_producto",
+                kwargs={"price_id": self.precio.pk},
+            )
         )
 
         self.assertContains(respuesta, "Deactivate product")
@@ -1683,13 +1806,15 @@ class DetalleYReporteEmpresaTests(EmpresaTestCase):
 
     def test_el_reporte_solo_contiene_productos_de_la_tienda_asignada(self):
         self.crear_precio(self.otra_store, self.variante, 500)
-        otra_variante = self.crear_variante("7441001234576", "Producto de otra tienda")
+        otra_variante = self.crear_variante(
+            "7441001234576", "Producto de otra tienda"
+        )
         precio_ajeno = self.crear_precio(self.otra_store, otra_variante, 800)
 
         datos = datos_reporte(self.store)
-        identificadores = {
-            precio.pk for precio in datos["above_market"]
-        } | {precio.pk for precio in datos["stale"]}
+        identificadores = {precio.pk for precio in datos["above_market"]} | {
+            precio.pk for precio in datos["stale"]
+        }
 
         self.assertIn(self.precio.pk, identificadores)
         self.assertNotIn(precio_ajeno.pk, identificadores)

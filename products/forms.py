@@ -29,37 +29,68 @@ class EditarProductoForm(forms.Form):
         label=translate_text_lazy("Categoría"),
         queryset=Categories.objects.order_by("name"),
         empty_label=None,
-        error_messages={"invalid_choice": translate_text_lazy("Seleccione una opción válida.")},
-        widget=forms.Select(attrs={"class": f"{CLASE_CAMPO} appearance-none cursor-pointer pr-10"}),
+        error_messages={
+            "invalid_choice": translate_text_lazy(
+                "Seleccione una opción válida."
+            )
+        },
+        widget=forms.Select(
+            attrs={
+                "class": f"{CLASE_CAMPO} appearance-none cursor-pointer pr-10"
+            }
+        ),
     )
     brand = forms.CharField(
         label=translate_text_lazy("Marca"),
         max_length=255,
-        help_text=translate_text_lazy("Escriba una de las marcas del catálogo; si no existe, se crea."),
-        widget=forms.TextInput(attrs={"class": CLASE_CAMPO, "list": "marcas-del-catalogo", "autocomplete": "off"}),
+        help_text=translate_text_lazy(
+            "Escriba una de las marcas del catálogo; si no existe, se crea."
+        ),
+        widget=forms.TextInput(
+            attrs={
+                "class": CLASE_CAMPO,
+                "list": "marcas-del-catalogo",
+                "autocomplete": "off",
+            }
+        ),
     )
     description = forms.CharField(
         label=translate_text_lazy("Descripción"),
         required=False,
         widget=forms.Textarea(
-            attrs={"class": CLASE_CAMPO.replace("rounded-full", "rounded-2xl").replace("py-2.5", "py-3"), "rows": 6}
+            attrs={
+                "class": CLASE_CAMPO.replace(
+                    "rounded-full", "rounded-2xl"
+                ).replace("py-2.5", "py-3"),
+                "rows": 6,
+            }
         ),
     )
     image = forms.ImageField(
         label=translate_text_lazy("Subir una imagen"),
         required=False,
         error_messages={
-            "invalid_image": translate_text_lazy("El archivo no es una imagen o está dañado."),
+            "invalid_image": translate_text_lazy(
+                "El archivo no es una imagen o está dañado."
+            ),
         },
-        widget=forms.FileInput(attrs={"accept": "image/jpeg,image/png,image/webp,image/gif"}),
+        widget=forms.FileInput(
+            attrs={"accept": "image/jpeg,image/png,.jpg,.jpeg,.png"}
+        ),
     )
     image_url = forms.URLField(
         label=translate_text_lazy("O pegue el enlace de la imagen"),
         required=False,
         max_length=1000,
         assume_scheme="https",
-        error_messages={"invalid": translate_text_lazy("Escriba un enlace válido, como https://…")},
-        widget=forms.URLInput(attrs={"class": CLASE_CAMPO, "placeholder": "https://"}),
+        error_messages={
+            "invalid": translate_text_lazy(
+                "Escriba un enlace válido, como https://…"
+            )
+        },
+        widget=forms.URLInput(
+            attrs={"class": CLASE_CAMPO, "placeholder": "https://"}
+        ),
     )
 
     def __init__(self, *args, producto, tiene_presentaciones=True, **kwargs):
@@ -86,16 +117,26 @@ class EditarProductoForm(forms.Form):
         if not imagen:
             return None
         if imagen.size > TAMANO_MAXIMO_DE_IMAGEN:
-            raise forms.ValidationError(translate_text_lazy("La imagen pesa más de 5 MB."))
+            raise forms.ValidationError(
+                translate_text_lazy("La imagen pesa más de 5 MB.")
+            )
         if imagen.image.format not in EXTENSION_POR_FORMATO:
-            raise forms.ValidationError(translate_text_lazy("La imagen tiene que ser JPG, PNG, WEBP o GIF."))
+            raise forms.ValidationError(
+                translate_text_lazy("La imagen tiene que ser JPG o PNG.")
+            )
         return imagen
 
     def clean(self):
         datos = super().clean()
         if datos.get("image") and datos.get("image_url"):
-            raise forms.ValidationError(translate_text_lazy("Suba una imagen o pegue un enlace, no los dos."))
-        if (datos.get("image") or datos.get("image_url")) and not self.tiene_presentaciones:
+            raise forms.ValidationError(
+                translate_text_lazy(
+                    "Suba una imagen o pegue un enlace, no los dos."
+                )
+            )
+        if (
+            datos.get("image") or datos.get("image_url")
+        ) and not self.tiene_presentaciones:
             raise forms.ValidationError(
                 translate_text_lazy(
                     "Este producto no tiene presentaciones con código de barras: la imagen se guarda en cada presentación."

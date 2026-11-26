@@ -6,7 +6,7 @@
     {% if icono %}<span class="material-symbols-outlined absolute left-3.5 text-secondary text-[20px] pointer-events-none">{{ icono }}</span>{% endif %}
     {{ field }}
   </div>
-  {% if field.help_text %}<div class="ayuda mt-1.5 text-body-sm font-body-sm text-secondary">{{ field.help_text|safe }}</div>{% endif %}
+  {% if field.help_text %}<div class="ayuda mt-1.5 text-body-sm font-body-sm text-secondary">{{ field.help_text }}</div>{% endif %}
   {% for error in field.errors %}
     <p class="mt-1.5 flex items-center gap-1 text-body-sm font-body-sm text-error"><span class="material-symbols-outlined text-[16px]">error</span>{% t error %}</p>
   {% endfor %}

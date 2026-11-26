@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "reviews",
     "ingestion",
     "enterprise",
+    "auditoria",
 ]
 AUTH_USER_MODEL = "accounts.User"
 

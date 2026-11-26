@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import role_required
 from accounts.models import User
+from auditoria.registro import Accion, registrar
 from core.panel import (
     duracion_aproximada,
     indicador,
@@ -26,12 +27,26 @@ from core.panel import (
 from . import ejecucion_manual
 from .models import Incident, ManualRun
 from .resolucion import (
+    ACEPTAR_CODIGO,
+    ACEPTAR_PRECIO,
+    CAMBIAR_ENLACE,
+    DESCARTAR,
     EXTRACCION_FALLIDA,
+    REVISAR,
     NoSePuedeResolver,
     Resolucion,
     acciones_para,
     codigos_de_la_tienda,
 )
+
+# Los botones de una incidencia, como se llaman en la pantalla, para la bitácora.
+NOMBRES_DE_ACCION = {
+    ACEPTAR_PRECIO: "Aceptar el precio nuevo",
+    ACEPTAR_CODIGO: "Aceptar el código de la tienda",
+    REVISAR: "Volver a revisar ahora",
+    CAMBIAR_ENLACE: "Cambiar el enlace",
+    DESCARTAR: "Descartar",
+}
 
 INCIDENCIAS_POR_PAGINA = 25
 
@@ -278,13 +293,39 @@ def resolver_incidencia(request, pk):
     incidencia = get_object_or_404(
         Incident, pk=pk, kind__in=EXTRACCION_FALLIDA
     )
+    accion = request.POST.get("accion", "")
+    url = request.POST.get("url", "")
     try:
         resultado = Resolucion(incidencia, request.user).ejecutar(
-            request.POST.get("accion", ""), url=request.POST.get("url", "")
+            accion, url=url
         )
     except NoSePuedeResolver as error:
         messages.error(request, str(error))
     else:
+        detalles = {
+            "Tipo": incidencia.get_kind_display(),
+            "Acción elegida": NOMBRES_DE_ACCION.get(accion, accion),
+            "Resultado": resultado.mensaje,
+        }
+        if accion == CAMBIAR_ENLACE:
+            detalles["Enlace nuevo"] = url
+        if resultado.repetidas:
+            detalles["Incidencias repetidas resueltas"] = resultado.repetidas
+        registrar(
+            request.user,
+            Accion.INCIDENT_RESOLVE,
+            incidencia.pk,
+            " — ".join(
+                parte
+                for parte in (
+                    incidencia.product_name or incidencia.gtin,
+                    incidencia.store_name,
+                )
+                if parte
+            )
+            or f"Incidencia {incidencia.pk}",
+            detalles,
+        )
         (messages.success if resultado.exito else messages.warning)(
             request, resultado.mensaje
         )
@@ -407,6 +448,19 @@ def ejecutar_obtencion(request):
     except ejecucion_manual.NoSePuedeEjecutar as error:
         messages.error(request, str(error))
     else:
+        registrar(
+            request.user,
+            Accion.DATA_RUN_REQUEST,
+            ejecucion.pk,
+            ejecucion.store_name,
+            {
+                "Dónde": ejecucion.get_runner_display(),
+                "Minutos como máximo": ejecucion.minutes,
+                "Todos los precios": ejecucion.all_prices,
+                "Modo de prueba": ejecucion.dry_run,
+            },
+            comercio=ejecucion.store_id,
+        )
         if ejecucion.runner == ManualRun.Runner.SERVER:
             messages.success(
                 request,

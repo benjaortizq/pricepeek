@@ -19,6 +19,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 from accounts.decorators import role_required
 from accounts.models import User
+from auditoria.registro import Accion, registrar
 from core.panel import indicador, pestanas, plural
 from core.translations import translate_text
 
@@ -219,6 +220,16 @@ def editar_producto(request, pk):
                 imagen_url=datos["image_url"],
             )
             if edicion.cambios:
+                detalles = {"Cambios": edicion.cambios}
+                if edicion.marca_nueva:
+                    detalles["Marca nueva"] = producto.brand.name
+                registrar(
+                    request.user,
+                    Accion.PRODUCT_EDIT,
+                    producto.pk,
+                    producto.name,
+                    detalles,
+                )
                 tiendas = (
                     Prices.objects.filter(gtin__product_id=producto.pk)
                     .values("id_store")

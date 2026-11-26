@@ -18,6 +18,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from auditoria.registro import Accion, registrar
 from core.panel import indicador, inicio_de_hoy, pestanas, plural
 from ingestion.models import Incident
 from ingestion.resolucion import EXTRACCION_FALLIDA
@@ -454,9 +455,20 @@ def suspender_cliente(request, pk):
     form = SuspenderClienteForm(request.POST)
     if not form.is_valid():
         return mostrar_detalle_cliente(request, cliente, form)
-    if User.objects.suspender_cliente(
-        cliente.pk, request.user, form.cleaned_data["motivo"]
-    ):
+    motivo = form.cleaned_data["motivo"]
+    with transaction.atomic():
+        suspendida = User.objects.suspender_cliente(
+            cliente.pk, request.user, motivo
+        )
+        if suspendida:
+            registrar(
+                request.user,
+                Accion.CLIENT_SUSPEND,
+                cliente.pk,
+                cliente.email,
+                {"Motivo": motivo},
+            )
+    if suspendida:
         messages.success(
             request, f"La cuenta de {cliente.email} fue suspendida."
         )
@@ -469,7 +481,16 @@ def suspender_cliente(request, pk):
 @require_POST
 def reactivar_cliente(request, pk):
     cliente = obtener_cliente(pk)
-    if User.objects.reactivar_cliente(cliente.pk):
+    with transaction.atomic():
+        reactivada = User.objects.reactivar_cliente(cliente.pk)
+        if reactivada:
+            registrar(
+                request.user,
+                Accion.CLIENT_REACTIVATE,
+                cliente.pk,
+                cliente.email,
+            )
+    if reactivada:
         messages.success(
             request, f"La cuenta de {cliente.email} fue reactivada."
         )

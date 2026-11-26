@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from auditoria.registro import Accion, registrar
 from core.panel import indicador, pestanas, plural
 from core.translations import translate_text
 from products.comercios import (
@@ -170,7 +171,9 @@ def comercios(request):
 
 
 def _avisar_acceso(request, cuenta, tienda):
-    if enviar_acceso(cuenta, tienda, request):
+    """Envía el acceso a la cuenta y lo avisa. Devuelve si el correo se pudo enviar."""
+    enviado = enviar_acceso(cuenta, tienda, request)
+    if enviado:
         messages.info(
             request,
             translate_text(
@@ -186,6 +189,12 @@ def _avisar_acceso(request, cuenta, tienda):
                 correo=cuenta.email,
             ),
         )
+    return enviado
+
+
+def _mecanismo(valor):
+    """El nombre del mecanismo de obtención de datos, para la bitácora."""
+    return PartnerStore.DataSource(valor).label
 
 
 @role_required(User.Role.ADMIN)
@@ -207,6 +216,25 @@ def registrar_comercio(request):
                     correo=datos["email"],
                     nombre=datos["first_name"],
                     apellidos=datos["last_name"],
+                )
+                registrar(
+                    request.user,
+                    Accion.STORE_REGISTER,
+                    tienda.pk,
+                    tienda.name,
+                    {
+                        "Obtención de datos": _mecanismo(datos["data_source"]),
+                        "Activo": bool(datos["is_active"]),
+                    },
+                    comercio=tienda,
+                )
+                registrar(
+                    request.user,
+                    Accion.ACCOUNT_CREATE,
+                    cuenta.pk,
+                    cuenta.email,
+                    {"Comercio": tienda.name},
+                    comercio=tienda,
                 )
             messages.success(
                 request,
@@ -271,12 +299,29 @@ def detalle_comercio(request, pk):
         form = DatosDelComercioForm(request.POST, tienda=tienda)
         if form.is_valid():
             datos = form.cleaned_data
-            if guardar_datos_del_comercio(
-                tienda,
-                nombre=datos["name"],
-                descripcion=datos["description"],
-                mecanismo=datos["data_source"],
-            ):
+            with transaction.atomic():
+                cambio = guardar_datos_del_comercio(
+                    tienda,
+                    nombre=datos["name"],
+                    descripcion=datos["description"],
+                    mecanismo=datos["data_source"],
+                )
+                if cambio:
+                    registrar(
+                        request.user,
+                        Accion.STORE_EDIT,
+                        tienda.pk,
+                        datos["name"],
+                        {
+                            "Nombre": datos["name"],
+                            "Descripción": datos["description"] or "—",
+                            "Obtención de datos": _mecanismo(
+                                datos["data_source"]
+                            ),
+                        },
+                        comercio=tienda,
+                    )
+            if cambio:
                 messages.success(
                     request,
                     translate_text("Se guardaron los datos del comercio."),
@@ -296,7 +341,19 @@ def estado_comercio(request, pk):
     tienda = get_object_or_404(Stores, pk=pk)
     activo = request.POST.get("activo") == "1"
     nombre = nombre_del_comercio(tienda)
-    if not cambiar_estado(tienda, activo=activo, administrador=request.user):
+    with transaction.atomic():
+        cambio = cambiar_estado(
+            tienda, activo=activo, administrador=request.user
+        )
+        if cambio:
+            registrar(
+                request.user,
+                Accion.STORE_ACTIVATE if activo else Accion.STORE_DEACTIVATE,
+                tienda.pk,
+                nombre,
+                comercio=tienda,
+            )
+    if not cambio:
         texto = (
             "El comercio «{comercio}» ya estaba activo."
             if activo
@@ -330,12 +387,21 @@ def crear_cuenta_comercio(request, pk):
     if not form.is_valid():
         return _mostrar_detalle(request, tienda, form_cuenta=form)
     datos = form.cleaned_data
-    cuenta = crear_cuenta_de_empresa(
-        tienda,
-        correo=datos["email"],
-        nombre=datos["first_name"],
-        apellidos=datos["last_name"],
-    )
+    with transaction.atomic():
+        cuenta = crear_cuenta_de_empresa(
+            tienda,
+            correo=datos["email"],
+            nombre=datos["first_name"],
+            apellidos=datos["last_name"],
+        )
+        registrar(
+            request.user,
+            Accion.ACCOUNT_CREATE,
+            cuenta.pk,
+            cuenta.email,
+            {"Comercio": nombre_del_comercio(tienda)},
+            comercio=tienda,
+        )
     messages.success(
         request,
         translate_text(
@@ -351,5 +417,13 @@ def crear_cuenta_comercio(request, pk):
 def reenviar_acceso(request, pk, cuenta_pk):
     tienda = get_object_or_404(Stores, pk=pk)
     cuenta = get_object_or_404(cuentas_de_empresa(tienda), pk=cuenta_pk)
-    _avisar_acceso(request, cuenta, tienda)
+    enviado = _avisar_acceso(request, cuenta, tienda)
+    registrar(
+        request.user,
+        Accion.ACCOUNT_SEND_ACCESS,
+        cuenta.pk,
+        cuenta.email,
+        {"Comercio": nombre_del_comercio(tienda), "Correo enviado": enviado},
+        comercio=tienda,
+    )
     return redirect("detalle_comercio", pk=tienda.pk)

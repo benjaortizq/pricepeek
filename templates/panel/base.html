@@ -45,6 +45,7 @@
       {% include "panel/enlace_lateral.html" with url_name="catalogo_de_productos" icono="inventory_2" texto="Productos" activo_si="catalogo_de_productos editar_producto" %}
       {% include "panel/enlace_lateral.html" with url_name="incidencias" icono="sync_problem" texto="Incidencias de datos" activo_si="incidencias" contador=pendientes.incidencias %}
       {% include "panel/enlace_lateral.html" with url_name="obtencion_de_datos" icono="cloud_sync" texto="Obtención de datos" activo_si="obtencion_de_datos" contador=pendientes.ejecuciones %}
+      {% include "panel/enlace_lateral.html" with url_name="bitacora" icono="history" texto="Bitácora" activo_si="bitacora" %}
     </nav>
   </div>
 
@@ -109,6 +110,7 @@
       {% include "panel/enlace_movil.html" with url_name="catalogo_de_productos" texto="Productos" activo_si="catalogo_de_productos editar_producto" %}
       {% include "panel/enlace_movil.html" with url_name="incidencias" texto="Incidencias de datos" activo_si="incidencias" contador=pendientes.incidencias %}
       {% include "panel/enlace_movil.html" with url_name="obtencion_de_datos" texto="Obtención de datos" activo_si="obtencion_de_datos" contador=pendientes.ejecuciones %}
+      {% include "panel/enlace_movil.html" with url_name="bitacora" texto="Bitácora" activo_si="bitacora" %}
     </nav>
   </header>
 

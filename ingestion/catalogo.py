@@ -222,9 +222,19 @@ def secuencias_atrasadas(modelos=TABLAS_DEL_CATALOGO):
             secuencia = cursor.fetchone()[0]
             if not secuencia:
                 continue
-            cursor.execute(f"SELECT last_value, is_called FROM {secuencia}")
+            # ``secuencia`` viene de pg_get_serial_sequence, pero se cita como
+            # identificador en vez de interpolarla directamente en SQL.
+            partes_secuencia = secuencia.split(".")
+            secuencia_citada = ".".join(
+                connection.ops.quote_name(parte.strip('"'))
+                for parte in partes_secuencia
+            )
+            cursor.execute(
+                f"SELECT last_value, is_called FROM {secuencia_citada}"
+            )
             ultimo, usado = cursor.fetchone()
-            cursor.execute(f'SELECT MAX(id) FROM "{tabla}"')
+            tabla_citada = connection.ops.quote_name(tabla)
+            cursor.execute(f"SELECT MAX(id) FROM {tabla_citada}")
             maximo = cursor.fetchone()[0] or 0
             siguiente = ultimo + 1 if usado else ultimo
             if siguiente <= maximo:

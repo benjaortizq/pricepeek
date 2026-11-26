@@ -1,3 +1,6 @@
+"""Pruebas unitarias y de integración para el módulo de productos."""
+from django.test import TestCase
+
 import re
 from datetime import timedelta
 from decimal import Decimal
@@ -5,7 +8,6 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.db import connection
-from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone

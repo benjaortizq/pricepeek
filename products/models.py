@@ -3,7 +3,6 @@
 # This is an auto-generated Django model module.
 from django.conf import settings
 from django.db import models
-from accounts.models import AccountsUser
 
 class Brands(models.Model):
     id = models.BigAutoField(primary_key=True)
